@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: ipmanager_app
+    ports:
+      - "8080:80"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=ipmanage
+      - DB_USER=root
+      - DB_PASS=rootpassword
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.11
+    container_name: ipmanager_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=ipmanage
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql/database.sql:/docker-entrypoint-initdb.d/database.sql
+
+volumes:
+  db_data:
