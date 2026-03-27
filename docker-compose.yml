@@ -11,6 +11,9 @@ services:
       - DB_NAME=ipmanage
       - DB_USER=root
       - DB_PASS=rootpassword
+      - DISCOVERY_AGGRESSIVE_MODE=1
+      - ENABLE_NMAP_FALLBACK=1
+      - OFFLINE_TTL_MINUTES=30
     depends_on:
       - db
 

@@ -43,7 +43,20 @@ Tambahan anti-miss:
 - final lightweight recheck untuk host borderline.
 - optional Nmap host discovery (`-sn`) untuk negative-case yang tetap meragukan.
 
-## D. Hostname Resolution
+## D. Mode Discovery Lanjutan
+
+Sistem mendukung dua mode tambahan via `includes/config.php`:
+
+1. **DISCOVERY_AGGRESSIVE_MODE** (`true`):
+   - Menambah daftar port probe menjadi: `80, 443, 22, 445, 3389, 53, 139, 161`.
+   - Sangat berguna untuk mendeteksi perangkat jaringan (DNS, SAMBA, SNMP).
+
+2. **ENABLE_NMAP_FALLBACK** (`true`):
+   - Menggunakan `nmap -sn -n` sebagai langkah pamungkas jika Ping/ARP/Port gagal.
+   - Memerlukan binary `nmap` terinstal di host scanner.
+   - Efektif menembus berbagai proteksi firewall host.
+
+## E. Hostname Resolution
 
 - DNS reverse lookup memakai retry ringan.
 - Hasil hostname dinormalisasi:

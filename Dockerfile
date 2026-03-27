@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y \
     libsnmp-dev \
     libssl-dev \
     snmp \
+    nmap \
+    iputils-ping \
     && docker-php-ext-install mysqli pdo pdo_mysql gettext snmp \
     && a2enmod rewrite
 
@@ -16,6 +18,10 @@ WORKDIR /var/www/html
 COPY . .
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod +x /var/www/html/entrypoint.sh
 
 EXPOSE 80
+
+# Use the entrypoint script to run both Apache and background cron
+ENTRYPOINT ["/var/www/html/entrypoint.sh"]
