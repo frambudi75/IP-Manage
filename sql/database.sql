@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `ip_addresses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Insert default admin (password: admin123)
-INSERT INTO `users` (`username`, `password`, `role`) VALUES ('admin', '$2y$12$VTOR60IMUSAbECXvErSxbuHQ32VVEj5farrfEv1im/EV.k5xGRt5e', 'admin');
+INSERT INTO `users` (`username`, `password`, `role`) VALUES ('admin', '$2y$10$iC1CpjbPVLpFx1BcbSTUsOZ52qhELYqHrKyADN/z9DF2UArhZEnPK', 'admin');
 
 -- Insert default section
 INSERT INTO `sections` (`name`, `description`) VALUES ('Default Section', 'Automatically created default section');
