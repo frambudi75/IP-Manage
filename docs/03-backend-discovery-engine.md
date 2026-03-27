@@ -35,11 +35,13 @@ Sinyal yang dipakai:
 - `ping` (dengan retry);
 - `arp` (dari ARP map);
 - `port` probe ke daftar port umum: `80,443,22,445,3389`.
+- `nmap` fallback opsional untuk host borderline (hanya jika diaktifkan).
 
 Tambahan anti-miss:
 
 - refresh ARP adaptif jika ada sinyal aktif tapi ARP belum muncul;
 - final lightweight recheck untuk host borderline.
+- optional Nmap host discovery (`-sn`) untuk negative-case yang tetap meragukan.
 
 ## D. Hostname Resolution
 
@@ -70,6 +72,7 @@ Bobot saat ini:
 
 - `snmp = 35`
 - `arp = 30`
+- `nmap = 25`
 - `ping = 20`
 - `port = 10`
 - `dns = 5`

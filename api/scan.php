@@ -64,6 +64,7 @@ for ($i = $range_start; $i <= $range_end; $i++) {
     $has_ping = $signals['ping'];
     $has_arp = $signals['arp'];
     $has_port = $signals['port'];
+    $has_nmap = !empty($signals['nmap']);
     $is_active = $signals['active'];
 
     if ($is_active) {
@@ -103,6 +104,7 @@ for ($i = $range_start; $i <= $range_end; $i++) {
         $confidence = calculate_discovery_confidence([
             'ping' => $has_ping,
             'arp' => $has_arp,
+            'nmap' => $has_nmap,
             'port' => $has_port,
             'dns' => $has_dns,
             'snmp' => $has_snmp

@@ -155,22 +155,72 @@ function refresh_arp_map() {
 }
 
 /**
+ * Detect whether nmap exists on scanner host.
+ */
+function has_nmap_binary() {
+    static $checked = false;
+    static $available = false;
+
+    if ($checked) {
+        return $available;
+    }
+
+    $checked = true;
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        exec("where nmap", $out, $code);
+    } else {
+        exec("command -v nmap", $out, $code);
+    }
+    $available = ($code === 0);
+    return $available;
+}
+
+/**
+ * Optional nmap host-up fallback (disabled by default).
+ */
+function nmap_detect_host($ip) {
+    $ip = normalize_ipv4($ip);
+    if (!$ip || !defined('ENABLE_NMAP_FALLBACK') || !ENABLE_NMAP_FALLBACK || !has_nmap_binary()) {
+        return false;
+    }
+
+    $target = escapeshellarg($ip);
+    // Keep it tight: host discovery only, no DNS, short timeout.
+    $cmd = "nmap -sn -n --host-timeout 2s {$target}";
+    exec($cmd, $output, $code);
+    if ($code !== 0 || empty($output)) {
+        return false;
+    }
+
+    foreach ($output as $line) {
+        if (stripos($line, 'Host is up') !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Multi-probe host activity detection to reduce misses.
  */
 function detect_host_signals($ip, &$arp_map) {
     $ip = normalize_ipv4($ip);
     if (!$ip) {
-        return ['ping' => false, 'arp' => false, 'port' => false, 'active' => false];
+        return ['ping' => false, 'arp' => false, 'port' => false, 'nmap' => false, 'active' => false];
     }
 
     $signals = [
         'ping' => ping_ip($ip, 2, 300),
         'arp' => isset($arp_map[$ip]),
         'port' => false,
+        'nmap' => false,
         'active' => false
     ];
 
     $ports = [80, 443, 22, 445, 3389];
+    if (defined('DISCOVERY_AGGRESSIVE_MODE') && DISCOVERY_AGGRESSIVE_MODE) {
+        $ports = [80, 443, 22, 445, 3389, 53, 139, 161];
+    }
     foreach ($ports as $port) {
         if (check_port($ip, $port, 0.28, 1)) {
             $signals['port'] = true;
@@ -199,7 +249,19 @@ function detect_host_signals($ip, &$arp_map) {
         }
     }
 
-    $signals['active'] = $signals['ping'] || $signals['arp'] || $signals['port'];
+    // Optional heavy fallback only for borderline negatives.
+    if (!$signals['ping'] && !$signals['arp'] && !$signals['port']) {
+        $signals['nmap'] = nmap_detect_host($ip);
+        if ($signals['nmap']) {
+            $fresh = refresh_arp_map();
+            if (!empty($fresh)) {
+                $arp_map = $fresh;
+                $signals['arp'] = isset($arp_map[$ip]);
+            }
+        }
+    }
+
+    $signals['active'] = $signals['ping'] || $signals['arp'] || $signals['port'] || $signals['nmap'];
     return $signals;
 }
 
@@ -269,6 +331,7 @@ function calculate_discovery_confidence($flags) {
     $weights = [
         'snmp' => 35,
         'arp' => 30,
+        'nmap' => 25,
         'ping' => 20,
         'port' => 10,
         'dns' => 5

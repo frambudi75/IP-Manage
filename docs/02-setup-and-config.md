@@ -33,10 +33,13 @@ Parameter penting:
 - `DB_USER` (default: `root`)
 - `DB_PASS` (default: kosong)
 - `OFFLINE_TTL_MINUTES` (default: `30`)
+- `DISCOVERY_AGGRESSIVE_MODE` (default: `1`)
+- `ENABLE_NMAP_FALLBACK` (default: `0`, opsional)
 
 Contoh override via environment:
 
 - `OFFLINE_TTL_MINUTES=45` -> host dianggap offline jika tidak terlihat >= 45 menit.
+- `ENABLE_NMAP_FALLBACK=1` -> aktifkan fallback host discovery berbasis Nmap untuk host borderline.
 
 ## 4) Prasyarat Agar Discovery Maksimal
 
@@ -48,6 +51,9 @@ Contoh override via environment:
 - Jika pakai SNMP:
   - pastikan extension PHP SNMP aktif;
   - community string pada subnet sudah benar.
+- Jika pakai Nmap fallback:
+  - install `nmap` di host scanner;
+  - pastikan binary `nmap` tersedia di PATH.
 
 ## 5) Pengaturan Scan per Subnet
 

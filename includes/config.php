@@ -9,6 +9,8 @@ define('DB_NAME', getenv('DB_NAME') ?: 'ipmanage');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('OFFLINE_TTL_MINUTES', (int)(getenv('OFFLINE_TTL_MINUTES') ?: 30));
+define('DISCOVERY_AGGRESSIVE_MODE', (int)(getenv('DISCOVERY_AGGRESSIVE_MODE') ?: 1) === 1);
+define('ENABLE_NMAP_FALLBACK', (int)(getenv('ENABLE_NMAP_FALLBACK') ?: 0) === 1);
 
 // Application Configuration
 define('APP_NAME', 'IPManager Pro');

@@ -67,6 +67,7 @@ foreach ($subnets as $subnet) {
         $has_ping = $signals['ping'];
         $has_arp = $signals['arp'];
         $has_port = $signals['port'];
+        $has_nmap = !empty($signals['nmap']);
         if ($signals['active']) {
             $found++;
             $hostname = resolve_hostname($ip);
@@ -100,6 +101,7 @@ foreach ($subnets as $subnet) {
             $confidence = calculate_discovery_confidence([
                 'ping' => $has_ping,
                 'arp' => $has_arp,
+                'nmap' => $has_nmap,
                 'port' => $has_port,
                 'dns' => $has_dns,
                 'snmp' => $has_snmp
