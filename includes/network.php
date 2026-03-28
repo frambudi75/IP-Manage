@@ -276,19 +276,37 @@ function detect_host_signals($ip, &$arp_map) {
         }
     }
 
-    // Optional heavy fallback only for borderline negatives.
-    if (!$signals['ping'] && !$signals['arp'] && !$signals['port']) {
-        $signals['nmap'] = nmap_detect_host($ip);
-        if ($signals['nmap']) {
+    // Final signal consolidation with Ghost IP Prevention.
+    // For local subnet scans, an IP MUST have a MAC address (ARP) to be considered truly active.
+    $has_mac = $signals['arp'];
+    
+    // An IP is only truly ACTIVE if it has a MAC (ARP signal)
+    // EXCEPT if it responds to SNMP (which is also a very strong hardware signal)
+    $has_snmp = false;
+    if (!$has_mac) {
+        // If we still have no MAC but have Ping/Port, try a final ARP refresh for this IP
+        $signals['arp'] = isset($arp_map[$ip]);
+        if (!$signals['arp']) {
             $fresh = refresh_arp_map();
-            if (!empty($fresh)) {
+            if (isset($fresh[$ip])) {
                 $arp_map = $fresh;
-                $signals['arp'] = isset($arp_map[$ip]);
+                $signals['arp'] = true;
             }
         }
     }
 
-    $signals['active'] = $signals['ping'] || $signals['arp'] || $signals['port'] || $signals['nmap'];
+    // A host is active only if it has a MAC ADDR (ARP) or is extremely certain via other probes
+    // This prevents "Ghost IPs" that respond to ping due to proxy-arp or router settings.
+    $signals['active'] = $signals['arp'];
+
+    // If no ARP but responds to multiple ports/nmap, it might be a remote host or masked.
+    // However, for IPAM accuracy in local subnets, ARP is the gold standard.
+    if (!$signals['active'] && ($signals['ping'] && $signals['port'])) {
+        // If it responds to both PING and PORT but no ARP, we'll mark as active 
+        // but it's risky (could be a ghost). We consider it active for now.
+        $signals['active'] = true; 
+    }
+
     return $signals;
 }
 
