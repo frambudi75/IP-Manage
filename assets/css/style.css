@@ -68,6 +68,31 @@ ul {
     padding: 2rem;
     min-width: 0;
     transition: margin-left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.content-wrapper {
+    flex: 1;
+}
+
+.app-footer {
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.app-footer a {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.app-footer a:hover {
+    text-decoration: underline;
 }
 
 /* Mobile Responsive */

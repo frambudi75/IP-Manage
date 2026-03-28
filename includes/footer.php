@@ -1,4 +1,14 @@
             </div>
+            
+            <footer class="app-footer">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>&copy; <?php echo date('Y'); ?> <b><?php echo APP_NAME; ?></b> — Developed with ❤️ by </span>
+                    <a href="https://github.com/frambudi75" target="_blank" style="display: flex; align-items: center; gap: 5px; color: var(--primary);">
+                         Habib Frambudi
+                        <i data-lucide="github" style="width: 14px;"></i>
+                    </a>
+                </div>
+            </footer>
         </main>
     </div>
     <script>
