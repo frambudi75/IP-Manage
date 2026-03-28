@@ -1,90 +1,76 @@
-# 🚀 IPManager Pro: High-Performance Network Management
+# 🚀 IPManager Pro: High-Performance IPAM & Network Monitoring
 
-IPManager Pro is a state-of-the-art **IP Address Management (IPAM)** system and **Network Monitoring** platform. It is designed for high-density environments where accuracy, speed, and real-time visibility are critical.
-
-Unlike standard IPAMs, IPManager Pro combines traditional inventory management with an **Active Discovery Engine** that tracks device health and location across your infrastructure.
+IPManager Pro is a modern, high-speed **IP Address Management (IPAM)** and **Infrastructure Monitoring** platform. It provides real-time visibility into your network subnets, device health, and physical connectivity.
 
 ---
 
-## 🛠️ System Architecture & Workflow
-How IPManager Pro maintains near 100% discovery accuracy:
+## 🏗️ System Architecture
+How IPManager Pro maintains its high-accuracy network map:
 
 ```mermaid
 graph TD
-    A[Scanner Engine] -->|Parallel Worker Pool| B(Active Discovery: Ping/Nmap/ARP)
-    C[Health Poller] -->|SNMP| D(Hardware Stats: CPU/RAM/Uptime)
-    E[Switch Poller] -->|L3 ARP Cache| F(MAC-to-Port-to-IP Mapping)
-    B -->|Found Hosts| G[(Central Intelligence Database)]
-    D -->|Health Analytics| G
-    F -->|Physical Connectivity| G
-    G --> H[Premium Dark-Mode Dashboard]
-    H -->|Real-time Visualization| I(Chart.js Analytics)
+    A[Scanner Engine] -->|Parallel Workers| B(Ping / Nmap / ARP)
+    C[Health Poller] -->|SNMP| D(CPU / RAM / Uptime)
+    E[Switch Poller] -->|L3 ARP Cache| F(MAC-Port-IP Mapping)
+    B -->|Found Hosts| G[(Central Intelligence DB)]
+    D -->|Health Stats| G
+    F -->|Port Locations| G
+    G --> H[Premium Dashboard]
 ```
 
 ---
 
-## 📂 Core Modules & Menus
-Discover the power of IPManager Pro through its specialized modules:
-
-| Menu | Description | Key Features |
-| :--- | :--- | :--- |
-| **📊 Dashboard** | The command center of your network. | Live usage trends, subnet density, and overall health status. |
-| **🌐 Managed Switches** | Deep-dive into your infrastructure hardware. | CPU/RAM gauges, system info, and full physical port mappings. |
-| **🗺️ IP Management** | Logical organization of your network assets. | Flexible subnets, VLAN tracking, and IP allocation status. |
-| **🧰 Network Toolbox** | Built-in professional diagnostic suite. | Real-time Ping, Traceroute, and MAC OUI vendor lookup. |
-| **📜 Audit Logs** | Complete accountability and history. | Tracking of manual changes and automated system discoveries. |
+## 📂 Core Modules
+| Module | Description |
+| :--- | :--- |
+| **📊 Dashboard** | Visual analytics, subnet density, and live usage trends. |
+| **🌐 Switches** | Hardware monitoring (CPU/RAM) and physical port mapping. |
+| **🗺️ IPAM** | Subnet organization, VLAN tracking, and IP allocation. |
+| **🧰 Toolbox** | Professional diagnostics (Ping, Traceroute, MAC OUI Lookup). |
+| **📜 Audit Logs** | Comprehensive history of all system and user changes. |
 
 ---
 
-## ⚡ The "Secret Sauce": Advanced Engines
-
-### 1. Parallel Discovery Pool
-Uses multi-process `proc_open` technology to scan thousands of IPs simultaneously across Windows and Linux, reducing scan times from hours to minutes.
-
-### 2. High-Accuracy Switch Poller
-Goes beyond standard SNMP. It uses vendor-specific OIDs (Cisco/MikroTik) and **L3 ARP Cache** analysis to link every connected device to its exact physical port and IP address.
-
-### 3. Hardware Health Monitoring
-Real-time tracking of hardware vitals (CPU, Memory, Uptime) ensures you know about infrastructure bottlenecks before they cause downtime.
+## 🔐 Default Credentials
+Logout/Login at the initial screen using:
+- **Username**: `admin`
+- **Password**: `admin123`
+*(Please change your password immediately after the first login)*
 
 ---
 
-## 📋 Technical Prerequisites
-- **PHP 8.1+** (Extensions: `snmp`, `curl`, `pdo_mysql`, `mbstring`)
-- **MariaDB 10.2+** / **MySQL 5.7+**
-- **System Tools**: `nmap` and `traceroute` (for advanced diagnostics)
+## ⚡ Installation Guide
 
----
+### Option 1: Docker (Recommended)
+1. Clone the repository.
+2. Run: `docker-compose up -d`
+3. Access: `http://localhost:8080`
 
-## 🚀 Installation & Deployment
+### Option 2: XAMPP (Windows)
+1. Copy project to `C:\xampp\htdocs\ipmanage`.
+2. **Setup PHP**: Edit `C:\xampp\php\php.ini`, remove `;` from `extension=snmp` and `extension=curl`.
+3. **Database**: Create `ipmanage` in phpMyAdmin and import `sql/database.sql`.
+4. Access: `http://localhost/ipmanage`
 
-### 🐳 Option A: Docker (Recommended)
-The fastest way to deploy with all dependencies pre-configured.
-```bash
-docker-compose up -d
-# Access at http://localhost:8080
-```
-
-### 🪟 Option B: XAMPP (Windows)
-1. Copy files to `C:\xampp\htdocs\ipmanage`.
-2. Enable `extension=snmp` and `extension=curl` in `php.ini`.
-3. Import `sql/database.sql` via phpMyAdmin.
-4. Access at `http://localhost/ipmanage`.
-
-### 🐧 Option C: Linux Bare Metal (Ubuntu/Debian)
-```bash
-sudo apt install apache2 mariadb-server php-mysql php-snmp nmap traceroute
-# Import database and configure /var/www/html/ipmanage
-```
+### Option 3: Linux (Ubuntu/Debian)
+1. Install: `apt install apache2 mariadb-server php-mysql php-snmp nmap traceroute`.
+2. Create DB and import `sql/database.sql`.
+3. Set permissions: `chown -R www-data:www-data /var/www/html/ipmanage`.
 
 ---
 
 ## 🤖 Automation (Background Tasks)
-| Platform | Tool | Command / Description |
-| :--- | :--- | :--- |
-| **Docker** | Internal | Handled automatically by entrypoint scripts. |
-| **Linux** | `crontab` | `*/15 * * * * php /path/to/cron_scanner.php` |
-| **Windows** | Task Scheduler | Run `php.exe` with `cron_scanner.php` every 30 mins. |
+| Platform | Requirement |
+| :--- | :--- |
+| **Docker** | Handled automatically. |
+| **Linux** | `*/15 * * * * php /var/www/html/ipmanage/cron_scanner.php` (Crontab) |
+| **Windows** | Set Task Scheduler to run `php.exe cron_scanner.php` every 30 mins. |
 
 ---
-*Powered by **Vanilla CSS**, **Lucide Icons**, and **Google Fonts (Outfit)** for a state-of-the-art UI experience.*
+
+## 🛠️ Configuration
+Custom settings (Database host, App URL, specific SNMP communities) can be modified in:
+`includes/config.php`
+
+---
+*Powered by **Vanilla CSS**, **Lucide Icons**, and **Chart.js**.*
