@@ -41,7 +41,8 @@ $range_end = isset($_GET['end']) ? (int)$_GET['end'] : min($end_long, $start_lon
 $results = [
     'scanned' => 0,
     'found' => 0,
-    'ips' => [] // Return found IPs for live UI update
+    'ips' => [], // Return found IPs for live UI update
+    'offline_ips' => [] // Return IPs that went offline (ghosts)
 ];
 
 // Pre-fetch ARP table for efficiency
@@ -165,6 +166,9 @@ for ($i = $range_start; $i <= $range_end; $i++) {
         // GHOST PREVENTION: If IP was active before but now not detected, mark as offline
         $stmt = $db->prepare("UPDATE ip_addresses SET state = 'offline' WHERE subnet_id = ? AND ip_addr = ? AND state = 'active'");
         $stmt->execute([$subnet_id, $ip]);
+        if ($stmt->rowCount() > 0) {
+            $results['offline_ips'][] = $ip;
+        }
     }
 }
 

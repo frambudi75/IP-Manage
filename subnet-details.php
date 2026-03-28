@@ -468,6 +468,18 @@ async function scanSubnet(id) {
                         gridItem.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
                         gridItem.title = `${ipInfo.ip} (active) - Confidence: ${ipInfo.confidence}% | ${ipInfo.mac || ''} ${ipInfo.vendor || ''}`;
                     }
+                    // Update Grid Live for Offline/Ghosts
+                    if (data.data.offline_ips) {
+                        data.data.offline_ips.forEach(ipAddr => {
+                            const gridItem = document.querySelector(`div[title*="${ipAddr} (active)"]`) || document.querySelector(`div[title^="${ipAddr} "]`);
+                            if (gridItem) {
+                                gridItem.style.background = 'var(--surface-light)';
+                                gridItem.style.opacity = '0.4';
+                                gridItem.style.boxShadow = 'none';
+                                gridItem.title = `${ipAddr} (offline)`;
+                            }
+                        });
+                    }
                 });
             }
         } catch (err) {

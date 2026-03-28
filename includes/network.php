@@ -295,17 +295,9 @@ function detect_host_signals($ip, &$arp_map) {
         }
     }
 
-    // A host is active only if it has a MAC ADDR (ARP) or is extremely certain via other probes
-    // This prevents "Ghost IPs" that respond to ping due to proxy-arp or router settings.
+    // A host is active only if it has a MAC ADDR (ARP).
+    // This strictly prevents "Ghost IPs" that respond to ping due to proxy-arp or router settings.
     $signals['active'] = $signals['arp'];
-
-    // If no ARP but responds to multiple ports/nmap, it might be a remote host or masked.
-    // However, for IPAM accuracy in local subnets, ARP is the gold standard.
-    if (!$signals['active'] && ($signals['ping'] && $signals['port'])) {
-        // If it responds to both PING and PORT but no ARP, we'll mark as active 
-        // but it's risky (could be a ghost). We consider it active for now.
-        $signals['active'] = true; 
-    }
 
     return $signals;
 }
