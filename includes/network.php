@@ -306,20 +306,15 @@ function detect_host_signals($ip, &$arp_map) {
         }
     } catch(Exception $e) {}
 
+    // Final decision: NO PING ALONE.
     // Sinyal kuat: Jika ada ARP (MAC) atau SNMP atau Nmap fingerprint
     $signals['active'] = $signals['arp'] || $signals['nmap'];
 
-    // Jika ARP tidak ada:
-    if (!$signals['active']) {
-        // 1. Jika terdeteksi PORT terbuka, it's a real device.
-        if ($signals['port']) {
-            $signals['active'] = true;
-        } 
-        // 2. Jika IP Remote (beda subnet) dan PING aktif, kita anggap Active.
-        // Di subnet remote, kita tidak bisa melihat ARP secara langsung.
-        else if ($is_remote && $signals['ping']) {
-            $signals['active'] = true;
-        }
+    // Jika tidak ada ARP (bisa jadi karena subnet berbeda/remote), 
+    // kita tetap izinkan Active ASALKAN ada PORT atau service yang terdeteksi.
+    // Ini memastikan CCTV di subnet lain tetap muncul, tapi IP Hantu (Ping saja) akan mati.
+    if (!$signals['active'] && $signals['port']) {
+        $signals['active'] = true;
     }
 
     return $signals;
