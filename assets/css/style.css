@@ -26,12 +26,18 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--background);
     color: var(--text);
     line-height: 1.5;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 a {
