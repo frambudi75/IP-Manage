@@ -80,7 +80,7 @@ ul {
 .app-footer {
     padding: 1.5rem 0;
     border-top: 1px solid var(--border);
-    margin-top: 3rem;
+    margin-top: auto;
     text-align: center;
     color: var(--text-muted);
     font-size: 0.875rem;
