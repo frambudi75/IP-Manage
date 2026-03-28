@@ -84,10 +84,74 @@ class NotificationHelper {
         $to = Settings::get('admin_email');
         if (!$to || !Settings::enabled('email_enabled')) return false;
 
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= "From: " . APP_NAME . " <notifications@example.com>" . "\r\n";
+        $smtp_host = Settings::get('smtp_host');
+        $smtp_port = Settings::get('smtp_port');
+        $smtp_user = Settings::get('smtp_user');
+        $smtp_pass = Settings::get('smtp_pass');
+        $from = Settings::get('mail_from', 'notifications@example.com');
 
-        return mail($to, $subject, $message, $headers);
+        // If no SMTP host is configured, try basic mail()
+        if (empty($smtp_host) || $smtp_host == 'localhost') {
+            $headers = "MIME-Version: 1.0" . "\r\n";
+            $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+            $headers .= "From: <{$from}>" . "\r\n";
+            return @mail($to, $subject, $message, $headers);
+        }
+
+        // Use Manual SMTP Sender for Authenticated/SSL mail
+        return self::sendSmtpEmail($smtp_host, $smtp_port, $smtp_user, $smtp_pass, $from, $to, $subject, $message);
+    }
+
+    /**
+     * Manual SMTP implementation to avoid massive dependencies like PHPMailer
+     */
+    private static function sendSmtpEmail($host, $port, $user, $pass, $from, $to, $subject, $message) {
+        $timeout = 10;
+        $newline = "\r\n";
+        
+        $smtp_host = ($port == 465) ? "ssl://{$host}" : $host;
+        $socket = @fsockopen($smtp_host, $port, $errno, $errstr, $timeout);
+
+        if (!$socket) return false;
+
+        $response = function($socket) {
+            $res = "";
+            while ($str = fgets($socket, 515)) {
+                $res .= $str;
+                if (substr($str, 3, 1) == " ") break;
+            }
+            return $res;
+        };
+
+        $exec = function($socket, $cmd) use ($response, $newline) {
+            fputs($socket, $cmd . $newline);
+            return $response($socket);
+        };
+
+        $response($socket); // Initial greeting
+        $exec($socket, "EHLO " . $_SERVER['SERVER_NAME']);
+        
+        if (!empty($user) && !empty($pass)) {
+            $exec($socket, "AUTH LOGIN");
+            $exec($socket, base64_encode($user));
+            $exec($socket, base64_encode($pass));
+        }
+
+        $exec($socket, "MAIL FROM: <{$from}>");
+        $exec($socket, "RCPT TO: <{$to}>");
+        $exec($socket, "DATA");
+
+        $headers = "MIME-Version: 1.0" . $newline;
+        $headers .= "Content-type:text/html;charset=UTF-8" . $newline;
+        $headers .= "From: " . APP_NAME . " <{$from}>" . $newline;
+        $headers .= "To: <{$to}>" . $newline;
+        $headers .= "Subject: {$subject}" . $newline;
+
+        fputs($socket, $headers . $newline . $message . $newline . "." . $newline);
+        $response($socket);
+
+        $exec($socket, "QUIT");
+        fclose($socket);
+        return true;
     }
 }

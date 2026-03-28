@@ -92,6 +92,11 @@ INSERT IGNORE INTO `settings` (`key`, `value`) VALUES
 ('telegram_chat_id', ''),
 ('email_enabled', '0'),
 ('admin_email', 'admin@example.com'),
+('smtp_host', 'localhost'),
+('smtp_port', '25'),
+('smtp_user', ''),
+('smtp_pass', ''),
+('mail_from', 'notifications@example.com'),
 ('nmap_enabled', '0'),
 ('discovery_aggressive', '1');
 
