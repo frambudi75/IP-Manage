@@ -103,7 +103,11 @@ function run_auto_migrations($db) {
         ip_addr VARCHAR(45) NOT NULL,
         community VARCHAR(100) DEFAULT 'public',
         snmp_version ENUM('1', '2c', '3') DEFAULT '2c',
-        description TEXT NULL,
+        model VARCHAR(100),
+        uptime VARCHAR(100),
+        cpu_usage INT DEFAULT 0,
+        memory_usage INT DEFAULT 0,
+        system_info TEXT,
         last_poll TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");

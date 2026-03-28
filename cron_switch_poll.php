@@ -24,7 +24,38 @@ foreach ($switches as $switch) {
     $ip = $switch['ip_addr'];
     $community = $switch['community'];
     
-    // 1. Get Bridge Port to ifIndex mapping
+    // --- Phase 0: System Info & Health ---
+    $sys_descr = @snmp2_get($ip, $community, ".1.3.6.1.2.1.1.1.0");
+    $sys_uptime = @snmp2_get($ip, $community, ".1.3.6.1.2.1.1.3.0");
+    
+    $model = "Generic";
+    $cpu = 0;
+    $mem = 0;
+    $system_info = trim(str_replace('STRING: ', '', str_replace('"', '', $sys_descr)));
+    $uptime_str = trim(str_replace('Timeticks: ', '', $sys_uptime));
+
+    // Smart Vendor Detection for CPU/RAM
+    if (stripos($system_info, 'Cisco') !== false) {
+        $model = "Cisco";
+        $cpu_raw = @snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.109.1.1.1.1.5.1");
+        $cpu = (int)trim(str_replace('INTEGER: ', '', $cpu_raw));
+        // Simple Mem for Cisco
+        $mem_free = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.6.1"));
+        $mem_used = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.5.1"));
+        if ($mem_used > 0) $mem = round(($mem_used / ($mem_used + $mem_free)) * 100);
+    } elseif (stripos($system_info, 'MikroTik') !== false) {
+        $model = "MikroTik";
+        $cpu = (int)trim(str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.10.0")));
+        $free_mem = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536"));
+        $total_mem = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536"));
+        if ($total_mem > 0) $mem = round((($total_mem - $free_mem) / $total_mem) * 100);
+    }
+    
+    // Save System Stats
+    $db->prepare("UPDATE switches SET model = ?, uptime = ?, cpu_usage = ?, memory_usage = ?, system_info = ? WHERE id = ?")
+       ->execute([$model, $uptime_str, $cpu, $mem, $system_info, $switch['id']]);
+
+    // --- Phase 1: Port Mapping (Already Existing Logic) ---
     // OID: .1.3.6.1.2.1.17.1.4.1.2 (dot1basePortIfIndex)
     $port_to_ifindex = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.17.1.4.1.2");
     if ($port_to_ifindex === false) {
