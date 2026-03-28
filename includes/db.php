@@ -41,5 +41,9 @@ function run_auto_migrations($db) {
         $db->exec("ALTER TABLE ip_addresses ADD COLUMN os varchar(100) DEFAULT NULL AFTER vendor");
     }
 
+    if (!in_array('conflict_detected', $ip_cols)) {
+        $db->exec("ALTER TABLE ip_addresses ADD COLUMN conflict_detected tinyint(1) NOT NULL DEFAULT 0 AFTER os");
+    }
+
     // 3. Settings table handled by settings.helper.php
 }

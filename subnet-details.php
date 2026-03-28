@@ -199,16 +199,19 @@ include 'includes/header.php';
                 $border = 'rgba(255,255,255,0.05)';
                 
                 if ($info) {
-                    if ($info['state'] == 'active') { $bg = 'var(--success)'; $color = 'white'; }
+                    if ($info['state'] == 'active') { 
+                        $bg = ($info['conflict_detected'] ?? 0) == 1 ? 'var(--danger)' : 'var(--success)';
+                        $color = 'white'; 
+                    }
                     else if ($info['state'] == 'reserved') { $bg = 'var(--warning)'; $color = 'white'; }
                     else if ($info['state'] == 'dhcp') { $bg = 'var(--primary)'; $color = 'white'; }
-                    $border = 'transparent';
+                    $border = ($info['conflict_detected'] ?? 0) == 1 ? 'var(--danger)' : 'transparent';
                 }
             ?>
             <div 
                 onclick="openEditModal('<?php echo $ip; ?>', '<?php echo $info['hostname'] ?? ''; ?>', '<?php echo $info['description'] ?? ''; ?>', '<?php echo $info['state'] ?? 'active'; ?>')"
-                style="aspect-ratio: 1; background: <?php echo $bg; ?>; border: 1px solid <?php echo $border; ?>; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: <?php echo $color; ?>; opacity: <?php echo $info ? '1' : '0.4'; ?>"
-                title="<?php echo $ip; ?> <?php echo $info ? '(' . $info['state'] . ') ' . ($info['mac_addr'] ?? '') . ' ' . ($info['vendor'] ?? '') : '(Free)'; ?>"
+                style="aspect-ratio: 1; background: <?php echo $bg; ?>; border: 1px solid <?php echo $border; ?>; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: <?php echo $color; ?>; opacity: <?php echo $info ? '1' : '0.4'; ?>; <?php echo ($info['conflict_detected'] ?? 0) == 1 ? 'box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); border: 2px solid white;' : ''; ?>"
+                title="<?php echo $ip; ?> <?php echo $info ? '(' . $info['state'] . ') ' . (($info['conflict_detected'] ?? 0) == 1 ? '[CONFLICT!] ' : '') . ($info['mac_addr'] ?? '') . ' ' . ($info['vendor'] ?? '') : '(Free)'; ?>"
                 onmouseover="this.style.transform='scale(1.2)'; this.style.zIndex='10'; this.style.opacity='1'; this.style.boxShadow='0 0 15px rgba(59, 130, 246, 0.3)';"
                 onmouseout="this.style.transform='scale(1)'; this.style.zIndex='1'; this.style.opacity='<?php echo $info ? '1' : '0.4'; ?>'; this.style.boxShadow='none';"
             >
@@ -279,6 +282,11 @@ include 'includes/header.php';
                                     ?>; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; border: 1px solid currentColor; border-opacity: 0.1;">
                                     <?php echo $info['state']; ?>
                                 </span>
+                                <?php if (($info['conflict_detected'] ?? 0) == 1): ?>
+                                    <span style="font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.1); color: var(--danger); font-weight: 800; border: 1px solid var(--danger); margin-left: 5px;">
+                                        CONFLICT
+                                    </span>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <span style="font-size: 0.7rem; color: var(--text-muted); opacity: 0.4; font-weight: 600;">FREE</span>
                             <?php endif; ?>

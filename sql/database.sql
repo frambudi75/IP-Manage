@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS `ip_addresses` (
   `mac_addr` varchar(20) DEFAULT NULL,
   `vendor` varchar(100) DEFAULT NULL,
   `os` varchar(100) DEFAULT NULL,
+  `conflict_detected` tinyint(1) NOT NULL DEFAULT 0,
   `confidence_score` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `data_sources` varchar(100) DEFAULT NULL,
   `state` enum('active','reserved','offline','dhcp') NOT NULL DEFAULT 'active',

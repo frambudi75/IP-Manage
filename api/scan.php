@@ -124,33 +124,33 @@ for ($i = $range_start; $i <= $range_end; $i++) {
             $stmt->execute([$subnet_id, $ip]);
             $current_data = $stmt->fetch();
 
+            $conflict_detected = 0;
             if (!$current_data) {
                 // New device discovered
                 NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']);
-            } elseif ($current_data['state'] !== 'active' && $current_data['state'] !== 'reserved') {
-                 // Re-discovered device (previously offline)
-                 // NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']);
             } elseif ($current_data['mac_addr'] && $mac && $current_data['mac_addr'] !== $mac) {
                 // IP Conflict (MAC changed)
+                $conflict_detected = 1;
                 NotificationHelper::notifyConflict($ip, $current_data['mac_addr'], $mac, $subnet['subnet']);
             }
 
             // Update or Insert IP record
             $stmt = $db->prepare("
-                INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, os, description, state, last_seen, confidence_score, data_sources) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, ?, ?)
+                INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, os, conflict_detected, description, state, last_seen, confidence_score, data_sources) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, ?, ?)
                 ON DUPLICATE KEY UPDATE 
                     hostname = IF(VALUES(hostname) != '', VALUES(hostname), hostname),
                     mac_addr = IF(VALUES(mac_addr) != '', VALUES(mac_addr), mac_addr),
                     vendor = IF(VALUES(vendor) != '', VALUES(vendor), vendor),
                     os = IF(VALUES(os) != '', VALUES(os), os),
+                    conflict_detected = VALUES(conflict_detected),
                     description = IF(VALUES(description) != '', VALUES(description), description),
                     confidence_score = VALUES(confidence_score),
                     data_sources = VALUES(data_sources),
                     state = 'active', 
                     last_seen = CURRENT_TIMESTAMP
             ");
-            $stmt->execute([$subnet_id, $ip, $hostname, $mac, $vendor, $os, $description, $confidence['score'], $confidence['sources']]);
+            $stmt->execute([$subnet_id, $ip, $hostname, $mac, $vendor, $os, $conflict_detected, $description, $confidence['score'], $confidence['sources']]);
             
             $found_ip_data['hostname'] = $hostname;
             $found_ip_data['mac'] = $mac;
