@@ -39,6 +39,34 @@ A premium, modern IP Address Management (IPAM) system similar to phpipam, design
 
 ---
 
+## 🤖 Automation (Cron Scanner)
+
+To enable automatic background scanning without manual intervention, follow these steps:
+
+### Windows (Task Scheduler - Recommended for XAMPP)
+1.  **Open Task Scheduler** (Search for it in Windows Start).
+2.  Select **Create Basic Task** from the Actions menu.
+3.  Name the task: `IPManager Scanner`.
+4.  Trigger: Select **Daily**, then set it to repeat every **30 minutes** (configurable).
+5.  Action: Select **Start a Program**.
+    - **Program/script**: `C:\xampp\php\php.exe` (Adjust if XAMPP is installed elsewhere).
+    - **Add arguments**: `C:\xampp\htdocs\ipmanage\cron_scanner.php`
+6.  Click **Finish**.
+
+### Linux (Crontab - Recommended for Docker/VPS)
+Add the following line to your crontab (`crontab -e`):
+```bash
+*/30 * * * * /usr/bin/php /var/www/html/cron_scanner.php >> /var/log/ipmanage_scan.log 2>&1
+```
+
+### Manual CLI Run
+You can always trigger a manual scan via terminal for debugging:
+```bash
+php cron_scanner.php
+```
+
+---
+
 ## 🛠️ Configuration
 Edit `includes/config.php` to change database credentials or application settings.
 
