@@ -1,28 +1,57 @@
-# Changelog - IPManager Pro
+# IPManager Pro: Development & Update History
 
-All notable changes to this project will be documented in this file.
-
-## [2026-03-28] - System Optimization & Security Update
-
-### Added
-- **Dynamic System Settings Dashboard**: New administrative menu to manage Telegram bot, Discovery modes, and SMTP Email configuration without editing `config.php`.
-- **Manual SMTP Native Sender**: Robust standalone SMTP client implementation supporting AUTH LOGIN and SSL/TLS (Port 465/587) for reliable notifications.
-- **Auto-Migration Engine**: Real-time database schema checking that automatically adds missing tables and columns (e.g., `settings` table, `os` column, `conflict_detected` flag).
-- **Visual Conflict Indicators**: Red-glowing grid items and "CONFLICT" badges in the detailed table to highlight MAC address mismatches on the same IP.
-- **Notification Test Suite**: Test buttons in System Settings to verify Telegram and Email connectivity instantly.
-- **Tabbed Configuration UI**: Clean redesigned interface with "UMUM", "NOTIFIKASI", and "EMAIL" tabs for better organization.
-
-### Fixed
-- **Ghost IP Prevention**: Significantly improved host detection accuracy by requiring a valid ARP/MAC signature. Hosts that respond to ping but have no MAC Address (ghost IPs) are now correctly ignored.
-- **Auto-Pruning Offline Hosts**: During scanning, IPs that were previously active but are no longer detected are automatically marked as "Offline" to keep the dashboard clean.
-- **Responsive Layout Improvements**: Fixed mobile sidebar behavior and Visual IP Grid scaling for smaller screens.
-
-### Technical Changes
-- Added `ipmanage.settings` table for persistent configuration.
-- Added `conflict_detected` column to `ip_addresses` table.
-- Added `includes/settings.helper.php` for centralized settings management.
-- Refactored `NotificationHelper` to support dynamic database-driven credentials.
-- Integrated `run_auto_migrations()` in `includes/db.php` for zero-effort database updates.
+All major functional changes, enhancements, and critical fixes are documented here.
 
 ---
-*Created by Habib Frambudi*
+
+## [2.5.0] - 2026-03-28
+### Added
+- **L3 ARP Discovery**: Active polling of switch ARP caches to automatically pair IP addresses with physical ports.
+- **Dynamic Subnet Lookup**: Automatic discovery association with the correct IPAM subnet, satisfying database integrity.
+### Enhanced
+- **Robust SNMP Engine**: Switched to plain value retrieval mode for universal hardware compatibility.
+- **MikroTik Fine-Tuning**: Precise OID mapping for RouterOS health vitals.
+### Fixed
+- **Accuracy Fix**: CPU Load calculation now correctly identifies processor load instead of frequency (no more 680% readings).
+- **SQL Integrity**: Resolved foreign key constraint violations during the discovery phase.
+
+---
+
+## [2.4.0] - 2026-03-28
+### Added
+- **Switch Health Monitoring**: Real-time dashboard for CPU usage, memory utilization, and system uptime.
+- **Switch Details Module**: Dedicated deep-dive view for individual switches showcasing physical port mappings.
+- **Enhanced Poller**: Background SNMP engine for recurring infrastructure checks.
+
+---
+
+## [2.3.0] - 2026-03-28
+### Added
+- **Parallel Discovery Engine**: Implementation of IPC worker pools (`proc_open`) for high-speed concurrent network scanning.
+### Performance
+- **Database Indexing**: Optimized `mac_addr` and `hostname` columns for high-speed device filtering.
+
+---
+
+## [2.2.0] - 2026-03-28
+### Added
+- **Network Toolbox**: Native integration of Ping, Traceroute, and MAC OUI Lookups.
+### Enhanced
+- **Discovery Signals**: Multi-probe methodology (Ping, Nmap, TCP Ports, ARP) for near 100% accuracy.
+
+---
+
+## [2.1.0] - 2026-03-28
+### Added
+- **Audit Logs**: Comprehensive activity tracking for both users and discovery engines.
+- **Chart.js Analytics**: Visual trend reporting for network utilization and subnet density.
+
+---
+
+## [2.0.0] - 2026-03-27
+### Changed
+- **Premium Core**: Initial deployment of the high-performance IPAM v2 platform.
+- **UI Redesign**: Complete transformation to professional dark-mode aesthetics.
+- **Multi-Platform Core**: Native support for Docker (Linux) and XAMPP (Windows).
+
+---
