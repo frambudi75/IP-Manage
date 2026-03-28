@@ -3,6 +3,7 @@ require_once '../includes/config.php';
 require_once '../includes/db.php';
 require_once '../includes/network.php';
 require_once '../includes/snmp.php';
+require_once '../includes/notifications.php';
 
 
 session_start();
@@ -118,6 +119,22 @@ for ($i = $range_start; $i <= $range_end; $i++) {
         ]);
 
         try {
+            // Check current status for notifications
+            $stmt = $db->prepare("SELECT state, mac_addr FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
+            $stmt->execute([$subnet_id, $ip]);
+            $current_data = $stmt->fetch();
+
+            if (!$current_data) {
+                // New device discovered
+                NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']);
+            } elseif ($current_data['state'] !== 'active' && $current_data['state'] !== 'reserved') {
+                 // Re-discovered device (previously offline)
+                 // NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']);
+            } elseif ($current_data['mac_addr'] && $mac && $current_data['mac_addr'] !== $mac) {
+                // IP Conflict (MAC changed)
+                NotificationHelper::notifyConflict($ip, $current_data['mac_addr'], $mac, $subnet['subnet']);
+            }
+
             // Update or Insert IP record
             $stmt = $db->prepare("
                 INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, os, description, state, last_seen, confidence_score, data_sources) 
