@@ -12,8 +12,13 @@
         <?php include 'sidebar.php'; ?>
         <main class="main-content">
             <header class="top-header">
-                <div class="breadcrumb">
-                    <span class="text-muted">Pages</span> / <span><?php echo isset($page_title) ? $page_title : 'Dashboard'; ?></span>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="menu-toggle" class="btn" style="padding: 6px; display: none; background: rgba(59, 130, 246, 0.1); color: var(--primary);">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="breadcrumb">
+                        <span class="text-muted">Pages</span> / <span><?php echo isset($page_title) ? $page_title : 'Dashboard'; ?></span>
+                    </div>
                 </div>
                 <div class="user-menu">
                     <span class="btn btn-secondary" style="font-size: 0.8rem; gap: 8px;">

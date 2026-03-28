@@ -187,7 +187,7 @@ include 'includes/header.php';
     <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
         <i data-lucide="grid-3x3" style="width: 18px;"></i> Visual IP Grid
     </h3>
-    <div style="display: grid; grid-template-columns: repeat(24, 1fr); gap: 6px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 8px;">
         <?php foreach ($current_ips as $ip): ?>
             <?php 
                 $info = $assigned_ips[$ip] ?? null; 
