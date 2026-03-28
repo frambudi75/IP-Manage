@@ -255,8 +255,13 @@ function detect_host_signals($ip, &$arp_map) {
         }
     }
 
+    // Nmap Fallback (if enabled and other signals failed or for extra confirmation)
+    if (defined('ENABLE_NMAP_FALLBACK') && ENABLE_NMAP_FALLBACK && !$signals['ping'] && !$signals['port']) {
+        $signals['nmap'] = nmap_detect_host($ip);
+    }
+
     // If we got any positive signal but ARP is still missing, refresh ARP once.
-    if (($signals['ping'] || $signals['port']) && !$signals['arp']) {
+    if (($signals['ping'] || $signals['port'] || $signals['nmap']) && !$signals['arp']) {
         $fresh = refresh_arp_map();
         if (!empty($fresh)) {
             $arp_map = $fresh;
@@ -265,7 +270,7 @@ function detect_host_signals($ip, &$arp_map) {
     }
 
     // Final lightweight recheck path for uncertain hosts.
-    if (!$signals['ping'] && !$signals['arp'] && !$signals['port']) {
+    if (!$signals['ping'] && !$signals['arp'] && !$signals['port'] && !$signals['nmap']) {
         $signals['ping'] = ping_ip($ip, 1, 650);
         if ($signals['ping']) {
             $fresh = refresh_arp_map();
@@ -276,44 +281,26 @@ function detect_host_signals($ip, &$arp_map) {
         }
     }
 
-    // Final signal consolidation with Ghost IP Prevention.
-    // For local subnet scans, an IP MUST have a MAC address (ARP) to be considered truly active.
-    $has_mac = $signals['arp'];
-    
-    // An IP is only truly ACTIVE if it has a MAC (ARP signal)
-    // EXCEPT if it responds to SNMP (which is also a very strong hardware signal)
-    $has_snmp = false;
-    if (!$has_mac) {
-        // If we still have no MAC but have Ping/Port, try a final ARP refresh for this IP
-        $signals['arp'] = isset($arp_map[$ip]);
-        if (!$signals['arp']) {
-            $fresh = refresh_arp_map();
-            if (isset($fresh[$ip])) {
-                $arp_map = $fresh;
-                $signals['arp'] = true;
-            }
-        }
-    }
-
     $is_remote = false;
     try {
         $local_ip = gethostbyname(gethostname());
         $local_parts = explode('.', $local_ip);
         $target_parts = explode('.', $ip);
-        // Basic check: if first 2 octets differ, it's likely remote (simplification)
+        // Robust check: if first 3 octets match, it's definitely local (most common /24)
+        // If not, and they are in different class A/B private ranges, it's remote.
         if ($local_parts[0] !== $target_parts[0] || $local_parts[1] !== $target_parts[1]) {
             $is_remote = true;
         }
     } catch(Exception $e) {}
 
-    // Final decision: NO PING ALONE.
-    // Sinyal kuat: Jika ada ARP (MAC) atau SNMP atau Nmap fingerprint
-    $signals['active'] = $signals['arp'] || $signals['nmap'];
-
-    // Jika tidak ada ARP (bisa jadi karena subnet berbeda/remote), 
-    // kita tetap izinkan Active ASALKAN ada PORT atau service yang terdeteksi.
-    // Ini memastikan CCTV di subnet lain tetap muncul, tapi IP Hantu (Ping saja) akan mati.
-    if (!$signals['active'] && $signals['port']) {
+    // Final signal consolidation with Ghost IP Prevention.
+    $signals['active'] = false;
+    if ($signals['nmap']) {
+        $signals['active'] = true;
+    } elseif ($signals['arp'] && ($signals['ping'] || $signals['port'])) {
+        $signals['active'] = true;
+    } elseif (!$signals['arp'] && ($signals['ping'] || $signals['port']) && $is_remote) {
+        // Allow remote subnet scans to detect hosts via open service port or ping without local ARP.
         $signals['active'] = true;
     }
 

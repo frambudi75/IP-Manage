@@ -15,6 +15,16 @@
                 </a>
             </li>
             <li>
+                <a href="tools.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'tools.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="wrench"></i> Network Toolbox
+                </a>
+            </li>
+            <li>
+                <a href="switches.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'switches.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="server"></i> Managed Switches
+                </a>
+            </li>
+            <li>
                 <a href="subnets.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'subnets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="layers"></i> Subnets
                 </a>
@@ -26,7 +36,7 @@
             </li>
             <li>
                 <a href="devices.php" class="btn" style="width: 100%; justify-content: flex-start;">
-                    <i data-lucide="server"></i> Devices
+                    <i data-lucide="monitor"></i> Devices
                 </a>
             </li>
             <li>
@@ -42,6 +52,11 @@
             <li>
                 <a href="users.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="users"></i> User Management
+                </a>
+            </li>
+            <li>
+                <a href="logs.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'logs.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="scroll"></i> Audit Logs
                 </a>
             </li>
             <li>

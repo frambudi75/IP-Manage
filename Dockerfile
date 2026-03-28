@@ -5,10 +5,12 @@ RUN apt-get update && apt-get install -y \
     libmariadb-dev \
     libsnmp-dev \
     libssl-dev \
+    libcurl4-openssl-dev \
     snmp \
     nmap \
+    traceroute \
     iputils-ping \
-    && docker-php-ext-install mysqli pdo pdo_mysql gettext snmp \
+    && docker-php-ext-install mysqli pdo pdo_mysql gettext snmp curl \
     && a2enmod rewrite
 
 # Set working directory

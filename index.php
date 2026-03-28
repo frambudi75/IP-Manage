@@ -26,11 +26,56 @@ try {
     $avg_confidence = $avg_confidence !== null ? $avg_confidence : 0;
     $low_confidence_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE confidence_score < 60 AND state IN ('active', 'reserved', 'dhcp')")->fetchColumn() ?: 0;
 
+    // Vendor Distribution Data
+    $vendor_data = $db->query("
+        SELECT COALESCE(vendor, 'Unknown') as vendor, COUNT(*) as count 
+        FROM ip_addresses 
+        WHERE state = 'active' 
+        GROUP BY vendor 
+        ORDER BY count DESC 
+        LIMIT 6
+    ")->fetchAll();
+
+    // Network Health Data
+    $health_stats = $db->query("
+        SELECT state, COUNT(*) as count 
+        FROM ip_addresses 
+        GROUP BY state
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    $recent_logs = $db->query("
+        SELECT a.*, u.username 
+        FROM audit_logs a 
+        LEFT JOIN users u ON a.user_id = u.id 
+        ORDER BY a.created_at DESC 
+        LIMIT 5
+    ")->fetchAll();
+
+    // Usage Trends (Last 7 Days)
+    $usage_trends = $db->query("SELECT snapshot_date, total_active FROM stats_history ORDER BY snapshot_date DESC LIMIT 7")->fetchAll();
+    $usage_trends = array_reverse($usage_trends);
+    
+    // Fallback if empty
+    if (empty($usage_trends)) {
+        $usage_trends = [['snapshot_date' => date('Y-m-d'), 'total_active' => $active_count]];
+    }
+
+    // Densest Subnets
+    $dense_subnets = $db->query("
+        SELECT s.subnet, s.mask, 
+               (COUNT(ip.id) * 100.0 / (POW(2, (32 - s.mask)) - (CASE WHEN s.mask < 31 THEN 2 ELSE 0 END))) as usage_percent
+        FROM subnets s
+        LEFT JOIN ip_addresses ip ON ip.subnet_id = s.id AND ip.state = 'active'
+        GROUP BY s.id
+        ORDER BY usage_percent DESC
+        LIMIT 5
+    ")->fetchAll();
+
     $recent_subnets = $db->query("
         SELECT s.id, s.subnet, s.mask, s.description,
                COUNT(ip.id) AS used_ips
         FROM subnets s
-        LEFT JOIN ip_addresses ip ON ip.subnet_id = s.id
+        LEFT JOIN ip_addresses ip ON ip.subnet_id = s.id AND ip.state = 'active'
         GROUP BY s.id, s.subnet, s.mask, s.description
         ORDER BY s.id DESC
         LIMIT 8
@@ -90,24 +135,115 @@ try {
     </div>
 </div>
 
-<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-    <div class="card" style="border-left: 4px solid var(--success);">
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Discovery Health - Active Hosts</p>
-        <h4 style="font-size: 1.5rem; margin-top: 0.3rem;"><?php echo (int)$active_count; ?></h4>
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Usage Trend Chart (Wider) -->
+    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">7-Day Usage Trend</h3>
+        <div style="flex-grow: 1; position: relative;"><canvas id="trendChart"></canvas></div>
     </div>
-    <div class="card" style="border-left: 4px solid var(--text-muted);">
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Marked Offline (TTL)</p>
-        <h4 style="font-size: 1.5rem; margin-top: 0.3rem;"><?php echo (int)$offline_count; ?></h4>
-    </div>
-    <div class="card" style="border-left: 4px solid var(--primary);">
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Average Confidence</p>
-        <h4 style="font-size: 1.5rem; margin-top: 0.3rem;"><?php echo htmlspecialchars($avg_confidence); ?>%</h4>
-    </div>
-    <div class="card" style="border-left: 4px solid var(--warning);">
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Low Confidence (&lt;60)</p>
-        <h4 style="font-size: 1.5rem; margin-top: 0.3rem;"><?php echo (int)$low_confidence_count; ?></h4>
+    
+    <!-- Network Health (Smaller) -->
+    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Network Health</h3>
+        <div style="flex-grow: 1; position: relative;"><canvas id="healthChart"></canvas></div>
     </div>
 </div>
+
+<div class="card" style="margin-bottom: 2rem; height: 300px; display: flex; flex-direction: column;">
+    <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Densest Subnets (%)</h3>
+    <div style="flex-grow: 1; position: relative;"><canvas id="densityChart"></canvas></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+            legend: { labels: { color: '#94a3b8', font: { size: 10 } } } 
+        },
+        scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+        }
+    };
+
+    // Trend Chart
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: [<?php echo implode(',', array_map(function($t) { return "'".date('d M', strtotime($t['snapshot_date']))."'"; }, $usage_trends)); ?>],
+            datasets: [{
+                label: 'Active Hosts',
+                data: [<?php echo implode(',', array_map(function($t) { return $t['total_active']; }, $usage_trends)); ?>],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: {
+                ...chartDefaults.scales,
+                y: { ...chartDefaults.scales.y, beginAtZero: true }
+            }
+        }
+    });
+
+    // Health Chart
+    new Chart(document.getElementById('healthChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Active', 'Offline', 'Reserved', 'DHCP'],
+            datasets: [{
+                data: [<?php echo $health_stats['active']??0;?>, <?php echo $health_stats['offline']??0;?>, <?php echo $health_stats['reserved']??0;?>, <?php echo $health_stats['dhcp']??0;?>],
+                backgroundColor: ['#10b981', '#94a3b8', '#f59e0b', '#3b82f6'],
+                borderRadius: 4
+            }]
+        },
+        options: { 
+            ...chartDefaults, 
+            plugins: { ...chartDefaults.plugins, legend: { display: false } },
+            scales: {
+                ...chartDefaults.scales,
+                y: { ...chartDefaults.scales.y, beginAtZero: true }
+            }
+        }
+    });
+
+    // Density Chart
+    new Chart(document.getElementById('densityChart'), {
+        type: 'bar',
+        data: {
+            labels: [<?php echo implode(',', array_map(function($s) { return "'".$s['subnet']."/".$s['mask']."'"; }, $dense_subnets)); ?>],
+            datasets: [{
+                label: 'Usage %',
+                data: [<?php echo implode(',', array_map(function($s) { return round($s['usage_percent'], 1); }, $dense_subnets)); ?>],
+                backgroundColor: '#f59e0b',
+                borderRadius: 4
+            }]
+        },
+        options: { 
+            ...chartDefaults, 
+            indexAxis: 'y', 
+            plugins: { ...chartDefaults.plugins, legend: { display: false } },
+            scales: {
+                x: { 
+                    grid: { color: 'rgba(255,255,255,0.05)' }, 
+                    ticks: { color: '#94a3b8' }, 
+                    beginAtZero: true,
+                    max: 100
+                },
+                y: { 
+                    grid: { display: false }, 
+                    ticks: { color: '#94a3b8' }
+                }
+            }
+        }
+    });
+});
+</script>
 
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
     <div class="card">
@@ -140,8 +276,24 @@ try {
                                 <td style="padding: 0.75rem; color: var(--text-muted);">
                                     <?php echo htmlspecialchars($subnet['description'] ?: 'No description'); ?>
                                 </td>
-                                <td style="padding: 0.75rem;">
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);"><?php echo (int)$subnet['used_ips']; ?> used</span>
+                                <td style="padding: 0.75rem; vertical-align: middle;">
+                                    <?php 
+                                        $capacity = pow(2, (32 - (int)$subnet['mask']));
+                                        if ((int)$subnet['mask'] < 31) $capacity -= 2;
+                                        $percent = round(($subnet['used_ips'] / max(1, $capacity)) * 100, 1);
+                                        $bar_color = 'var(--success)';
+                                        if ($percent >= 90) $bar_color = 'var(--danger)';
+                                        elseif ($percent >= 70) $bar_color = 'var(--warning)';
+                                    ?>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="flex-grow: 1; height: 8px; background: rgba(0,0,0,0.05); border-radius: 4px; overflow: hidden;">
+                                            <div style="width: <?php echo min(100, $percent); ?>%; height: 100%; background: <?php echo $bar_color; ?>; border-radius: 4px;"></div>
+                                        </div>
+                                        <span style="font-size: 0.75rem; font-weight: 600; min-width: 35px;"><?php echo $percent; ?>%</span>
+                                    </div>
+                                    <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                                        <?php echo (int)$subnet['used_ips']; ?> / <?php echo $capacity; ?> IPs
+                                    </p>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -152,23 +304,43 @@ try {
     </div>
 
     <div class="card">
-        <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem;">Quick Links</h3>
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <a href="add-subnet.php" class="btn btn-primary" style="justify-content: flex-start;">
-                <i data-lucide="plus-circle"></i> Add New Subnet
+        <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem;">Recent System Activity</h3>
+        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+            <?php if (empty($recent_logs)): ?>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.875rem; padding: 1rem;">No recent activity.</p>
+            <?php else: ?>
+                <?php foreach ($recent_logs as $log): ?>
+                <div style="border-left: 3px solid var(--primary); padding-left: 12px; margin-bottom: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text);"><?php echo str_replace('_', ' ', strtoupper($log['action'])); ?></span>
+                        <span style="font-size: 0.65rem; color: var(--text-muted); font-family: monospace;"><?php echo date('H:i', strtotime($log['created_at'])); ?></span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; line-height: 1.3;"><?php echo htmlspecialchars(substr($log['details'], 0, 80)) . (strlen($log['details']) > 80 ? '...' : ''); ?></p>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            <a href="logs.php" class="btn btn-secondary" style="margin-top: 0.5rem; font-size: 0.75rem; background: var(--surface-light);">
+                <i data-lucide="scroll" style="width: 14px;"></i> View Full Audit Log
             </a>
-            <a href="vlans.php" class="btn" style="justify-content: flex-start; background: var(--surface-light);">
-                <i data-lucide="vibrate"></i> Manage VLANs
-            </a>
-            <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border-radius: 8px; border: 1px dashed var(--primary);">
-                <p style="font-size: 0.75rem; color: var(--text-muted);">
-                    <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle;"></i> 
-                    IPManager Pro automatically calculates address usage and availability for all scanned subnets.
-                </p>
-            </div>
         </div>
     </div>
 </div>
+
+<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+    <div class="card">
+        <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem;">System Quick Links</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.8rem;">
+            <a href="add-subnet.php" class="btn btn-primary" style="font-size: 0.875rem;">
+                <i data-lucide="plus-circle" style="width: 16px;"></i> New Subnet
+            </a>
+            <a href="vlans.php" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
+                <i data-lucide="vibrate" style="width: 16px;"></i> VLANs
+            </a>
+            <a href="settings.php" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
+                <i data-lucide="settings" style="width: 16px;"></i> Settings
+            </a>
+        </div>
+    </div>
 
 <div class="card" style="margin-top: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">

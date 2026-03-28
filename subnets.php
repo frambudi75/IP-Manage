@@ -80,16 +80,32 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') {
 }
 
 // Fetch subnets
-$subnets = $db->query("SELECT s.*, v.number as vlan_number FROM subnets s LEFT JOIN vlans v ON s.vlan_id = v.id ORDER BY s.subnet ASC")->fetchAll();
+// Fetch subnets with usage count
+$subnets = $db->query("
+    SELECT s.*, v.number as vlan_number, COUNT(ip.id) as used_ips 
+    FROM subnets s 
+    LEFT JOIN vlans v ON s.vlan_id = v.id 
+    LEFT JOIN ip_addresses ip ON ip.subnet_id = s.id 
+    GROUP BY s.id 
+    ORDER BY s.subnet ASC
+")->fetchAll();
 
 include 'includes/header.php';
 ?>
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1 style="font-size: 1.5rem;">Subnet Management</h1>
-    <button class="btn btn-primary" onclick="document.getElementById('addModal').style.display='flex'">
-        <i data-lucide="plus"></i> Add Subnet
-    </button>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="export.php?type=subnets" class="btn btn-secondary" style="font-size: 0.875rem;">
+            <i data-lucide="download" style="width: 14px;"></i> Export CSV
+        </a>
+        <button class="btn btn-secondary" style="font-size: 0.875rem;" onclick="window.print()">
+            <i data-lucide="printer" style="width: 14px;"></i> Print PDF
+        </button>
+        <button class="btn btn-primary" style="font-size: 0.875rem;" onclick="document.getElementById('addModal').style.display='flex'">
+            <i data-lucide="plus" style="width: 14px;"></i> Add Subnet
+        </button>
+    </div>
 </div>
 
 <?php if ($message): ?>
@@ -106,6 +122,7 @@ include 'includes/header.php';
                     <th style="padding: 1rem; color: var(--text-muted);">Subnet</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Description</th>
                     <th style="padding: 1rem; color: var(--text-muted);">VLAN</th>
+                    <th style="padding: 1rem; color: var(--text-muted);">Usage</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Action</th>
                 </tr>
             </thead>
@@ -121,6 +138,23 @@ include 'includes/header.php';
                             <td style="padding: 1rem; color: var(--text-muted);"><?php echo $s['description']; ?></td>
                             <td style="padding: 1rem;">
                                 <?php echo $s['vlan_number'] ? '<span class="text-primary">VLAN '.$s['vlan_number'].'</span>' : '-'; ?>
+                            </td>
+                            <td style="padding: 1rem; min-width: 140px;">
+                                <?php 
+                                    $capacity = pow(2, (32 - (int)$s['mask']));
+                                    if ((int)$s['mask'] < 31) $capacity -= 2;
+                                    $percent = round(($s['used_ips'] / max(1, $capacity)) * 100, 1);
+                                    $bar_color = 'var(--success)';
+                                    if ($percent >= 90) $bar_color = 'var(--danger)';
+                                    elseif ($percent >= 70) $bar_color = 'var(--warning)';
+                                ?>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="flex-grow: 1; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
+                                        <div style="width: <?php echo min(100, $percent); ?>%; height: 100%; background: <?php echo $bar_color; ?>; border-radius: 3px;"></div>
+                                    </div>
+                                    <span style="font-size: 0.7rem; font-weight: 600;"><?php echo $percent; ?>%</span>
+                                </div>
+                                <p style="font-size: 0.6rem; color: var(--text-muted); margin-top: 4px;"><?php echo (int)$s['used_ips']; ?> / <?php echo $capacity; ?> IPs</p>
                             </td>
                             <td style="padding: 1rem; display: flex; gap: 0.5rem; align-items: center;">
                                 <a href="subnet-details.php?id=<?php echo $s['id']; ?>" class="btn" style="padding: 6px; background: rgba(59, 130, 246, 0.1); color: var(--primary);" title="View Details">

@@ -6,6 +6,7 @@
     <title><?php echo isset($page_title) ? $page_title . ' - ' . APP_NAME : APP_NAME; ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -28,4 +29,8 @@
                     </span>
                 </div>
             </header>
+            <div class="print-only-header">
+                <h1><?php echo APP_NAME; ?> - Network Report</h1>
+                <p>Generated on: <?php echo date('d M Y H:i:s'); ?> | User: <?php echo $_SESSION['username']; ?></p>
+            </div>
             <div class="content-wrapper mt-4">

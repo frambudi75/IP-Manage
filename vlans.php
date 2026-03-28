@@ -69,9 +69,17 @@ include 'includes/header.php';
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1 style="font-size: 1.5rem;">VLAN Management</h1>
-    <button class="btn btn-primary" onclick="document.getElementById('vlanModal').style.display='flex'">
-        <i data-lucide="plus"></i> Add VLAN
-    </button>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="export.php?type=vlans" class="btn btn-secondary" style="font-size: 0.875rem;">
+            <i data-lucide="download" style="width: 14px;"></i> Export CSV
+        </a>
+        <button class="btn btn-secondary" style="font-size: 0.875rem;" onclick="window.print()">
+            <i data-lucide="printer" style="width: 14px;"></i> Print PDF
+        </button>
+        <button class="btn btn-primary" style="font-size: 0.875rem;" onclick="document.getElementById('vlanModal').style.display='flex'">
+            <i data-lucide="plus" style="width: 14px;"></i> Add VLAN
+        </button>
+    </div>
 </div>
 
 <?php if ($message): ?>

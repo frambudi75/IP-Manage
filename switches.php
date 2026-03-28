@@ -1,0 +1,135 @@
+<?php
+require_once 'includes/config.php';
+require_once 'includes/db.php';
+require_once 'includes/audit.helper.php';
+
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$db = get_db_connection();
+$message = '';
+
+// Handle Switch Add/Delete
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_switch'])) {
+        $name = $_POST['name'];
+        $ip = $_POST['ip_addr'];
+        $community = $_POST['community'] ?: 'public';
+        $version = $_POST['snmp_version'] ?: '2c';
+        
+        $stmt = $db->prepare("INSERT INTO switches (name, ip_addr, community, snmp_version) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$name, $ip, $community, $version]);
+        AuditLogHelper::log("add_switch", "switch", $db->lastInsertId(), "Added switch $name ($ip)");
+        $message = "Switch added successfully!";
+    }
+    
+    if (isset($_POST['delete_switch'])) {
+        $id = $_POST['id'];
+        $db->prepare("DELETE FROM switches WHERE id = ?")->execute([$id]);
+        AuditLogHelper::log("delete_switch", "switch", $id, "Deleted switch ID $id");
+        $message = "Switch removed.";
+    }
+}
+
+$switches = $db->query("SELECT * FROM switches ORDER BY name ASC")->fetchAll();
+
+$page_title = "Switch Management";
+include 'includes/header.php';
+?>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 style="font-size: 1.5rem;">Managed Switches</h1>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Manage devices for L2 port mapping discovery</p>
+    </div>
+    <button class="btn btn-primary" onclick="document.getElementById('addSwitchModal').style.display='flex'">
+        <i data-lucide="plus"></i> Add Switch
+    </button>
+</div>
+
+<?php if ($message): ?>
+    <div class="card" style="background: rgba(16, 185, 129, 0.1); color: var(--success); margin-bottom: 1.5rem; padding: 1rem;">
+        <?php echo $message; ?>
+    </div>
+<?php endif; ?>
+
+<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+    <?php if (empty($switches)): ?>
+        <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4rem; opacity: 0.5;">
+            <i data-lucide="server" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+            <h3>No managed switches found.</h3>
+            <p>Add your network switches to start discover device physical port locations.</p>
+        </div>
+    <?php endif; ?>
+    
+    <?php foreach ($switches as $switch): ?>
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div>
+                <h3 style="font-size: 1.125rem;"><?php echo htmlspecialchars($switch['name']); ?></h3>
+                <code style="color: var(--primary);"><?php echo htmlspecialchars($switch['ip_addr']); ?></code>
+            </div>
+            <span style="background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">
+                SNMP <?php echo strtoupper($switch['snmp_version']); ?>
+            </span>
+        </div>
+        
+        <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            <p><i data-lucide="shield" style="width: 14px; vertical-align: middle;"></i> Community: <?php echo htmlspecialchars($switch['community']); ?></p>
+            <p><i data-lucide="clock" style="width: 14px; vertical-align: middle;"></i> Last Poll: <?php echo $switch['last_poll'] ? date('d M Y H:i', strtotime($switch['last_poll'])) : 'Never'; ?></p>
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.75rem;" onclick="location.href='cron_switch_poll.php?id=<?php echo $switch['id']; ?>'">
+                <i data-lucide="refresh-cw" style="width: 14px;"></i> Poll FDB Table
+            </button>
+            <form action="" method="POST" onsubmit="return confirm('Remove this switch?');">
+                <input type="hidden" name="id" value="<?php echo $switch['id']; ?>">
+                <button type="submit" name="delete_switch" class="btn" style="background: var(--surface-light); color: var(--danger);">
+                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
+<!-- Add Switch Modal -->
+<div id="addSwitchModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="card" style="width: 450px; padding: 2.5rem; position: relative;">
+        <button onclick="document.getElementById('addSwitchModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
+            <i data-lucide="x"></i>
+        </button>
+        <h2 style="margin-bottom: 1.5rem;">Add Managed Switch</h2>
+        <form action="" method="POST">
+            <div class="input-group">
+                <label>Switch Name</label>
+                <input type="text" name="name" class="input-control" placeholder="e.g. Core-SW-01" required>
+            </div>
+            <div class="input-group">
+                <label>Management IP</label>
+                <input type="text" name="ip_addr" class="input-control" placeholder="10.10.0.1" required>
+            </div>
+            <div class="input-group">
+                <label>SNMP Community</label>
+                <input type="text" name="community" class="input-control" placeholder="public" value="public">
+            </div>
+            <div class="input-group">
+                <label>SNMP Version</label>
+                <select name="snmp_version" class="input-control">
+                    <option value="1">v1</option>
+                    <option value="2c" selected>v2c</option>
+                    <option value="3">v3 (TBD)</option>
+                </select>
+            </div>
+            <button type="submit" name="add_switch" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;">
+                Add Switch
+            </button>
+        </form>
+    </div>
+</div>
+
+<?php include 'includes/footer.php'; ?>

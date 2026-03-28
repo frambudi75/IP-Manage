@@ -8,33 +8,98 @@ class NotificationHelper {
      * Send a notification when a new device is discovered.
      */
     public static function notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet_name) {
-        if (!Settings::enabled('telegram_enabled')) return;
+        $telegram_enabled = Settings::enabled('telegram_enabled');
+        $email_enabled = Settings::enabled('email_enabled');
 
-        $message = "🚨 *New Device Discovered!*\n\n";
-        $message .= "📍 *Subnet:* {$subnet_name}\n";
-        $message .= "🌐 *IP:* `{$ip}`\n";
-        $message .= "🏷 *Hostname:* " . ($hostname ?: 'Unknown') . "\n";
-        $message .= "🔌 *MAC:* `{$mac}`\n";
-        $message .= "🏢 *Vendor:* {$vendor}\n";
-        $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
+        if (!$telegram_enabled && !$email_enabled) return;
 
-        self::sendTelegram($message);
+        if ($telegram_enabled) {
+            $message = "🚨 *New Device Discovered!*\n\n";
+            $message .= "📍 *Subnet:* {$subnet_name}\n";
+            $message .= "🌐 *IP:* `{$ip}`\n";
+            $message .= "🏷 *Hostname:* " . ($hostname ?: 'Unknown') . "\n";
+            $message .= "🔌 *MAC:* `{$mac}`\n";
+            $message .= "🏢 *Vendor:* {$vendor}\n";
+            $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
+            self::sendTelegram($message);
+        }
+
+        if ($email_enabled) {
+            $subject = "🚨 New Device: {$ip} ({$vendor})";
+            $body = "<h2>New Device Discovered</h2>";
+            $body .= "<ul>";
+            $body .= "<li><b>IP:</b> {$ip}</li>";
+            $body .= "<li><b>MAC:</b> {$mac}</li>";
+            $body .= "<li><b>Hostname:</b> " . ($hostname ?: 'Unknown') . "</li>";
+            $body .= "<li><b>Vendor:</b> {$vendor}</li>";
+            $body .= "<li><b>Subnet:</b> {$subnet_name}</li>";
+            $body .= "</ul>";
+            self::sendEmail($subject, $body);
+        }
     }
 
     /**
      * Send notification for an IP conflict (MAC address change).
      */
     public static function notifyConflict($ip, $old_mac, $new_mac, $subnet_name) {
-        if (!Settings::enabled('telegram_enabled')) return;
+        $telegram_enabled = Settings::enabled('telegram_enabled');
+        $email_enabled = Settings::enabled('email_enabled');
 
-        $message = "⚠️ *IP Conflict Detected!*\n\n";
-        $message .= "📍 *Subnet:* {$subnet_name}\n";
-        $message .= "🌐 *IP:* `{$ip}`\n";
-        $message .= "🛑 *Old MAC:* `{$old_mac}`\n";
-        $message .= "🚩 *New MAC:* `{$new_mac}`\n";
-        $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
+        if (!$telegram_enabled && !$email_enabled) return;
 
-        self::sendTelegram($message);
+        if ($telegram_enabled) {
+            $message = "⚠️ *IP Conflict Detected!*\n\n";
+            $message .= "📍 *Subnet:* {$subnet_name}\n";
+            $message .= "🌐 *IP:* `{$ip}`\n";
+            $message .= "🛑 *Old MAC:* `{$old_mac}`\n";
+            $message .= "🚩 *New MAC:* `{$new_mac}`\n";
+            $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
+            self::sendTelegram($message);
+        }
+
+        if ($email_enabled) {
+            $subject = "⚠️ IP Conflict: {$ip}";
+            $body = "<h2>IP Conflict Detected</h2>";
+            $body .= "<p>An IP conflict has been detected on subnet: <b>{$subnet_name}</b></p>";
+            $body .= "<ul>";
+            $body .= "<li><b>IP Address:</b> {$ip}</li>";
+            $body .= "<li><b>Old MAC:</b> {$old_mac}</li>";
+            $body .= "<li><b>New MAC:</b> {$new_mac}</li>";
+            $body .= "</ul>";
+            self::sendEmail($subject, $body);
+        }
+    }
+
+    /**
+     * Notify when a subnet is nearly full.
+     */
+    public static function notifySubnetFull($subnet, $mask, $percent, $used, $total) {
+        $telegram_enabled = Settings::enabled('telegram_enabled');
+        $email_enabled = Settings::enabled('email_enabled');
+
+        if (!$telegram_enabled && !$email_enabled) return;
+
+        if ($telegram_enabled) {
+            $message = "☢️ *Subnet Nearly Full! ({$percent}%)*\n\n";
+            $message .= "📍 *Subnet:* {$subnet}/{$mask}\n";
+            $message .= "📊 *Usage:* {$used} / {$total} IPs\n";
+            $message .= "⚡️ *Notice:* Consider expanding this subnet soon.\n";
+            $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
+            self::sendTelegram($message);
+        }
+
+        if ($email_enabled) {
+            $subject = "☢️ CAPACITY ALERT: Subnet {$subnet}/{$mask} is {$percent}% full";
+            $body = "<h2>Subnet Capacity Alert</h2>";
+            $body .= "<p>Subnet <b>{$subnet}/{$mask}</b> has reached its usage threshold.</p>";
+            $body .= "<ul>";
+            $body .= "<li><b>Current Usage:</b> {$percent}%</li>";
+            $body .= "<li><b>Used IPs:</b> {$used}</li>";
+            $body .= "<li><b>Total Capacity:</b> {$total}</li>";
+            $body .= "</ul>";
+            $body .= "<p>Take action to prevent IP exhaustion.</p>";
+            self::sendEmail($subject, $body);
+        }
     }
 
     public static function testTelegram() {

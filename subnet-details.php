@@ -33,9 +33,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip'])) {
     $hostname = $_POST['hostname'];
     $state = $_POST['state'] ?? 'active';
 
+    // Fetch old info for logging
+    $stmt = $db->prepare("SELECT * FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
+    $stmt->execute([$subnet_id, $ip_addr]);
+    $old_info = $stmt->fetch();
+
     try {
         $stmt = $db->prepare("INSERT INTO ip_addresses (subnet_id, ip_addr, description, hostname, state) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE description=VALUES(description), hostname=VALUES(hostname), state=VALUES(state)");
         $stmt->execute([$subnet_id, $ip_addr, $description, $hostname, $state]);
+        
+        // Log the change
+        $new_info = ['hostname' => $hostname, 'description' => $description, 'state' => $state];
+        AuditLogHelper::logIpUpdate($ip_addr, $old_info, $new_info);
     } catch (Exception $e) {}
 }
 
@@ -86,7 +95,7 @@ include 'includes/header.php';
 ?>
 
 <div style="margin-bottom: 2.5rem;">
-    <a href="subnets.php" class="text-muted" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
+    <a href="subnets.php" class="text-muted back-link" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
         <i data-lucide="arrow-left" style="width: 14px;"></i> Back to Subnets
     </a>
     <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
@@ -100,7 +109,7 @@ include 'includes/header.php';
                 <?php endif; ?>
             </div>
             <p style="color: var(--text-muted); font-size: 1rem;"><?php echo $subnet['description'] ?: 'No description provided'; ?></p>
-            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+            <div class="no-print" style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
                 <span><i data-lucide="clock" style="width: 12px; vertical-align: middle;"></i> Auto-Scan: <?php echo ($subnet['scan_interval'] ?? 0) > 0 ? "Every {$subnet['scan_interval']} min" : "Disabled"; ?></span>
                 <?php if ($subnet['last_scan'] ?? null): ?>
                     <span><i data-lucide="calendar" style="width: 12px; vertical-align: middle;"></i> Last: <?php echo date('d M Y H:i', strtotime($subnet['last_scan'])); ?></span>
@@ -111,14 +120,16 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <div class="card" style="padding: 1rem 1.5rem; display: flex; flex-direction: column; align-items: center; min-width: 120px;">
-                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Usage</span>
-                <span style="font-size: 1.5rem; font-weight: 700; color: <?php echo $used_percentage > 80 ? 'var(--danger)' : 'var(--success)'; ?>;"><?php echo $used_percentage; ?>%</span>
-            </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <a href="export.php?type=subnet_details&id=<?php echo $subnet_id; ?>" class="btn btn-secondary" style="font-size: 0.8125rem;" title="Export IP list to CSV">
+                <i data-lucide="download" style="width: 14px;"></i> Export CSV
+            </a>
+            <button class="btn btn-secondary" style="font-size: 0.8125rem;" onclick="window.print()" title="Generate PDF Report">
+                <i data-lucide="printer" style="width: 14px;"></i> Print PDF
+            </button>
             <?php if (is_admin()): ?>
-            <button id="scanBtn" class="btn btn-primary" style="padding: 1rem 1.5rem; height: 100%;" onclick="scanSubnet(<?php echo $subnet_id; ?>)">
-                <i data-lucide="search"></i> Scan Subnet
+            <button id="scanBtn" class="btn btn-primary" style="font-size: 0.8125rem;" onclick="scanSubnet(<?php echo $subnet_id; ?>)">
+                <i data-lucide="search" style="width: 14px;"></i> Scan Subnet
             </button>
             <?php endif; ?>
         </div>
@@ -126,7 +137,7 @@ include 'includes/header.php';
 </div>
 
 <!-- Usage Bar -->
-<div style="margin-bottom: 3rem;">
+<div class="no-print" style="margin-bottom: 3rem;">
     <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.875rem;">
         <span>IP Utilization Space (<?php echo ($total_displayed - $stats['free']); ?> / <?php echo $total_displayed; ?>)</span>
         <span class="text-muted">Total Available: <?php echo $stats['free']; ?></span>
@@ -152,7 +163,7 @@ include 'includes/header.php';
     </div>
 </div>
 
-<div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+<div class="card no-print" style="margin-bottom: 2rem; border-left: 4px solid var(--primary);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="font-size: 1.125rem; display: flex; align-items: center; gap: 8px;">
             <i data-lucide="activity" style="width: 18px;"></i> Network Analysis
@@ -183,7 +194,7 @@ include 'includes/header.php';
 </div>
 
 <!-- Visual Grid -->
-<div class="card" style="margin-bottom: 2rem;">
+<div class="card no-print" style="margin-bottom: 2rem;">
     <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
         <i data-lucide="grid-3x3" style="width: 18px;"></i> Visual IP Grid
     </h3>
@@ -225,27 +236,34 @@ include 'includes/header.php';
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h3 style="font-size: 1.125rem; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="list" style="width: 18px;"></i> Detailed Allocation
+            <i data-lucide="list" class="no-print" style="width: 18px;"></i> Detailed Allocation
         </h3>
     </div>
     
-    <div style="overflow-x: auto;">
+    <div class="table-container" style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">IP Address</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Status</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Hostname</th>
-                    <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Confidence</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">MAC / Vendor</th>
+                    <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Switch Port</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">OS / Device</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Description</th>
-                    <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem; text-align: right;">Action</th>
+                    <th class="no-print" style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem; text-align: right;">Action</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($current_ips as $ip): ?>
-                    <?php $info = $assigned_ips[$ip] ?? null; ?>
+                <?php 
+                // Pre-fetch switch ports for this subnet
+                $port_map = $db->query("SELECT m.mac_addr, m.port_name, s.name as switch_name FROM switch_port_map m JOIN switches s ON m.switch_id = s.id")->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+                
+                foreach ($current_ips as $ip): 
+                    $info = $assigned_ips[$ip] ?? null;
+                    $mac = $info['mac_addr'] ?? null;
+                    $port_info = ($mac && isset($port_map[$mac])) ? $port_map[$mac][0] : null;
+                ?>
                     <?php
                         $confidence = $info ? (int)($info['confidence_score'] ?? 0) : 0;
                         $source_labels = [];
@@ -267,7 +285,7 @@ include 'includes/header.php';
                             $confidence_color = 'var(--text-muted)';
                         }
                     ?>
-                    <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s ease;" onmouseover="this.style.background='rgba(59, 130, 246, 0.03)'" onmouseout="this.style.background='transparent'">
+                    <tr class="<?php echo $info ? 'ip-assigned' : 'ip-free'; ?>" style="border-bottom: 1px solid var(--border); transition: background 0.2s ease;" onmouseover="this.style.background='rgba(59, 130, 246, 0.03)'" onmouseout="this.style.background='transparent'">
                         <td style="padding: 1rem; font-family: monospace; font-size: 0.9375rem; font-weight: 500; color: <?php echo $info ? 'var(--text)' : 'var(--text-muted)'; ?>;">
                             <?php echo $ip; ?>
                         </td>
@@ -311,6 +329,19 @@ include 'includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td style="padding: 1rem; font-size: 0.875rem;">
+                            <?php if ($port_info): ?>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="map-pin" style="width: 14px; color: var(--primary);"></i>
+                                    <div>
+                                        <div style="font-weight: 600;"><?php echo htmlspecialchars($port_info['port_name']); ?></div>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted);"><?php echo htmlspecialchars($port_info['switch_name']); ?></div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <span style="opacity: 0.3">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td style="padding: 1rem; font-size: 0.8125rem;">
                             <div style="font-family: monospace; font-size: 0.8rem;"><?php echo $info['mac_addr'] ?? '<span style="opacity: 0.3">-</span>'; ?></div>
                             <div style="font-size: 0.7rem; color: var(--primary); font-weight: 500;"><?php echo $info['vendor'] ?? ''; ?></div>
                         </td>
@@ -334,7 +365,7 @@ include 'includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td style="padding: 1rem; font-size: 0.875rem; color: var(--text-muted);"><?php echo ($info['description'] ?? '') ?: '<span style="opacity: 0.3">-</span>'; ?></td>
-                        <td style="padding: 1rem; text-align: right;">
+                        <td class="no-print" style="padding: 1rem; text-align: right;">
                             <?php if (is_admin()): ?>
                             <button class="btn" style="padding: 6px; background: var(--surface-light); color: var(--text-muted);" onclick="openEditModal('<?php echo $ip; ?>', '<?php echo $info['hostname'] ?? ''; ?>', '<?php echo $info['description'] ?? ''; ?>', '<?php echo $info['state'] ?? 'active'; ?>')">
                                 <i data-lucide="edit-3" style="width: 14px;"></i>

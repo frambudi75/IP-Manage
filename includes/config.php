@@ -16,7 +16,7 @@ define('ENABLE_NMAP_FALLBACK', Settings::enabled('nmap_enabled'));
 
 // Application Configuration
 define('APP_NAME', 'IPManager Pro');
-define('APP_URL', 'http://localhost/ipmanage');
+define('APP_URL', getenv('APP_URL') ?: 'http://localhost/ipmanage');
 
 // Error reporting (disable in production)
 error_reporting(E_ALL);

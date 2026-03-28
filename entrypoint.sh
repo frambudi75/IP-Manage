@@ -1,11 +1,15 @@
 #!/bin/bash
 set -e
 
-# Start a background loop for automated scanning (every 5 minutes)
+# Start a background loop for automated tasks
 (
   while true; do
-    echo "[$(date)] Running automated discovery..."
-    php /var/www/html/api/cron.php
+    echo "[$(date)] Running Parallel Discovery..."
+    php /var/www/html/cron_scanner.php
+    
+    echo "[$(date)] Polling Manageable Switches..."
+    php /var/www/html/cron_switch_poll.php
+    
     sleep 300
   done
 ) &

@@ -101,6 +101,94 @@ ul {
     text-decoration: underline;
 }
 
+/* Default hidden print header */
+.print-only-header {
+    display: none !important;
+}
+
+@media print {
+    /* Hide non-printable UI elements */
+    .sidebar, .top-header, .btn, .btn-primary, .modal, .scan-status, .no-print,
+    nav, aside, footer, #scanBtn, #analyzeBtn, .quick-links, .breadcrumb, h1 a, .back-link {
+        display: none !important;
+    }
+
+    /* Reset layout for full page width */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        background: white !important;
+    }
+
+    .table-container {
+        overflow: visible !important;
+        width: 100% !important;
+    }
+
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 9pt;
+    }
+
+    .card {
+        border: 1px solid #eee !important;
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid;
+    }
+
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    th, td {
+        border-bottom: 1px solid #eee !important;
+        padding: 8px !important;
+        color: black !important;
+    }
+
+    /* Hide Free IPs in print to focus on devices */
+    tr.ip-free {
+        display: none !important;
+    }
+
+    /* Ensure colors are printed */
+    .progress-bar {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .badge, [style*="background:"] {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Report Title (only for print) */
+    .print-only-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #3b82f6;
+        padding-bottom: 15px;
+        color: black !important;
+    }
+
+    .print-only-header h1 {
+        margin: 0;
+        color: #3b82f6 !important;
+    }
+
+    /* Hide Action columns in tables */
+    th:last-child, td:last-child {
+        display: none !important;
+    }
+}
+
 /* Mobile Responsive */
 @media (max-width: 1024px) {
     .sidebar {

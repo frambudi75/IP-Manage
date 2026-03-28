@@ -42,74 +42,82 @@ if (empty($subnets)) {
 }
 
 foreach ($subnets as $subnet) {
-    echo "Processing Subnet: {$subnet['subnet']}/{$subnet['mask']}...\n";
+    $start_time = microtime(true);
+    echo "Starting Parallel Scan for Subnet: " . $subnet['subnet'] . "/" . $subnet['mask'] . " (ID: " . $subnet['id'] . ")\n";
     
-    // Calculate range
     list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
     
-    // Pre-fetch ARP
-    exec("arp -a", $arp_cache);
-    $arp_map = parse_arp_table($arp_cache);
+    // Performance limit for cron: scan at most 256 IPs per subnet run to avoid congestion
+    $scan_end = min($end_long, $start_long + 255);
     
-    $active_count = 0;
+    $chunk_size = 16; 
+    $max_workers = 10;
+    $current_batch = [];
     
-    // Iterate through first 256 IPs (limit for performance in cron)
-    for ($i = $start_long; $i <= min($end_long, $start_long + 254); $i++) {
-        if (!is_usable_host_long($i, $start_long, $end_long, (int)$subnet['mask'])) continue;
+    $is_windows = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
+
+    for ($i = $start_long; $i <= $scan_end; $i += $chunk_size) {
+        $chunk_end = min($i + $chunk_size - 1, $scan_end);
         
-        $ip = long2ip($i);
-        $signals = detect_host_signals($ip, $arp_map);
-        
-        if ($signals['active']) {
-            $active_count++;
-            
-            // Basic discovery
-            $hostname = resolve_hostname($ip);
-            $mac = $arp_map[$ip] ?? null;
-            $mac = normalize_mac($mac);
-            $vendor = get_vendor_by_mac($mac);
-            $os = ''; // Nmap fingerprinting can be added here if needed
-            
-            // Check for conflict/notification
-            $stmt_check = $db->prepare("SELECT mac_addr FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
-            $stmt_check->execute([$subnet['id'], $ip]);
-            $current = $stmt_check->fetch();
-            
-            $conflict = 0;
-            if ($current) {
-                if ($current['mac_addr'] && $mac && $current['mac_addr'] !== $mac) {
-                    $conflict = 1;
-                    NotificationHelper::notifyConflict($ip, $current['mac_addr'], $mac, $subnet['subnet']);
-                }
-            } else {
-                NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']);
-            }
-            
-            // Update DB
-            $save = $db->prepare("
-                INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, state, last_seen, conflict_detected)
-                VALUES (?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, ?)
-                ON DUPLICATE KEY UPDATE 
-                    hostname = IF(VALUES(hostname) != '', VALUES(hostname), hostname),
-                    mac_addr = IF(VALUES(mac_addr) != '', VALUES(mac_addr), mac_addr),
-                    state = 'active',
-                    last_seen = CURRENT_TIMESTAMP,
-                    conflict_detected = VALUES(conflict_detected)
-            ");
-            $save->execute([$subnet['id'], $ip, $hostname, $mac, $vendor, $conflict]);
-            
+        // Render cross-platform command
+        if ($is_windows) {
+            $cmd = "start /B php scanner_worker.php " . (int)$subnet['id'] . " " . (int)$i . " " . (int)$chunk_end;
         } else {
-            // Mark as offline if it was previously active
-            $db->prepare("UPDATE ip_addresses SET state = 'offline' WHERE subnet_id = ? AND ip_addr = ? AND state = 'active'")
-               ->execute([$subnet['id'], $ip]);
+            $cmd = "php scanner_worker.php " . (int)$subnet['id'] . " " . (int)$i . " " . (int)$chunk_end . " > /dev/null 2>&1 &";
+        }
+        
+        pclose(popen($cmd, "r"));
+        $current_batch[] = $i;
+        
+        if (count($current_batch) >= $max_workers) {
+            echo "Waiting for worker batch batch...\n";
+            usleep(2500000); // 2.5s delay between batches
+            $current_batch = [];
         }
     }
     
+    // Wait for final batch
+    usleep(4000000);
+
+    // After all workers, perform offline reconciliation (TTL cleanup)
+    $offline_ttl = (int)Settings::get('offline_ttl_minutes', 30);
+    $db->prepare("
+        UPDATE ip_addresses SET state = 'offline' 
+        WHERE subnet_id = ? AND state = 'active' 
+        AND TIMESTAMPDIFF(MINUTE, last_seen, CURRENT_TIMESTAMP) >= ?
+    ")->execute([$subnet['id'], $offline_ttl]);
+
     // Update last_scan timestamp
     $db->prepare("UPDATE subnets SET last_scan = CURRENT_TIMESTAMP WHERE id = ?")
        ->execute([$subnet['id']]);
+
+    // Perform capacity alert check
+    $stmt = $db->prepare("SELECT COUNT(*) FROM ip_addresses WHERE subnet_id = ? AND state = 'active'");
+    $stmt->execute([$subnet['id']]);
+    $active_count = $stmt->fetchColumn();
+    
+    $threshold = (int)Settings::get('subnet_limit_threshold', 80);
+    $capacity = pow(2, (32 - (int)$subnet['mask']));
+    if ((int)$subnet['mask'] < 31) $capacity -= 2;
+    
+    $usage_percent = ($active_count / max(1, $capacity)) * 100;
+    
+    if ($usage_percent >= $threshold) {
+        $last_alert = $subnet['last_limit_alert'] ? strtotime($subnet['last_limit_alert']) : 0;
+        if (time() - $last_alert > 86400) {
+            NotificationHelper::notifySubnetFull($subnet['subnet'], $subnet['mask'], round($usage_percent, 1), $active_count, $capacity);
+            $db->prepare("UPDATE subnets SET last_limit_alert = CURRENT_TIMESTAMP WHERE id = ?")->execute([$subnet['id']]);
+        }
+    }
        
-    echo "Finished Subnet. Found $active_count active devices.\n";
+    $duration = round(microtime(true) - $start_time, 2);
+    echo "Finished. Found $active_count active devices (Usage: " . round($usage_percent, 1) . "%). Time: {$duration}s\n";
 }
 
-echo "All tasks completed.\n";
+echo "[ " . date('Y-m-d H:i:s') . " ] All tasks completed.\n";
+
+// Daily Trend Snapshot
+$total_active = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'active'")->fetchColumn();
+$db->prepare("INSERT INTO stats_history (snapshot_date, total_active) VALUES (CURRENT_DATE, ?) ON DUPLICATE KEY UPDATE total_active = VALUES(total_active)")
+   ->execute([$total_active]);
+?>
