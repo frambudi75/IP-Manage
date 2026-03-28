@@ -75,6 +75,26 @@ CREATE TABLE IF NOT EXISTS `ip_addresses` (
   CONSTRAINT `ip_addresses_ibfk_1` FOREIGN KEY (`subnet_id`) REFERENCES `subnets` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Settings table
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `key` varchar(50) NOT NULL,
+  `value` text DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key` (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Default settings
+INSERT IGNORE INTO `settings` (`key`, `value`) VALUES 
+('telegram_enabled', '0'),
+('telegram_bot_token', ''),
+('telegram_chat_id', ''),
+('email_enabled', '0'),
+('admin_email', 'admin@example.com'),
+('nmap_enabled', '0'),
+('discovery_aggressive', '1');
+
 -- Insert default admin (password: admin123)
 INSERT INTO `users` (`username`, `password`, `role`) VALUES ('admin', '$2y$10$iC1CpjbPVLpFx1BcbSTUsOZ52qhELYqHrKyADN/z9DF2UArhZEnPK', 'admin');
 

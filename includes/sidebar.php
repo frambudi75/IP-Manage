@@ -40,8 +40,13 @@
         <p style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted); margin: 2rem 0 1rem; letter-spacing: 1px;">Admin</p>
         <ul style="display: flex; flex-direction: column; gap: 0.5rem;">
             <li>
-                <a href="users.php" class="btn" style="width: 100%; justify-content: flex-start;">
+                <a href="users.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="users"></i> User Management
+                </a>
+            </li>
+            <li>
+                <a href="settings.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="settings"></i> System Settings
                 </a>
             </li>
         <?php endif; ?>
