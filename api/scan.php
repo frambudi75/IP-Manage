@@ -101,6 +101,13 @@ for ($i = $range_start; $i <= $range_end; $i++) {
             }
             if (!empty($snmp_info['description'])) $description = $snmp_info['description'];
         }
+
+        // OS Fingerprinting (Nmap)
+        $os = '';
+        if ($has_nmap || ($is_active && defined('DISCOVERY_AGGRESSIVE_MODE') && DISCOVERY_AGGRESSIVE_MODE)) {
+            $os = nmap_fingerprint_os($ip);
+        }
+
         $confidence = calculate_discovery_confidence([
             'ping' => $has_ping,
             'arp' => $has_arp,
@@ -113,23 +120,25 @@ for ($i = $range_start; $i <= $range_end; $i++) {
         try {
             // Update or Insert IP record
             $stmt = $db->prepare("
-                INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, description, state, last_seen, confidence_score, data_sources) 
-                VALUES (?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, ?, ?)
+                INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, os, description, state, last_seen, confidence_score, data_sources) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, ?, ?)
                 ON DUPLICATE KEY UPDATE 
                     hostname = IF(VALUES(hostname) != '', VALUES(hostname), hostname),
                     mac_addr = IF(VALUES(mac_addr) != '', VALUES(mac_addr), mac_addr),
                     vendor = IF(VALUES(vendor) != '', VALUES(vendor), vendor),
+                    os = IF(VALUES(os) != '', VALUES(os), os),
                     description = IF(VALUES(description) != '', VALUES(description), description),
                     confidence_score = VALUES(confidence_score),
                     data_sources = VALUES(data_sources),
                     state = 'active', 
                     last_seen = CURRENT_TIMESTAMP
             ");
-            $stmt->execute([$subnet_id, $ip, $hostname, $mac, $vendor, $description, $confidence['score'], $confidence['sources']]);
+            $stmt->execute([$subnet_id, $ip, $hostname, $mac, $vendor, $os, $description, $confidence['score'], $confidence['sources']]);
             
             $found_ip_data['hostname'] = $hostname;
             $found_ip_data['mac'] = $mac;
             $found_ip_data['vendor'] = $vendor;
+            $found_ip_data['os'] = $os;
             $found_ip_data['confidence'] = $confidence['score'];
             $results['ips'][] = $found_ip_data;
         } catch (Exception $e) {

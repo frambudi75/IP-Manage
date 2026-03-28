@@ -235,6 +235,7 @@ include 'includes/header.php';
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Hostname</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Confidence</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">MAC / Vendor</th>
+                    <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">OS / Device</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Description</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem; text-align: right;">Action</th>
                 </tr>
@@ -304,6 +305,25 @@ include 'includes/header.php';
                         <td style="padding: 1rem; font-size: 0.875rem;">
                             <div style="font-family: monospace; font-size: 0.8rem;"><?php echo $info['mac_addr'] ?? '<span style="opacity: 0.3">-</span>'; ?></div>
                             <div style="font-size: 0.7rem; color: var(--primary); font-weight: 500;"><?php echo $info['vendor'] ?? ''; ?></div>
+                        </td>
+                        <td style="padding: 1rem; font-size: 0.825rem;">
+                            <?php if (!empty($info['os'])): ?>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <?php 
+                                        $os = strtolower($info['os']);
+                                        $icon = 'monitor';
+                                        $os_color = 'var(--text-muted)';
+                                        if (strpos($os, 'windows') !== false) { $icon = 'layout'; $os_color = '#00a4ef'; }
+                                        else if (strpos($os, 'linux') !== false) { $icon = 'terminal'; $os_color = '#fcc624'; }
+                                        else if (strpos($os, 'apple') !== false || strpos($os, 'ios') !== false) { $icon = 'apple'; $os_color = '#a2aaad'; }
+                                        else if (strpos($os, 'android') !== false) { $icon = 'smartphone'; $os_color = '#3ddc84'; }
+                                    ?>
+                                    <i data-lucide="<?php echo $icon; ?>" style="width: 14px; color: <?php echo $os_color; ?>;"></i>
+                                    <span style="font-size: 0.75rem;"><?php echo htmlspecialchars($info['os']); ?></span>
+                                </div>
+                            <?php else: ?>
+                                <span style="opacity: 0.3">-</span>
+                            <?php endif; ?>
                         </td>
                         <td style="padding: 1rem; font-size: 0.875rem; color: var(--text-muted);"><?php echo ($info['description'] ?? '') ?: '<span style="opacity: 0.3">-</span>'; ?></td>
                         <td style="padding: 1rem; text-align: right;">

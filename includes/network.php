@@ -185,7 +185,8 @@ function nmap_detect_host($ip) {
     }
 
     $target = escapeshellarg($ip);
-    // Keep it tight: host discovery only, no DNS, short timeout.
+    // Use -O for OS detection if running as admin (may need sudo/admin privilege)
+    // For now, keep it simple with -sV or -O try
     $cmd = "nmap -sn -n --host-timeout 2s {$target}";
     exec($cmd, $output, $code);
     if ($code !== 0 || empty($output)) {
@@ -198,6 +199,32 @@ function nmap_detect_host($ip) {
         }
     }
     return false;
+}
+
+/**
+ * Advanced Nmap OS Fingerprinting
+ */
+function nmap_fingerprint_os($ip) {
+    $ip = normalize_ipv4($ip);
+    if (!$ip || !has_nmap_binary()) return 'Unknown';
+
+    $target = escapeshellarg($ip);
+    // This requires high privilege on Windows/Linux but we try
+    $cmd = "nmap -O --osscan-guess --max-os-tries 1 {$target} 2>&1";
+    exec($cmd, $output);
+    
+    $os_guess = 'Unknown';
+    foreach ($output as $line) {
+        if (preg_match('/OS details: (.+)/', $line, $matches)) {
+            $os_guess = $matches[1];
+            break;
+        }
+        if (preg_match('/Aggressive OS guesses: (.+)/', $line, $matches)) {
+            $os_guess = explode(',', $matches[1])[0]; // Take first guess
+            break;
+        }
+    }
+    return $os_guess;
 }
 
 /**
@@ -392,7 +419,7 @@ function get_vendor_by_mac($mac) {
     if (!$mac) return null;
     $prefix = substr(str_replace(':', '', $mac), 0, 6);
     
-    // Simple local mapping of common vendors
+    // Expanded local mapping of common vendors
     $vendors = [
         '000C29' => 'VMware', '000569' => 'VMware', '005056' => 'VMware',
         '00249B' => 'Google', 'BCF5AC' => 'Google', '20DFB9' => 'Google',
@@ -400,10 +427,17 @@ function get_vendor_by_mac($mac) {
         'B827EB' => 'Raspberry Pi', 'DCDECA' => 'Raspberry Pi',
         '00155D' => 'Microsoft (Hyper-V)',
         '000A19' => 'Cisco', '000142' => 'Cisco', '000143' => 'Cisco',
-        '000E7F' => 'Hewlett Packard', '00110A' => 'Hewlett Packard',
-        '001C23' => 'Dell', '00219B' => 'Dell', '000AC7' => 'Dell',
-        '000D0B' => 'Tp-Link', '30B5C2' => 'Tp-Link',
-        '00156D' => 'Ubiquiti', '24A43C' => 'Ubiquiti'
+        '000C41' => 'Cisco', '000E83' => 'Cisco', '00408C' => 'Cisco',
+        'E0ACF1' => 'Cisco', 'CC46D6' => 'Cisco', '64A0E7' => 'Cisco',
+        '000E7F' => 'HP', '00110A' => 'HP', '001708' => 'HP',
+        '001C23' => 'Dell', '00219B' => 'Dell', '000AC7' => 'Dell', 'B083FE' => 'Dell', '24B657' => 'Dell',
+        '000D0B' => 'Tp-Link', '30B5C2' => 'Tp-Link', '34DAB7' => 'Tp-Link', '98DA33' => 'Tp-Link',
+        '00156D' => 'Ubiquiti', '24A43C' => 'Ubiquiti', 'F09FC2' => 'Ubiquiti', 'B4FBE4' => 'Ubiquiti',
+        '001132' => 'Synology', '001132' => 'Synology',
+        '000C29' => 'VMware', '000569' => 'VMware', '005056' => 'VMware',
+        '002686' => 'Realtek', 'E470B8' => 'Realtek',
+        '0009B0' => 'D-Link', '18622C' => 'D-Link',
+        '001D0F' => 'MikroTik', '4C5E0C' => 'MikroTik', '6C3B6B' => 'MikroTik', 'D4CA6D' => 'MikroTik'
     ];
 
     if (isset($vendors[strtoupper($prefix)])) {
