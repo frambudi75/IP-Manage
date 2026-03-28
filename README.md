@@ -1,71 +1,90 @@
+# 🚀 IPManager Pro: High-Performance Network Management
+
+IPManager Pro is a state-of-the-art **IP Address Management (IPAM)** system and **Network Monitoring** platform. It is designed for high-density environments where accuracy, speed, and real-time visibility are critical.
+
+Unlike standard IPAMs, IPManager Pro combines traditional inventory management with an **Active Discovery Engine** that tracks device health and location across your infrastructure.
 
 ---
 
-## 🐳 Installation (Docker - Recommended for Linux/Pro)
-The fastest way to deploy IPManager Pro with all dependencies pre-configured.
+## 🛠️ System Architecture & Workflow
+How IPManager Pro maintains near 100% discovery accuracy:
 
-1. Clone this repository.
-2. Run the deployment:
-   ```bash
-   docker-compose up -d
-   ```
-3. Access at `http://localhost:8080`.
-4. Login: **admin** / **admin123**.
-
----
-
-## 🐧 Installation (Linux Bare Metal - Ubuntu/Debian)
-For VPS or dedicated Linux servers.
-
-1. **Install Dependencies**:
-   ```bash
-   sudo apt update
-   sudo apt install apache2 mariadb-server php php-mysql php-snmp php-curl nmap traceroute
-   ```
-2. **Setup Database**:
-   ```bash
-   mysql -u root -e "CREATE DATABASE ipmanage;"
-   mysql -u root ipmanage < sql/database.sql
-   ```
-3. **Configure Permissions**:
-   ```bash
-   sudo chown -R www-data:www-data /var/www/html/ipmanage
-   ```
-4. **Cron Job**: Add `*/5 * * * * php /var/www/html/ipmanage/cron_scanner.php` to crontab.
-
----
-
-## 🪟 Installation (XAMPP - Windows)
-Perfect for local testing or Windows-based environments.
-
-1. **Copy Files**: Move the project to `C:\xampp\htdocs\ipmanage`.
-2. **Enable PHP Extensions**:
-   - Open `C:\xampp\php\php.ini` in a text editor.
-   - Remove `;` from `extension=snmp` and `extension=curl`.
-   - Restart Apache via XAMPP Control Panel.
-3. **Setup Database**:
-   - Open [phpMyAdmin](http://localhost/phpmyadmin) and create `ipmanage` database.
-   - Import `sql/database.sql`.
-4. **Access**: [http://localhost/ipmanage](http://localhost/ipmanage).
-
----
-
-## 🤖 Automation (Background Tasks)
-To keep your network map updated, set up these tasks:
-
-### Windows (Task Scheduler)
-Create a task to run `C:\xampp\php\php.exe C:\xampp\htdocs\ipmanage\cron_scanner.php` every 30 minutes.
-
-### Linux (Systemd/Crontab)
-The Docker version handles this automatically. For Bare Metal, use:
-```bash
-*/15 * * * * /usr/bin/php /var/www/html/ipmanage/cron_switch_poll.php
+```mermaid
+graph TD
+    A[Scanner Engine] -->|Parallel Worker Pool| B(Active Discovery: Ping/Nmap/ARP)
+    C[Health Poller] -->|SNMP| D(Hardware Stats: CPU/RAM/Uptime)
+    E[Switch Poller] -->|L3 ARP Cache| F(MAC-to-Port-to-IP Mapping)
+    B -->|Found Hosts| G[(Central Intelligence Database)]
+    D -->|Health Analytics| G
+    F -->|Physical Connectivity| G
+    G --> H[Premium Dark-Mode Dashboard]
+    H -->|Real-time Visualization| I(Chart.js Analytics)
 ```
 
 ---
 
-## 🛠️ Configuration
-Custom settings (Database, App URL) can be modified in `includes/config.php`.
+## 📂 Core Modules & Menus
+Discover the power of IPManager Pro through its specialized modules:
 
-## 🎨 UI Aesthetics
-Powered by **Vanilla CSS**, **Lucide Icons**, and **Chart.js** for high-performance visual analytics.
+| Menu | Description | Key Features |
+| :--- | :--- | :--- |
+| **📊 Dashboard** | The command center of your network. | Live usage trends, subnet density, and overall health status. |
+| **🌐 Managed Switches** | Deep-dive into your infrastructure hardware. | CPU/RAM gauges, system info, and full physical port mappings. |
+| **🗺️ IP Management** | Logical organization of your network assets. | Flexible subnets, VLAN tracking, and IP allocation status. |
+| **🧰 Network Toolbox** | Built-in professional diagnostic suite. | Real-time Ping, Traceroute, and MAC OUI vendor lookup. |
+| **📜 Audit Logs** | Complete accountability and history. | Tracking of manual changes and automated system discoveries. |
+
+---
+
+## ⚡ The "Secret Sauce": Advanced Engines
+
+### 1. Parallel Discovery Pool
+Uses multi-process `proc_open` technology to scan thousands of IPs simultaneously across Windows and Linux, reducing scan times from hours to minutes.
+
+### 2. High-Accuracy Switch Poller
+Goes beyond standard SNMP. It uses vendor-specific OIDs (Cisco/MikroTik) and **L3 ARP Cache** analysis to link every connected device to its exact physical port and IP address.
+
+### 3. Hardware Health Monitoring
+Real-time tracking of hardware vitals (CPU, Memory, Uptime) ensures you know about infrastructure bottlenecks before they cause downtime.
+
+---
+
+## 📋 Technical Prerequisites
+- **PHP 8.1+** (Extensions: `snmp`, `curl`, `pdo_mysql`, `mbstring`)
+- **MariaDB 10.2+** / **MySQL 5.7+**
+- **System Tools**: `nmap` and `traceroute` (for advanced diagnostics)
+
+---
+
+## 🚀 Installation & Deployment
+
+### 🐳 Option A: Docker (Recommended)
+The fastest way to deploy with all dependencies pre-configured.
+```bash
+docker-compose up -d
+# Access at http://localhost:8080
+```
+
+### 🪟 Option B: XAMPP (Windows)
+1. Copy files to `C:\xampp\htdocs\ipmanage`.
+2. Enable `extension=snmp` and `extension=curl` in `php.ini`.
+3. Import `sql/database.sql` via phpMyAdmin.
+4. Access at `http://localhost/ipmanage`.
+
+### 🐧 Option C: Linux Bare Metal (Ubuntu/Debian)
+```bash
+sudo apt install apache2 mariadb-server php-mysql php-snmp nmap traceroute
+# Import database and configure /var/www/html/ipmanage
+```
+
+---
+
+## 🤖 Automation (Background Tasks)
+| Platform | Tool | Command / Description |
+| :--- | :--- | :--- |
+| **Docker** | Internal | Handled automatically by entrypoint scripts. |
+| **Linux** | `crontab` | `*/15 * * * * php /path/to/cron_scanner.php` |
+| **Windows** | Task Scheduler | Run `php.exe` with `cron_scanner.php` every 30 mins. |
+
+---
+*Powered by **Vanilla CSS**, **Lucide Icons**, and **Google Fonts (Outfit)** for a state-of-the-art UI experience.*
