@@ -135,7 +135,7 @@ try {
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+<div class="grid-2-1" style="margin-bottom: 2rem;">
     <!-- Usage Trend Chart (Wider) -->
     <div class="card" style="height: 350px; display: flex; flex-direction: column;">
         <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">7-Day Usage Trend</h3>
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+<div class="grid-2-1">
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3 style="font-size: 1.125rem;">Recent Subnets</h3>

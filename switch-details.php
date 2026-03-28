@@ -56,7 +56,7 @@ include 'includes/header.php';
         <h1 style="font-size: 1.75rem;"><?php echo htmlspecialchars($switch['name']); ?></h1>
         <p style="color: var(--text-muted); font-family: monospace;"><?php echo htmlspecialchars($switch['ip_addr']); ?></p>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
+    <div class="header-actions" style="display: flex; gap: 0.75rem;">
         <button class="btn" onclick="location.href='cron_switch_poll.php?id=<?php echo $id; ?>'" style="background: var(--surface-light);">
             <i data-lucide="refresh-cw" style="width: 16px;"></i> Force Poll
         </button>
@@ -66,7 +66,7 @@ include 'includes/header.php';
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; align-items: start;">
+<div class="grid-side-detail">
     <!-- Hardware Status Sidebar -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Hardware Health</h3>

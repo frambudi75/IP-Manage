@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem; text-align: center;">
             <p style="color: var(--text-muted); font-size: 0.75rem;">
-                Default Credentials: <strong>admin</strong> / <strong>admin123</strong>
+                
             </p>
         </div>
     </div>
