@@ -25,4 +25,4 @@ All notable changes to this project will be documented in this file.
 - Integrated `run_auto_migrations()` in `includes/db.php` for zero-effort database updates.
 
 ---
-*Created by Habib Frambudi & AI Team*
+*Created by Habib Frambudi*
