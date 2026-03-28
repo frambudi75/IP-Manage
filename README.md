@@ -73,4 +73,15 @@ Custom settings (Database host, App URL, specific SNMP communities) can be modif
 `includes/config.php`
 
 ---
+
+## 👨‍💻 Author
+**Habib Frambudi**
+
+## ☕ Support the Project
+If IPManager Pro has helped you optimize your network, consider buying me a coffee! Your support helps me maintain and add new features.
+
+-   **Saweria (IDR)**: [saweria.co/Habibframbudi](https://saweria.co/Habibframbudi)
+-   **PayPal (USD)**: `habibframbudi@gmail.com`
+
+---
 *Powered by **Vanilla CSS**, **Lucide Icons**, and **Chart.js**.*
