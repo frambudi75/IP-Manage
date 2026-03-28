@@ -1,21 +1,3 @@
-# IPManager Pro 🚀
-
-A high-performance, professional IP Address Management (IPAM) and Network Monitoring system. Designed with a premium dark-mode UI and robust backend discovery.
-
-## 🌟 Key Features
-- **Parallel Scanning**: High-speed discovery using cross-platform worker pools.
-- **SNMP Health Monitoring**: Real-time CPU, RAM, and Uptime tracking for Cisco/MikroTik.
-- **L3 ARP Discovery**: Automatically maps IP addresses to physical switch ports.
-- **Network Toolbox**: Integrated Ping, Traceroute, and OUI Lookup.
-- **Audit Logs**: Detailed history of all network changes.
-
----
-
-## 📋 Prerequisites
-Before installation, ensure your environment meets these requirements:
-- **PHP 8.1+** (with `pdo_mysql`, `snmp`, `curl`, `mbstring` extensions)
-- **MySQL 5.7+** or **MariaDB 10.2+**
-- **Network Tools**: `nmap` and `traceroute` (highly recommended for better discovery accuracy)
 
 ---
 
