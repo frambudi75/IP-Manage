@@ -39,16 +39,31 @@ foreach ($switches as $switch) {
         $model = "Cisco";
         $cpu_raw = @snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.109.1.1.1.1.5.1");
         $cpu = (int)trim(str_replace('INTEGER: ', '', $cpu_raw));
-        // Simple Mem for Cisco
         $mem_free = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.6.1"));
         $mem_used = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.5.1"));
         if ($mem_used > 0) $mem = round(($mem_used / ($mem_used + $mem_free)) * 100);
-    } elseif (stripos($system_info, 'MikroTik') !== false) {
+    } elseif (stripos($system_info, 'MikroTik') !== false || stripos($system_info, 'RouterOS') !== false) {
         $model = "MikroTik";
         $cpu = (int)trim(str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.10.0")));
         $free_mem = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536"));
         $total_mem = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536"));
         if ($total_mem > 0) $mem = round((($total_mem - $free_mem) / $total_mem) * 100);
+    } else {
+        // Generic Fallback (Standard Host Resources MIB - RFC 2790)
+        $cores = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
+        if ($cores) {
+            $cpu_sum = 0; $count = 0;
+            foreach ($cores as $val) {
+                $cpu_sum += (int)str_replace('INTEGER: ', '', $val);
+                $count++;
+            }
+            $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+        }
+        
+        // Generic RAM
+        $total_mem = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536"));
+        $used_mem = (int)str_replace('INTEGER: ', '', @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536"));
+        if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
     }
     
     // Save System Stats
