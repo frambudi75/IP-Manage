@@ -14,9 +14,32 @@ function get_db_connection() {
     ];
 
     try {
-        return new PDO($dsn, DB_USER, DB_PASS, $options);
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        run_auto_migrations($pdo);
+        return $pdo;
     } catch (\PDOException $e) {
-        // In a real app, log error and show friendly message
         die("Connection failed: " . $e->getMessage());
     }
+}
+
+/**
+ * Ensures database structure is up to date
+ */
+function run_auto_migrations($db) {
+    // 1. Check Subnets table for new columns
+    $cols = $db->query("SHOW COLUMNS FROM subnets")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('scan_interval', $cols)) {
+        $db->exec("ALTER TABLE subnets ADD COLUMN scan_interval int(11) DEFAULT 0");
+    }
+    if (!in_array('last_scan', $cols)) {
+        $db->exec("ALTER TABLE subnets ADD COLUMN last_scan timestamp NULL DEFAULT NULL");
+    }
+
+    // 2. Check IP Addresses table for OS column
+    $ip_cols = $db->query("SHOW COLUMNS FROM ip_addresses")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('os', $ip_cols)) {
+        $db->exec("ALTER TABLE ip_addresses ADD COLUMN os varchar(100) DEFAULT NULL AFTER vendor");
+    }
+
+    // 3. Settings table handled by settings.helper.php
 }

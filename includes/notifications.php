@@ -37,6 +37,17 @@ class NotificationHelper {
         self::sendTelegram($message);
     }
 
+    public static function testTelegram() {
+        $message = "🔹 *Test Notification* 🔹\n\n✅ Your Telegram Bot integration for **" . APP_NAME . "** is working correctly!\n\n🕒 *Sent at:* " . date('Y-m-d H:i:s');
+        return self::sendTelegram($message);
+    }
+
+    public static function testEmail() {
+        $subject = "Test Notification - " . APP_NAME;
+        $body = "<h2>Test Notification</h2><p>Your email notification settings for <b>" . APP_NAME . "</b> are working correctly!</p><p>Sent at: " . date('Y-m-d H:i:s') . "</p>";
+        return self::sendEmail($subject, $body);
+    }
+
     /**
      * Send message via Telegram Bot API
      */
@@ -64,5 +75,19 @@ class NotificationHelper {
 
         $context  = stream_context_create($options);
         return @file_get_contents($url, false, $context);
+    }
+
+    /**
+     * Send email via local mail() function (fallback to system sendmail)
+     */
+    private static function sendEmail($subject, $message) {
+        $to = Settings::get('admin_email');
+        if (!$to || !Settings::enabled('email_enabled')) return false;
+
+        $headers = "MIME-Version: 1.0" . "\r\n";
+        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+        $headers .= "From: " . APP_NAME . " <notifications@example.com>" . "\r\n";
+
+        return mail($to, $subject, $message, $headers);
     }
 }

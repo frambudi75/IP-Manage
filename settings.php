@@ -1,6 +1,7 @@
 <?php
 require_once 'includes/config.php';
 require_once 'includes/db.php';
+require_once 'includes/notifications.php';
 
 session_start();
 
@@ -36,6 +37,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     } catch (Exception $e) {
         $db->rollBack();
         $message = 'Error saving settings: ' . $e->getMessage();
+    }
+}
+
+// Handle Test Telegram
+if (isset($_POST['test_telegram'])) {
+    if (NotificationHelper::testTelegram()) {
+        $message = 'Test Telegram message sent!';
+    } else {
+        $message = '❌ Failed to send Telegram message. Check your Token and Chat ID.';
+    }
+}
+
+// Handle Test Email
+if (isset($_POST['test_email'])) {
+    if (NotificationHelper::testEmail()) {
+        $message = 'Test Email sent!';
+    } else {
+        $message = '❌ Failed to send Email. Check your server mail configuration.';
     }
 }
 
@@ -84,7 +103,12 @@ include 'includes/header.php';
                 <label>Chat ID</label>
                 <input type="text" name="telegram_chat_id" class="input-control" value="<?php echo htmlspecialchars($settings['telegram_chat_id'] ?? ''); ?>" placeholder="-100123456789">
             </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">Get token from <strong>@BotFather</strong> and ID from <strong>@userinfobot</strong>.</p>
+            <div style="margin-top: 1rem;">
+                <button type="submit" name="test_telegram" class="btn" style="background: rgba(0, 136, 204, 0.1); color: #0088cc; width: 100%;">
+                    <i data-lucide="send"></i> Test Telegram Connection
+                </button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">Get token from <strong>@BotFather</strong> and ID from <strong>@userinfobot</strong>.</p>
         </div>
 
         <!-- Scan Settings -->
@@ -124,6 +148,11 @@ include 'includes/header.php';
             <div class="input-group">
                 <label>Admin Email Address</label>
                 <input type="email" name="admin_email" class="input-control" value="<?php echo htmlspecialchars($settings['admin_email'] ?? 'admin@example.com'); ?>">
+            </div>
+            <div style="margin-top: 1rem;">
+                <button type="submit" name="test_email" class="btn" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); width: 100%;">
+                    <i data-lucide="mail"></i> Test Email Delivery
+                </button>
             </div>
         </div>
     </div>
