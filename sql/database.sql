@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS `subnets` (
   `section_id` int(11) DEFAULT NULL,
   `vlan_id` int(11) DEFAULT NULL,
   `master_subnet` int(11) DEFAULT NULL,
+  `scan_interval` int(11) DEFAULT 0,
+  `last_scan` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `section_id` (`section_id`),
