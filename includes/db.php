@@ -131,4 +131,13 @@ function run_auto_migrations($db) {
         total_active INT NOT NULL,
         UNIQUE KEY `unique_date` (`snapshot_date`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+    // 9. Add missing columns to switches (Migration)
+    try {
+        $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS model VARCHAR(100)");
+        $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS uptime VARCHAR(100)");
+        $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS cpu_usage INT DEFAULT 0");
+        $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS memory_usage INT DEFAULT 0");
+        $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS system_info TEXT");
+    } catch(Exception $e) { /* Already exists or not supported */ }
 }

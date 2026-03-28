@@ -80,41 +80,44 @@ include 'includes/header.php';
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; background: rgba(0,0,0,0.05); padding: 0.75rem; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span>CPU Usage</span>
-                <span style="font-weight: 600; color: var(--text);"><?php echo (int)$switch['cpu_usage']; ?>%</span>
+                <span style="font-weight: 600; color: var(--text);"><?php echo (int)($switch['cpu_usage'] ?? 0); ?>%</span>
             </div>
             <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 1rem;">
-                <div style="width: <?php echo (int)$switch['cpu_usage']; ?>%; height: 100%; background: <?php echo (int)$switch['cpu_usage'] > 80 ? 'var(--danger)' : 'var(--primary)'; ?>;"></div>
+                <div style="width: <?php echo (int)($switch['cpu_usage'] ?? 0); ?>%; height: 100%; background: <?php echo (int)($switch['cpu_usage'] ?? 0) > 80 ? 'var(--danger)' : 'var(--primary)'; ?>;"></div>
             </div>
 
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span>Memory Usage</span>
-                <span style="font-weight: 600; color: var(--text);"><?php echo (int)$switch['memory_usage']; ?>%</span>
+                <span style="font-weight: 600; color: var(--text);"><?php echo (int)($switch['memory_usage'] ?? 0); ?>%</span>
             </div>
             <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-                <div style="width: <?php echo (int)$switch['memory_usage']; ?>%; height: 100%; background: <?php echo (int)$switch['memory_usage'] > 80 ? 'var(--warning)' : 'var(--success)'; ?>;"></div>
+                <div style="width: <?php echo (int)($switch['memory_usage'] ?? 0); ?>%; height: 100%; background: <?php echo (int)($switch['memory_usage'] ?? 0) > 80 ? 'var(--warning)' : 'var(--success)'; ?>;"></div>
             </div>
         </div>
 
         <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-            <p style="margin-bottom: 0.4rem;"><i data-lucide="cpu" style="width: 14px; vertical-align: middle;"></i> Model: <strong><?php echo htmlspecialchars($switch['model'] ?: 'Unknown'); ?></strong></p>
-            <p style="margin-bottom: 0.4rem;"><i data-lucide="timer" style="width: 14px; vertical-align: middle;"></i> Uptime: <?php echo htmlspecialchars($switch['uptime'] ?: '-'); ?></p>
+            <p style="margin-bottom: 0.4rem;"><i data-lucide="cpu" style="width: 14px; vertical-align: middle;"></i> Model: <strong><?php echo htmlspecialchars($switch['model'] ?? 'Unknown'); ?></strong></p>
+            <p style="margin-bottom: 0.4rem;"><i data-lucide="timer" style="width: 14px; vertical-align: middle;"></i> Uptime: <?php echo htmlspecialchars($switch['uptime'] ?? '-'); ?></p>
             <p style="margin-bottom: 0.4rem;"><i data-lucide="shield" style="width: 14px; vertical-align: middle;"></i> Community: <?php echo htmlspecialchars($switch['community']); ?></p>
             <p><i data-lucide="clock" style="width: 14px; vertical-align: middle;"></i> Last Poll: <?php echo $switch['last_poll'] ? date('d M Y H:i', strtotime($switch['last_poll'])) : 'Never'; ?></p>
         </div>
 
-        <?php if ($switch['system_info']): ?>
+        <?php if (!empty($switch['system_info'])): ?>
             <div style="font-size: 0.7rem; color: var(--text-muted); background: var(--surface-light); padding: 0.5rem; border-radius: 4px; border-left: 2px solid var(--primary); margin-bottom: 1rem;">
                 <?php echo htmlspecialchars(substr($switch['system_info'], 0, 100)) . (strlen($switch['system_info']) > 100 ? '...' : ''); ?>
             </div>
         <?php endif; ?>
         
         <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
-            <button class="btn btn-primary" style="flex: 1; font-size: 0.75rem;" onclick="location.href='cron_switch_poll.php?id=<?php echo $switch['id']; ?>'">
-                <i data-lucide="refresh-cw" style="width: 14px;"></i> Poll FDB Table
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.75rem;" onclick="location.href='switch-details.php?id=<?php echo $switch['id']; ?>'">
+                <i data-lucide="eye" style="width: 14px; margin-right: 4px;"></i> Details
+            </button>
+            <button class="btn" style="background: var(--surface-light); font-size: 0.75rem;" onclick="location.href='cron_switch_poll.php?id=<?php echo $switch['id']; ?>'">
+                <i data-lucide="refresh-cw" style="width: 14px;"></i> Poll
             </button>
             <form action="" method="POST" onsubmit="return confirm('Remove this switch?');">
                 <input type="hidden" name="id" value="<?php echo $switch['id']; ?>">
-                <button type="submit" name="delete_switch" class="btn" style="background: var(--surface-light); color: var(--danger);">
+                <button type="submit" name="delete_switch" class="btn" style="background: var(--surface-light); color: var(--danger); padding: 5px 10px;">
                     <i data-lucide="trash-2" style="width: 14px;"></i>
                 </button>
             </form>
