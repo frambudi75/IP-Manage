@@ -1,79 +1,89 @@
-# IPManager Pro
+# IPManager Pro 🚀
 
-A premium, modern IP Address Management (IPAM) system similar to phpipam, designed for XAMPP and Docker.
+A high-performance, professional IP Address Management (IPAM) and Network Monitoring system. Designed with a premium dark-mode UI and robust backend discovery.
 
-## Features
-- **Modern UI**: Dark-mode-first dashboard with glassmorphism effects.
-- **Subnet Management**: Organize network prefixes and CIDR blocks.
-- **IP Tracking**: Manage allocation, hostnames, and status of every IP.
-- **VLAN Tracking**: Keep track of VLAN IDs and descriptions.
-- **Multi-Environment**: Runs seamlessly on XAMPP (Windows) and Docker (Linux).
-
----
-
-## 🚀 Installation (XAMPP)
-
-1. **Clone/Copy** this project into your `htdocs` folder: `C:\xampp\htdocs\ipmanage`.
-2. **Start MySQL** via XAMPP Control Panel.
-3. **Import Database**:
-   - Open [phpMyAdmin](http://localhost/phpmyadmin).
-   - Create a new database named `ipmanage`.
-   - Import the file located at `sql/database.sql`.
-4. **Access the App**:
-   - Open [http://localhost/ipmanage](http://localhost/ipmanage).
-   - Login with: **admin** / **admin123**.
+## 🌟 Key Features
+- **Parallel Scanning**: High-speed discovery using cross-platform worker pools.
+- **SNMP Health Monitoring**: Real-time CPU, RAM, and Uptime tracking for Cisco/MikroTik.
+- **L3 ARP Discovery**: Automatically maps IP addresses to physical switch ports.
+- **Network Toolbox**: Integrated Ping, Traceroute, and OUI Lookup.
+- **Audit Logs**: Detailed history of all network changes.
 
 ---
 
-## 🐳 Installation (Docker)
+## 📋 Prerequisites
+Before installation, ensure your environment meets these requirements:
+- **PHP 8.1+** (with `pdo_mysql`, `snmp`, `curl`, `mbstring` extensions)
+- **MySQL 5.7+** or **MariaDB 10.2+**
+- **Network Tools**: `nmap` and `traceroute` (highly recommended for better discovery accuracy)
 
-1. Make sure you have **Docker Desktop** installed.
-2. Open terminal in the project directory.
-3. Run the following command:
+---
+
+## 🐳 Installation (Docker - Recommended for Linux/Pro)
+The fastest way to deploy IPManager Pro with all dependencies pre-configured.
+
+1. Clone this repository.
+2. Run the deployment:
    ```bash
    docker-compose up -d
    ```
-4. Access the App:
-   - Open [http://localhost:8080](http://localhost:8080).
-   - Login with: **admin** / **admin123**.
+3. Access at `http://localhost:8080`.
+4. Login: **admin** / **admin123**.
 
 ---
 
-## 🤖 Automation (Cron Scanner)
+## 🐧 Installation (Linux Bare Metal - Ubuntu/Debian)
+For VPS or dedicated Linux servers.
 
-To enable automatic background scanning without manual intervention, follow these steps:
+1. **Install Dependencies**:
+   ```bash
+   sudo apt update
+   sudo apt install apache2 mariadb-server php php-mysql php-snmp php-curl nmap traceroute
+   ```
+2. **Setup Database**:
+   ```bash
+   mysql -u root -e "CREATE DATABASE ipmanage;"
+   mysql -u root ipmanage < sql/database.sql
+   ```
+3. **Configure Permissions**:
+   ```bash
+   sudo chown -R www-data:www-data /var/www/html/ipmanage
+   ```
+4. **Cron Job**: Add `*/5 * * * * php /var/www/html/ipmanage/cron_scanner.php` to crontab.
 
-### Windows (Task Scheduler - Recommended for XAMPP)
-1.  **Open Task Scheduler** (Search for it in Windows Start).
-2.  Select **Create Basic Task** from the Actions menu.
-3.  Name the task: `IPManager Scanner`.
-4.  Trigger: Select **Daily**, then set it to repeat every **30 minutes** (configurable).
-5.  Action: Select **Start a Program**.
-    - **Program/script**: `C:\xampp\php\php.exe` (Adjust if XAMPP is installed elsewhere).
-    - **Add arguments**: `C:\xampp\htdocs\ipmanage\cron_scanner.php`
-6.  Click **Finish**.
+---
 
-### Linux (Crontab - Recommended for Docker/VPS)
-Add the following line to your crontab (`crontab -e`):
+## 🪟 Installation (XAMPP - Windows)
+Perfect for local testing or Windows-based environments.
+
+1. **Copy Files**: Move the project to `C:\xampp\htdocs\ipmanage`.
+2. **Enable PHP Extensions**:
+   - Open `C:\xampp\php\php.ini` in a text editor.
+   - Remove `;` from `extension=snmp` and `extension=curl`.
+   - Restart Apache via XAMPP Control Panel.
+3. **Setup Database**:
+   - Open [phpMyAdmin](http://localhost/phpmyadmin) and create `ipmanage` database.
+   - Import `sql/database.sql`.
+4. **Access**: [http://localhost/ipmanage](http://localhost/ipmanage).
+
+---
+
+## 🤖 Automation (Background Tasks)
+To keep your network map updated, set up these tasks:
+
+### Windows (Task Scheduler)
+Create a task to run `C:\xampp\php\php.exe C:\xampp\htdocs\ipmanage\cron_scanner.php` every 30 minutes.
+
+### Linux (Systemd/Crontab)
+The Docker version handles this automatically. For Bare Metal, use:
 ```bash
-*/30 * * * * /usr/bin/php /var/www/html/cron_scanner.php >> /var/log/ipmanage_scan.log 2>&1
-```
-
-### Manual CLI Run
-You can always trigger a manual scan via terminal for debugging:
-```bash
-php cron_scanner.php
+*/15 * * * * /usr/bin/php /var/www/html/ipmanage/cron_switch_poll.php
 ```
 
 ---
 
 ## 🛠️ Configuration
-Edit `includes/config.php` to change database credentials or application settings.
+Custom settings (Database, App URL) can be modified in `includes/config.php`.
 
-## 📚 Documentation
-Complete technical documentation is available in:
-
-- `docs/README.md`
-
-## 🎨 UI & Aesthetics
-Powered by Vanilla CSS with **Lucide Icons** and **Google Fonts (Outfit)** for a premium corporate look.
+## 🎨 UI Aesthetics
+Powered by **Vanilla CSS**, **Lucide Icons**, and **Chart.js** for high-performance visual analytics.
