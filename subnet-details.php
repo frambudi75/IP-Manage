@@ -22,6 +22,8 @@ if (!$subnet) {
     die("Subnet not found");
 }
 
+$all_vlans = $db->query("SELECT id, number, name FROM vlans ORDER BY number ASC")->fetchAll();
+
 $page_title = 'Subnet Details: ' . $subnet['subnet'] . '/' . $subnet['mask'];
 
 // Handle IP allocation
@@ -40,13 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip'])) {
 // Handle Subnet Settings Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subnet_settings'])) {
     $scan_interval = (int)$_POST['scan_interval'];
-    $description = $_POST['description'];
-    
+    $description = $_POST['description'] ?? '';
+    $vlan_id = (isset($_POST['vlan_id']) && $_POST['vlan_id'] !== '') ? (int)$_POST['vlan_id'] : null;
+
     try {
-        $stmt = $db->prepare("UPDATE subnets SET scan_interval = ?, description = ? WHERE id = ?");
-        $stmt->execute([$scan_interval, $description, $subnet_id]);
-        $subnet['scan_interval'] = $scan_interval;
-        $subnet['description'] = $description;
+        $stmt = $db->prepare("UPDATE subnets SET scan_interval = ?, description = ?, vlan_id = ? WHERE id = ?");
+        $stmt->execute([$scan_interval, $description, $vlan_id, $subnet_id]);
+        $stmt = $db->prepare("SELECT s.*, v.number as vlan_number FROM subnets s LEFT JOIN vlans v ON s.vlan_id = v.id WHERE s.id = ?");
+        $stmt->execute([$subnet_id]);
+        $subnet = $stmt->fetch();
     } catch (Exception $e) {}
 }
 
@@ -144,6 +148,31 @@ include 'includes/header.php';
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted);">
             <div style="width: 10px; height: 10px; border-radius: 2px; background: var(--surface-light);"></div> Free
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.125rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="activity" style="width: 18px;"></i> Network Analysis
+        </h3>
+        <button id="analyzeBtn" class="btn" style="padding: 6px 12px; font-size: 0.75rem; background: rgba(59, 130, 246, 0.1); color: var(--primary);" onclick="analyzeNetwork(<?php echo $subnet_id; ?>)">
+            <i data-lucide="play" style="width: 12px;"></i> Quick Analysis
+        </button>
+    </div>
+    <div id="analysisSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div class="analysis-box" style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Detected Gateway</div>
+            <div id="gatewayResult" style="font-weight: 600; font-size: 0.9rem;">-</div>
+        </div>
+        <div class="analysis-box" style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">DNS Resolvers (Local)</div>
+            <div id="dnsResult" style="font-weight: 600; font-size: 0.9rem;">-</div>
+        </div>
+        <div class="analysis-box" style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Routing Info</div>
+            <div id="routingResult" style="font-weight: 600; font-size: 0.9rem;">-</div>
         </div>
     </div>
 </div>
@@ -303,6 +332,17 @@ include 'includes/header.php';
                 <input type="text" name="description" class="input-control" value="<?php echo htmlspecialchars($subnet['description'] ?? ''); ?>">
             </div>
             <div class="input-group">
+                <label>VLAN (optional)</label>
+                <select name="vlan_id" class="input-control" style="appearance: none;">
+                    <option value="" <?php echo empty($subnet['vlan_id']) ? 'selected' : ''; ?>>No VLAN</option>
+                    <?php foreach ($all_vlans as $v): ?>
+                        <option value="<?php echo (int)$v['id']; ?>" <?php echo (isset($subnet['vlan_id']) && (int)$subnet['vlan_id'] === (int)$v['id']) ? 'selected' : ''; ?>>
+                            VLAN <?php echo htmlspecialchars((string)$v['number']); ?> — <?php echo htmlspecialchars($v['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="input-group">
                 <label>Auto-Scan Interval</label>
                 <select name="scan_interval" class="input-control" style="appearance: none;">
                     <option value="0" <?php echo ($subnet['scan_interval'] ?? 0) == 0 ? 'selected' : ''; ?>>Manual Only</option>
@@ -419,6 +459,62 @@ async function scanSubnet(id) {
 
     statusText.innerText = `Scan Complete! Found ${foundCount} active hosts. Reloading...`;
     setTimeout(() => location.reload(), 1500);
+}
+
+async function analyzeNetwork(id) {
+    const btn = document.getElementById('analyzeBtn');
+    const gatewayEl = document.getElementById('gatewayResult');
+    const dnsEl = document.getElementById('dnsResult');
+    const routingEl = document.getElementById('routingResult');
+    
+    btn.disabled = true;
+    gatewayEl.innerHTML = '<span class="text-muted">Analyzing...</span>';
+    dnsEl.innerHTML = '<span class="text-muted">Scanning...</span>';
+    routingEl.innerHTML = '<span class="text-muted">Checking...</span>';
+
+    try {
+        const response = await fetch(`api/analyze.php?id=${id}`);
+        const data = await response.json();
+        if (data.success) {
+            const results = data.data;
+            
+            // Gateway display
+            if (results.gateways.length > 0) {
+                gatewayEl.innerHTML = results.gateways.map(gw => 
+                    `<div style="color: var(--success); display: flex; align-items: center; gap: 6px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+                        ${gw.ip} <span style="font-size: 0.7rem; color: var(--text-muted);">(${gw.vendor})</span>
+                    </div>`
+                ).join('');
+            } else {
+                gatewayEl.innerHTML = '<span style="color: var(--danger);">Not detected</span>';
+            }
+
+            // DNS display
+            if (results.dns_resolvers.length > 0) {
+                dnsEl.innerHTML = results.dns_resolvers.map(dns => 
+                    `<div style="color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="shield" style="width: 12px;"></i> ${dns.ip}
+                    </div>`
+                ).join('');
+                if (window.lucide) window.lucide.createIcons();
+            } else {
+                dnsEl.innerHTML = '<span class="text-muted">None found in subnet</span>';
+            }
+
+            // Routing display
+            routingEl.innerHTML = `
+                <div style="font-size: 0.85rem;">
+                    Local Interface: ${results.routing.local_interface}<br>
+                    Range: ${results.routing.is_local_range ? '<span style="color: var(--success);">Inside local scope</span>' : '<span style="color: var(--warning);">External/Remote</span>'}
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error("Analysis error", err);
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 function openEditModal(ip, hostname, desc, state) {

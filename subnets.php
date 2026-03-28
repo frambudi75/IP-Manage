@@ -12,6 +12,8 @@ if (!isset($_SESSION['user_id'])) {
 $db = get_db_connection();
 $page_title = 'Subnets';
 
+$vlans_list = $db->query("SELECT id, number, name FROM vlans ORDER BY number ASC")->fetchAll();
+
 // Handle Add Subnet
 $message = '';
 if (isset($_GET['msg']) && $_GET['msg'] === 'added') {
@@ -23,11 +25,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subnet'])) {
     $mask = $_POST['mask'] ?? '';
     $description = $_POST['description'] ?? '';
     $section_id = $_POST['section_id'] ?? 1;
+    $vlan_id = (isset($_POST['vlan_id']) && $_POST['vlan_id'] !== '') ? (int)$_POST['vlan_id'] : null;
+    $scan_interval = (int)($_POST['scan_interval'] ?? 0);
 
     try {
-        $stmt = $db->prepare("INSERT INTO subnets (subnet, mask, description, section_id) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$subnet, $mask, $description, $section_id]);
+        $stmt = $db->prepare("INSERT INTO subnets (subnet, mask, description, section_id, vlan_id, scan_interval) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$subnet, $mask, $description, $section_id, $vlan_id, $scan_interval]);
         $message = 'Subnet added successfully!';
+    } catch (Exception $e) {
+        $message = 'Error: ' . $e->getMessage();
+    }
+}
+
+// Handle Edit Subnet
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_subnet'])) {
+    $sid = (int)$_POST['subnet_id'];
+    $subnet = $_POST['subnet'] ?? '';
+    $mask = $_POST['mask'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $vlan_id = (isset($_POST['vlan_id']) && $_POST['vlan_id'] !== '') ? (int)$_POST['vlan_id'] : null;
+    $scan_interval = (int)($_POST['scan_interval'] ?? 0);
+
+    try {
+        $stmt = $db->prepare("UPDATE subnets SET subnet = ?, mask = ?, description = ?, vlan_id = ?, scan_interval = ? WHERE id = ?");
+        $stmt->execute([$subnet, $mask, $description, $vlan_id, $scan_interval, $sid]);
+        $message = 'Subnet updated successfully!';
     } catch (Exception $e) {
         $message = 'Error: ' . $e->getMessage();
     }
@@ -105,6 +127,9 @@ include 'includes/header.php';
                                     <i data-lucide="external-link" style="width: 16px;"></i>
                                 </a>
                                 <?php if (is_admin()): ?>
+                                <button onclick="openEditModal(<?php echo htmlspecialchars(json_encode($s)); ?>)" class="btn" style="padding: 6px; background: rgba(16, 185, 129, 0.1); color: var(--success);" title="Edit Subnet">
+                                    <i data-lucide="edit" style="width: 16px;"></i>
+                                </button>
                                 <a href="?delete=<?php echo $s['id']; ?>" class="btn" style="padding: 6px; background: rgba(239, 68, 68, 0.1); color: var(--danger);" onclick="return confirm('Are you sure you want to delete this subnet and ALL its IP records?')" title="Delete">
                                     <i data-lucide="trash-2" style="width: 16px;"></i>
                                 </a>
@@ -141,9 +166,92 @@ include 'includes/header.php';
                 <label>Description</label>
                 <input type="text" name="description" class="input-control">
             </div>
+            <div class="input-group">
+                <label>VLAN (optional)</label>
+                <select name="vlan_id" class="input-control" style="appearance: none;">
+                    <option value="">No VLAN</option>
+                    <?php foreach ($vlans_list as $v): ?>
+                        <option value="<?php echo (int)$v['id']; ?>">VLAN <?php echo htmlspecialchars((string)$v['number']); ?> — <?php echo htmlspecialchars($v['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Create VLANs first under <strong>VLANs</strong> if the list is empty.</p>
+            </div>
+            <div class="input-group">
+                <label>Auto-Scan Interval</label>
+                <select name="scan_interval" class="input-control" style="appearance: none;">
+                    <option value="0">Manual Only</option>
+                    <option value="30">Every 30 Minutes</option>
+                    <option value="60">Every 1 Hour</option>
+                    <option value="360">Every 6 Hours</option>
+                    <option value="720">Every 12 Hours</option>
+                    <option value="1440">Every 24 Hours</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Save Subnet</button>
         </form>
     </div>
 </div>
+
+<!-- Simple Edit Modal (Hidden by default) -->
+<div id="editModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 500px; padding: 2.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Edit Subnet</h3>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="edit_subnet" value="1">
+            <input type="hidden" name="subnet_id" id="edit_subnet_id">
+            <div class="input-group">
+                <label>Subnet Address</label>
+                <input type="text" name="subnet" id="edit_subnet" class="input-control" required>
+            </div>
+            <div class="input-group">
+                <label>Mask (CIDR)</label>
+                <input type="number" name="mask" id="edit_mask" class="input-control" min="0" max="32" required>
+            </div>
+            <div class="input-group">
+                <label>Description</label>
+                <input type="text" name="description" id="edit_description" class="input-control">
+            </div>
+            <div class="input-group">
+                <label>VLAN (optional)</label>
+                <select name="vlan_id" id="edit_vlan_id" class="input-control" style="appearance: none;">
+                    <option value="">No VLAN</option>
+                    <?php foreach ($vlans_list as $v): ?>
+                        <option value="<?php echo (int)$v['id']; ?>">VLAN <?php echo htmlspecialchars((string)$v['number']); ?> — <?php echo htmlspecialchars($v['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Auto-Scan Interval</label>
+                <select name="scan_interval" id="edit_scan_interval" class="input-control" style="appearance: none;">
+                    <option value="0">Manual Only</option>
+                    <option value="30">Every 30 Minutes</option>
+                    <option value="60">Every 1 Hour</option>
+                    <option value="360">Every 6 Hours</option>
+                    <option value="720">Every 12 Hours</option>
+                    <option value="1440">Every 24 Hours</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Update Subnet</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(subnet) {
+    document.getElementById('edit_subnet_id').value = subnet.id;
+    document.getElementById('edit_subnet').value = subnet.subnet;
+    document.getElementById('edit_mask').value = subnet.mask;
+    document.getElementById('edit_description').value = subnet.description;
+    document.getElementById('edit_vlan_id').value = subnet.vlan_id || '';
+    document.getElementById('edit_scan_interval').value = subnet.scan_interval || '0';
+    
+    document.getElementById('editModal').style.display = 'flex';
+}
+</script>
 
 <?php include 'includes/footer.php'; ?>
