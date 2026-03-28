@@ -244,12 +244,12 @@ function detect_host_signals($ip, &$arp_map) {
         'active' => false
     ];
 
-    $ports = [80, 443, 22, 445, 3389];
+    $ports = [80, 443, 22, 445, 135, 139, 3389, 8000];
     if (defined('DISCOVERY_AGGRESSIVE_MODE') && DISCOVERY_AGGRESSIVE_MODE) {
-        $ports = [80, 443, 22, 445, 3389, 53, 139, 161];
+        $ports = [80, 443, 22, 445, 135, 139, 3389, 53, 161, 8000, 8080, 8443, 554, 37777];
     }
     foreach ($ports as $port) {
-        if (check_port($ip, $port, 0.28, 1)) {
+        if (check_port($ip, $port, 0.45, 1)) {
             $signals['port'] = true;
             break;
         }
@@ -295,9 +295,32 @@ function detect_host_signals($ip, &$arp_map) {
         }
     }
 
-    // A host is active only if it has a MAC ADDR (ARP).
-    // This strictly prevents "Ghost IPs" that respond to ping due to proxy-arp or router settings.
-    $signals['active'] = $signals['arp'];
+    $is_remote = false;
+    try {
+        $local_ip = gethostbyname(gethostname());
+        $local_parts = explode('.', $local_ip);
+        $target_parts = explode('.', $ip);
+        // Basic check: if first 2 octets differ, it's likely remote (simplification)
+        if ($local_parts[0] !== $target_parts[0] || $local_parts[1] !== $target_parts[1]) {
+            $is_remote = true;
+        }
+    } catch(Exception $e) {}
+
+    // Sinyal kuat: Jika ada ARP (MAC) atau SNMP atau Nmap fingerprint
+    $signals['active'] = $signals['arp'] || $signals['nmap'];
+
+    // Jika ARP tidak ada:
+    if (!$signals['active']) {
+        // 1. Jika terdeteksi PORT terbuka, it's a real device.
+        if ($signals['port']) {
+            $signals['active'] = true;
+        } 
+        // 2. Jika IP Remote (beda subnet) dan PING aktif, kita anggap Active.
+        // Di subnet remote, kita tidak bisa melihat ARP secara langsung.
+        else if ($is_remote && $signals['ping']) {
+            $signals['active'] = true;
+        }
+    }
 
     return $signals;
 }
