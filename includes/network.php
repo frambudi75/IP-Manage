@@ -466,5 +466,27 @@ function get_vendor_by_mac($mac) {
     return 'Generic / Unknown';
 }
 
+/**
+ * Find the subnet ID that contains a given IP address.
+ */
+function find_subnet_for_ip($db, $ip) {
+    if (!$ip) return null;
+    $ip_long = ip2long($ip);
+    if ($ip_long === false) return null;
+
+    static $subnets_cache = null;
+    if ($subnets_cache === null) {
+        $subnets_cache = $db->query("SELECT id, subnet, mask FROM subnets")->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    foreach ($subnets_cache as $s) {
+        list($start, $end) = cidr_to_range($s['subnet'] . '/' . $s['mask']);
+        if ($ip_long >= $start && $ip_long <= $end) {
+            return $s['id'];
+        }
+    }
+    return null;
+}
+
 
 
