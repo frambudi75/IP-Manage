@@ -16,6 +16,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - .:/var/www/html
     networks:
       - ipmanage_net
 
