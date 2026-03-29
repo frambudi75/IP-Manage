@@ -3,7 +3,7 @@ services:
     build: .
     container_name: ipmanager_app
     ports:
-      - "8080:80"
+      - "2025:80"
     environment:
       - DB_HOST=db
       - DB_NAME=ipmanage
@@ -33,7 +33,7 @@ services:
       - db_data:/var/lib/mysql
       - ./sql/database.sql:/docker-entrypoint-initdb.d/database.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password_secure"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password_secure" ]
       interval: 10s
       timeout: 5s
       retries: 5

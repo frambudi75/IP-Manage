@@ -10,8 +10,7 @@ define('DB_NAME', 'ipmanage');
 define('DB_USER', 'ipmanager');
 define('DB_PASS', 'ipmanager_pass');
 
-// App URL inside Docker
-define('APP_URL', 'http://localhost:8080');
+// App URL is set in config.php to avoid redefinition
 
 // Environment flag
 define('ENV_DOCKER', true);
