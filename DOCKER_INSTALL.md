@@ -4,129 +4,111 @@ Dokumentasi ini menjelaskan cara menginstal dan menjalankan **IPManager Pro** me
 
 ## Persyaratan Sistem
 
-Pastikan Anda sudah menginstal perangkat lunak berikut di mesin Anda:
+Pastikan Anda sudah menginstal perangkat lunak berikut:
 - [Docker Engine](https://docs.docker.com/get-docker/) (v20.10+)
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
 
 ## Struktur Docker
 
 Proyek ini menggunakan dua kontainer utama:
-1. **app**: Menjalankan Apache dengan PHP 8.2 dan semua ekstensi yang diperlukan (mysqli, pdo, snmp, curl). Kontainer ini juga menjalankan proses background scanner secara otomatis.
-2. **db**: Menjalankan MariaDB 10.11 untuk penyimpanan data.
+1. **app**: Apache + PHP 8.2 dengan ekstensi mysqli, pdo, snmp, curl. Menjalankan scanner otomatis di background setiap 5 menit.
+2. **db**: MariaDB 10.11 untuk penyimpanan data.
 
 ## Langkah-langkah Instalasi
 
-### 1. Persiapkan File Project
-Pastikan Anda berada di direktori utama proyek di mana terdapat file `Dockerfile` dan `docker-compose.yml`.
+### 1. Clone Repositori
+```bash
+git clone https://github.com/frambudi75/IP-Manage.git ipmanage
+cd ipmanage
+```
 
 ### 2. Konfigurasi (Opsional)
-Anda dapat mengubah konfigurasi database atau port di dalam file `docker-compose.yml`. Secara default:
-- Port Aplikasi: `8080`
-- Database Root Password: `rootpassword`
-- Nama Database: `ipmanage`
+Anda dapat mengubah port atau password di `docker-compose.yml`. Default:
+- Port Aplikasi: `2025`
+- Database User: `ipmanager` / Password: `ipmanager_pass`
 
 ### 3. Jalankan Docker Compose
-Jalankan perintah berikut di terminal Anda:
-
 ```bash
-docker-compose up -d
+sudo docker compose up -d --build
 ```
 
 Perintah ini akan:
-- Membangun image untuk aplikasi PHP.
-- Menarik image MariaDB dari Docker Hub.
-- Menjalankan kedua kontainer di latar belakang (-d).
-- Mengimpor skema database dari `./sql/database.sql` secara otomatis saat pertama kali dijalankan.
+- Membangun image PHP dengan semua dependensi.
+- Menjalankan MariaDB dan mengimpor skema dari `./sql/database.sql` secara otomatis.
+- Menjalankan kedua kontainer di background.
 
-### 4. Verifikasi Kontainer
-Pastikan kedua kontainer berjalan dengan baik:
-
+### 4. Verifikasi
 ```bash
-docker ps
+sudo docker ps
 ```
-
-Anda harus melihat kontainer `ipmanager_app` dan `ipmanager_db` dengan status "Up".
+Pastikan `ipmanager_app` dan `ipmanager_db` berstatus **Up / Healthy**.
 
 ### 5. Akses Aplikasi
-Buka browser Anda dan akses:
-`http://localhost:8080`
+Buka browser: `http://localhost:2025`
 
-Login default (jika sudah ada di database):
-- **Username**: admin
-- **Password**: password (atau sesuai isi `database.sql`)
+**Login Default:**
+- Username: `admin`
+- Password: `admin123`
 
-## Informasi Tambahan
+## Perintah Berguna
 
-### Background Scanner
-Aplikasi ini menjalankan `cron_scanner.php` dan `cron_switch_poll.php` secara otomatis setiap 5 menit di dalam kontainer `app`. Anda tidak perlu mengatur crontab manual di host.
-
-### Melihat Log
-Untuk melihat aktivitas scanner atau error aplikasi, Anda bisa memantau log kontainer:
-
+### Melihat Log Aplikasi
 ```bash
-docker logs -f ipmanager_app
+sudo docker logs -f ipmanager_app
+```
+
+### Melihat Log Database
+```bash
+sudo docker logs -f ipmanager_db
 ```
 
 ### Menghentikan Aplikasi
-Untuk menghentikan semua layanan:
-
 ```bash
-docker-compose down
+sudo docker compose down
 ```
 
-Untuk menghapus data database juga (Hati-hati: ini akan menghapus semua data!):
-
+### Reset Total (Hapus Semua Data)
 ```bash
-docker-compose down -v
+sudo docker compose down -v
+```
+> **Perhatian:** Perintah `-v` akan menghapus semua data database!
+
+### Update Kode Terbaru
+```bash
+git pull
+sudo docker compose down
+sudo docker compose up -d --build
 ```
 
 ## Troubleshooting
 
-### Error: `php_network_getaddresses: getaddrinfo for db failed`
-Pesan ini menunjukkan bahwa aplikasi PHP tidak dapat menemukan server dengan nama `db`. Hal ini biasanya terjadi karena beberapa alasan:
+### Error: `entrypoint.sh: permission denied`
+Terjadi saat file dari Windows tidak memiliki permission execute di Linux.
+**Solusi:** Sudah diatasi secara otomatis — Dockerfile menggunakan `bash` untuk menjalankan entrypoint.
 
-**1. Anda menjalankan aplikasi menggunakan XAMPP (Bukan Docker)**
-Jika Anda membuka aplikasi melalui `http://localhost/ipmanage` (URL XAMPP), maka PHP yang digunakan adalah PHP milik XAMPP di Windows, bukan PHP di dalam Docker. PHP XAMPP tidak mengenali hostname `db`.
-*   **Solusi:** Gunakan URL `http://localhost:8080` untuk mengakses aplikasi yang berjalan di dalam Docker.
-*   **Alternatif (jika ingin tetap pakai XAMPP):** Ubah `DB_HOST` di file `includes/config.php` dari `db` menjadi `127.0.0.1`.
-
-**2. Kontainer database belum siap atau gagal dijalankan**
-Meskipun kontainer `ipmanager_app` sudah berjalan, servis database di dalam kontainer `ipmanager_db` mungkin masih dalam proses inisialisasi.
-*   **Solusi:** File `docker-compose.yml` terbaru sudah menyertakan `healthcheck` agar aplikasi PHP menunggu sampai database benar-benar aktif. Jika masih error, coba jalankan `docker compose restart`.
-
-**3. Masalah cache DNS di sistem**
-Terkadang Docker mengalami masalah resolusi nama internal.
-*   **Solusi:** Hentikan dan jalankan ulang seluruh layanan:
-   ```bash
-   docker compose down
-   docker compose up -d
-   ```
-
-### Error: `failed to connect to the docker API at unix:///var/run/docker.sock`
-Jika Anda melihat pesan error di atas, itu berarti layanan Docker (Docker Daemon) belum berjalan di sistem Anda.
-
-**Solusi (Linux/WSL):**
-1. Jalankan layanan Docker:
-   ```bash
-   sudo systemctl start docker
-   ```
-2. Pastikan Docker berjalan saat boot:
-   ```bash
-   sudo systemctl enable docker
-   ```
-### Error: `Access denied for user 'root' or 'ipmanager'`
-Jika Anda baru saja mengubah kredensial database di `docker-compose.yml` tetapi aplikasi tetap ditolak aksesnya, hal ini dikarenakan kontainer database masih menyimpan data lama dari *volume* sebelumnya.
-
+### Error: `getaddrinfo for db failed`
+Database belum siap atau ada konflik jaringan.
 **Solusi:**
-Hentikan kontainer dan hapus volume database lama (PERHATIAN: data akan hilang!):
 ```bash
-docker compose down -v
-docker compose up -d
+sudo docker compose down
+sudo docker compose up -d
+```
+
+### Error: `Access denied for user`
+Volume database lama tersisa dengan kredensial lama.
+**Solusi:**
+```bash
+sudo docker compose down -v
+sudo docker compose up -d
 ```
 
 ### Error: `failed to bind host port 0.0.0.0:3306`
-Pesan ini berarti port `3306` sudah digunakan oleh aplikasi lain (biasanya XAMPP atau MySQL lokal).
+Port 3306 sudah digunakan oleh MySQL/XAMPP lokal.
+**Solusi:** Database sudah dipetakan ke port **3307** di host. Tidak ada yang perlu diubah.
 
+### Error: Docker tidak bisa connect (`/var/run/docker.sock`)
+Docker Daemon belum berjalan.
 **Solusi:**
-File `docker-compose.yml` terbaru sudah dipetakan ke port **`3307`** di sisi host. Anda tidak perlu mengubah apa pun. Cukup jalankan kembali `docker compose up -d`.
-
+```bash
+sudo systemctl start docker
+```
