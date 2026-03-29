@@ -33,10 +33,11 @@ services:
       - db_data:/var/lib/mysql
       - ./sql/database.sql:/docker-entrypoint-initdb.d/database.sql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password_secure"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - ipmanage_net
 
