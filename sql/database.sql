@@ -41,47 +41,7 @@ CREATE TABLE `audit_logs` (
 -- Dumping data untuk tabel `audit_logs`
 --
 
-INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `target_type`, `target_id`, `details`, `created_at`) VALUES
-(1, 3, 'add_switch', 'switch', 1, 'Added switch router utama (192.168.5.1)', '2026-03-28 07:13:18'),
-(2, 3, 'add_switch', 'switch', 2, 'Added switch router utama (192.168.5.1)', '2026-03-28 07:13:41'),
-(3, 3, 'delete_switch', 'switch', 1, 'Deleted switch ID 1', '2026-03-28 07:13:48'),
-(4, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:38:27'),
-(5, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:38:29'),
-(6, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:38:30'),
-(7, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:38:48'),
-(8, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:38:50'),
-(9, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:40:03'),
-(10, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:45:31'),
-(11, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:46:49'),
-(12, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:47:11'),
-(13, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:48:33'),
-(14, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:48:35'),
-(15, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:50:20'),
-(16, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:50:49'),
-(17, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:51:55'),
-(18, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:51:56'),
-(19, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:51:56'),
-(20, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:52:32'),
-(21, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:52:34'),
-(22, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:52:51'),
-(23, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:52:54'),
-(24, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:52:56'),
-(25, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:53:13'),
-(26, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:54:18'),
-(27, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:55:14'),
-(28, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:55:16'),
-(29, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:57:15'),
-(30, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:57:25'),
-(31, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:57:30'),
-(32, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:57:49'),
-(33, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:58:30'),
-(34, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:58:32'),
-(35, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:58:41'),
-(36, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:58:46'),
-(37, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:59:06'),
-(38, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:59:24'),
-(39, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:59:27'),
-(40, NULL, 'poll_switch', 'switch', 2, 'Discovered 6 mappings on router utama', '2026-03-28 07:59:29');
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -110,19 +70,7 @@ CREATE TABLE `ip_addresses` (
 -- Dumping data untuk tabel `ip_addresses`
 --
 
-INSERT INTO `ip_addresses` (`id`, `subnet_id`, `ip_addr`, `description`, `hostname`, `state`, `last_seen`, `created_at`, `mac_addr`, `vendor`, `os`, `conflict_detected`, `confidence_score`, `data_sources`) VALUES
-(34, 3, '192.168.1.2', NULL, '', 'active', '2026-03-27 10:27:16', '2026-03-27 08:30:14', NULL, NULL, NULL, 0, 20, 'ping'),
-(35, 3, '192.168.1.1', '', 'pfsense-test.frambudi', 'active', '2026-03-28 07:59:29', '2026-03-27 08:35:55', '50:5B:1D:34:65:33', 'Generic / Unknown', NULL, 0, 65, 'arp,ping,port,dns,snmp_arp'),
-(36, 3, '192.168.1.156', '', 'desktop-t7mj6kt', 'active', '2026-03-27 10:32:56', '2026-03-27 08:38:32', '18:C0:4D:B4:7D:C8', 'Generic / Unknown', NULL, 0, 65, 'arp,ping,port,dns'),
-(37, 3, '192.168.1.158', '', 'desktop-u6nbn32.frambudi', 'active', '2026-03-27 10:33:00', '2026-03-27 08:38:33', NULL, NULL, NULL, 0, 35, 'ping,port,dns'),
-(38, 3, '192.168.1.182', '', '', 'active', '2026-03-27 08:52:23', '2026-03-27 08:39:17', 'C0:3F:D5:61:35:FC', 'Generic / Unknown', NULL, 0, 60, 'arp,ping,port'),
-(39, 3, '192.168.1.255', '', '', 'active', '2026-03-27 10:35:39', '2026-03-27 08:40:18', 'FF:FF:FF:FF:FF:FF', 'Generic / Unknown', NULL, 0, 30, 'arp'),
-(51, 3, '192.168.1.3', '', '', 'active', '2026-03-27 10:27:37', '2026-03-27 10:27:37', NULL, NULL, NULL, 0, 20, 'ping'),
-(54, 3, '192.168.1.159', '', '', 'active', '2026-03-27 10:33:21', '2026-03-27 10:33:21', NULL, NULL, NULL, 0, 20, 'ping'),
-(55, 3, '192.168.1.160', '', '', 'active', '2026-03-27 10:33:43', '2026-03-27 10:33:43', NULL, NULL, NULL, 0, 20, 'ping'),
-(120, 9, '192.168.5.1', '', '', 'active', '2026-03-28 06:29:08', '2026-03-28 06:29:08', '4C:5E:0C:E6:51:89', 'MikroTik', 'Linux 2.6.32 - 3.10', 0, 60, 'arp,ping,port'),
-(121, 9, '192.168.5.252', '', 'desktop-u6nbn32', 'active', '2026-03-28 07:59:29', '2026-03-28 06:36:35', '54:E1:AD:56:40:82', NULL, 'Microsoft Windows 10 1809 - 21H2', 0, 35, 'ping,port,dns,snmp_arp'),
-(122, 10, '10.10.0.5', '', '', 'active', '2026-03-28 07:59:29', '2026-03-28 07:33:50', '4C:F5:DC:5E:E9:D2', NULL, 'Linux 3.2 - 4.14', 0, 30, 'ping,port,snmp_arp');
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -161,18 +109,15 @@ CREATE TABLE `settings` (
 --
 
 INSERT INTO `settings` (`id`, `key`, `value`, `updated_at`) VALUES
-(1, 'telegram_enabled', '1', '2026-03-28 05:11:17'),
-(2, 'telegram_bot_token', '8746546081:AAFZ9rWFksJqaaAY6Atenp8bkv4nNlwQO3Y', '2026-03-28 05:11:17'),
-(3, 'telegram_chat_id', '6244477500', '2026-03-28 05:11:17'),
-(4, 'email_enabled', '1', '2026-03-28 05:11:17'),
-(5, 'admin_email', 'habib@omit.avi.id', '2026-03-28 05:11:17'),
-(6, 'nmap_enabled', '1', '2026-03-28 05:11:17'),
-(7, 'discovery_aggressive', '1', '2026-03-28 05:09:41'),
-(34, 'smtp_host', 'mail.avi.id', '2026-03-28 05:18:23'),
-(35, 'smtp_port', '465', '2026-03-28 05:18:23'),
-(36, 'smtp_user', 'habib@omit.avi.id', '2026-03-28 05:18:23'),
-(37, 'smtp_pass', 'Aviasi2023', '2026-03-28 05:18:23'),
-(38, 'mail_from', 'habib@omit.avi.id', '2026-03-28 05:18:23');
+(1, 'telegram_enabled', '0', '2026-03-29 06:00:00'),
+(2, 'telegram_bot_token', '', '2026-03-29 06:00:00'),
+(3, 'telegram_chat_id', '', '2026-03-29 06:00:00'),
+(4, 'email_enabled', '0', '2026-03-29 06:00:00'),
+(5, 'admin_email', '', '2026-03-29 06:00:00'),
+(6, 'nmap_enabled', '0', '2026-03-29 06:00:00'),
+(7, 'discovery_aggressive', '0', '2026-03-29 06:00:00');
+
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -210,10 +155,7 @@ CREATE TABLE `subnets` (
 -- Dumping data untuk tabel `subnets`
 --
 
-INSERT INTO `subnets` (`id`, `subnet`, `mask`, `description`, `section_id`, `vlan_id`, `master_subnet`, `created_at`, `scan_interval`, `last_scan`, `last_limit_alert`) VALUES
-(3, '192.168.1.1', 24, 'firewall habib', 1, NULL, NULL, '2026-03-27 08:29:13', 30, NULL, NULL),
-(9, '192.168.5.1', 24, 'inet-lan', 1, 2, NULL, '2026-03-28 06:28:41', 30, NULL, NULL),
-(10, '10.10.0.1', 24, 'cctv', 1, 3, NULL, '2026-03-28 07:07:39', 30, NULL, NULL);
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -241,8 +183,7 @@ CREATE TABLE `switches` (
 -- Dumping data untuk tabel `switches`
 --
 
-INSERT INTO `switches` (`id`, `name`, `ip_addr`, `community`, `snmp_version`, `description`, `last_poll`, `created_at`, `model`, `uptime`, `cpu_usage`, `memory_usage`, `system_info`) VALUES
-(2, 'router utama', '192.168.5.1', 'public', '2c', NULL, '2026-03-28 07:59:29', '2026-03-28 07:13:41', 'MikroTik', '15192200', 0, 0, 'RouterOS RB450G');
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -263,13 +204,7 @@ CREATE TABLE `switch_port_map` (
 -- Dumping data untuk tabel `switch_port_map`
 --
 
-INSERT INTO `switch_port_map` (`id`, `mac_addr`, `switch_id`, `port_name`, `vlan_id`, `updated_at`) VALUES
-(1, '4C:5E:0C:E6:51:88', 2, 'Port 0', NULL, '2026-03-28 07:59:29'),
-(2, '4C:5E:0C:E6:51:89', 2, 'Port 0', NULL, '2026-03-28 07:59:29'),
-(3, '4C:5E:0C:E6:51:8B', 2, 'ether4-to-cctv', NULL, '2026-03-28 07:59:29'),
-(4, '4C:F5:DC:5E:E9:D2', 2, 'ether4-to-cctv', NULL, '2026-03-28 07:59:29'),
-(5, '50:5B:1D:34:65:33', 2, 'ether1-inet', NULL, '2026-03-28 07:59:29'),
-(6, '54:E1:AD:56:40:82', 2, 'ether2-pc', NULL, '2026-03-28 07:59:29');
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -291,9 +226,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `created_at`) VALUES
-(1, 'admin', '$2y$10$iC1CpjbPVLpFx1BcbSTUsOZ52qhELYqHrKyADN/z9DF2UArhZEnPK', NULL, 'admin', '2026-03-27 04:17:59'),
-(2, 'viewer', '$2y$10$QNO/v3lGp9GDZ/DDhBO3HuSJ6SMXaUaeD5C1xkFX1p3V6ZiW5qHD6', NULL, 'viewer', '2026-03-27 08:20:33'),
-(3, 'habib', '$2y$10$Qc3pPSejizGU/b6CitJ3auy0TtFR923YvRwA4bZsSqgiyv33/bnxu', NULL, 'admin', '2026-03-27 08:22:19');
+(1, 'admin', '$2y$10$iC1CpjbPVLpFx1BcbSTUsOZ52qhELYqHrKyADN/z9DF2UArhZEnPK', NULL, 'admin', '2026-03-27 04:17:59');
+
+-- --------------------------------------------------------
 
 -- --------------------------------------------------------
 
@@ -312,10 +247,7 @@ CREATE TABLE `vlans` (
 -- Dumping data untuk tabel `vlans`
 --
 
-INSERT INTO `vlans` (`id`, `number`, `name`, `description`) VALUES
-(1, 99, 'vlan-management', ''),
-(2, 100, 'lan-inet', ''),
-(3, 200, 'cctv', '');
+-- --------------------------------------------------------
 
 --
 -- Indexes for dumped tables

@@ -2,6 +2,7 @@
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/network.php';
+require_once 'includes/audit.helper.php';
 
 session_start();
 
