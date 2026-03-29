@@ -4,6 +4,21 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.7.0] - 2026-03-29
+### Added
+- **Realtime CPU & Memory Monitoring**: Implementasi Server-Sent Events (SSE) pada halaman Switch Details untuk streaming data CPU dan RAM langsung dari SNMP setiap 5 detik — tanpa perlu refresh halaman.
+- **Live Status Badge**: Indikator badge `LIVE` / `OFFLINE` di header "Hardware Health" untuk menampilkan status koneksi SSE secara visual.
+- **Performance History Charts**: Dua grafik Chart.js riwayat CPU dan Memory di bawah tabel port mapping, dengan filter periode 1h / 6h / 24h / 48h.
+- **Period Summary Card**: Kartu statistik yang menampilkan jumlah Active Interfaces, Mapped Devices, Avg CPU, dan Peak CPU selama periode yang dipilih.
+- **switch_health_history Table**: Tabel database baru untuk menyimpan snapshot CPU & Memory tiap polling (auto-migrate, retensi 48 jam).
+- **API Endpoints Baru**: `api/switch-health-stream.php` (SSE stream SNMP live) dan `api/switch-history.php` (data riwayat untuk Chart.js).
+
+### Enhanced
+- **Smooth Bar Animation**: Progress bar CPU dan Memory kini memiliki transisi animasi halus saat nilai berubah.
+- **cron_switch_poll.php**: Setiap siklus polling kini otomatis menyimpan snapshot ke tabel history dan membersihkan data lama (>48 jam).
+
+---
+
 ## [2.6.0] - 2026-03-29
 ### Added
 - **Docker Support**: Full production-ready Docker Compose setup dengan dua kontainer (app + db).
