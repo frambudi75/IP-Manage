@@ -69,25 +69,28 @@ include 'includes/header.php';
 <div class="grid-side-detail">
     <!-- Hardware Status Sidebar -->
     <div class="card">
-        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Hardware Health</h3>
+        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            Hardware Health
+            <span id="live-badge" style="font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--border); color: var(--text-muted); letter-spacing: 0.5px;">LOADING...</span>
+        </h3>
         
         <div style="margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                 <span>CPU Load</span>
-                <span style="font-weight: 700;"><?php echo (int)($switch['cpu_usage'] ?? 0); ?>%</span>
+                <span id="cpu-val" style="font-weight: 700;"><?php echo (int)($switch['cpu_usage'] ?? 0); ?>%</span>
             </div>
             <div style="height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
-                <div style="width: <?php echo (int)($switch['cpu_usage'] ?? 0); ?>%; height: 100%; background: <?php echo (int)($switch['cpu_usage'] ?? 0) > 80 ? 'var(--danger)' : 'var(--primary)'; ?>;"></div>
+                <div id="cpu-bar" style="width: <?php echo (int)($switch['cpu_usage'] ?? 0); ?>%; height: 100%; background: var(--primary); transition: width 0.8s ease, background 0.5s ease;"></div>
             </div>
         </div>
 
         <div style="margin-bottom: 2rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                 <span>Memory Usage</span>
-                <span style="font-weight: 700;"><?php echo (int)($switch['memory_usage'] ?? 0); ?>%</span>
+                <span id="mem-val" style="font-weight: 700;"><?php echo (int)($switch['memory_usage'] ?? 0); ?>%</span>
             </div>
             <div style="height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
-                <div style="width: <?php echo (int)($switch['memory_usage'] ?? 0); ?>%; height: 100%; background: <?php echo (int)($switch['memory_usage'] ?? 0) > 80 ? 'var(--warning)' : 'var(--success)'; ?>;"></div>
+                <div id="mem-bar" style="width: <?php echo (int)($switch['memory_usage'] ?? 0); ?>%; height: 100%; background: var(--success); transition: width 0.8s ease, background 0.5s ease;"></div>
             </div>
         </div>
 
@@ -102,7 +105,7 @@ include 'includes/header.php';
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span style="color:var(--text-muted)">Last Updated:</span>
-                <span style="font-weight: 600;"><?php echo $switch['last_poll'] ? date('H:i:s, d M', strtotime($switch['last_poll'])) : 'Never'; ?></span>
+                <span id="last-poll-val" style="font-weight: 600;"><?php echo $switch['last_poll'] ? date('H:i:s, d M', strtotime($switch['last_poll'])) : 'Never'; ?></span>
             </div>
         </div>
 
@@ -169,5 +172,68 @@ include 'includes/header.php';
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const switchId = <?php echo $id; ?>;
+    const badge    = document.getElementById('live-badge');
+    const cpuVal   = document.getElementById('cpu-val');
+    const cpuBar   = document.getElementById('cpu-bar');
+    const memVal   = document.getElementById('mem-val');
+    const memBar   = document.getElementById('mem-bar');
+    const lastPoll = document.getElementById('last-poll-val');
+
+    function setBar(bar, val, dangerThreshold, dangerColor, normalColor) {
+        bar.style.width = val + '%';
+        bar.style.background = val > dangerThreshold ? dangerColor : normalColor;
+    }
+
+    if (typeof EventSource === 'undefined') {
+        badge.textContent = 'NO SSE';
+        return;
+    }
+
+    // Open SSE connection to our stream endpoint
+    const es = new EventSource('api/switch-health-stream.php?id=' + switchId);
+
+    es.onopen = function() {
+        badge.textContent = 'LIVE';
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = 'var(--success, #22c55e)';
+    };
+
+    es.onmessage = function(e) {
+        try {
+            const d = JSON.parse(e.data);
+
+            // Update CPU
+            cpuVal.textContent = d.cpu + '%';
+            setBar(cpuBar, d.cpu, 80, 'var(--danger, #ef4444)', 'var(--primary, #6366f1)');
+
+            // Update Memory
+            memVal.textContent = d.mem + '%';
+            setBar(memBar, d.mem, 90, 'var(--danger, #ef4444)', 'var(--success, #22c55e)');
+
+            // Update last poll time
+            lastPoll.textContent = d.last_poll;
+
+            // Pulse animation on update
+            [cpuVal, memVal].forEach(el => {
+                el.style.opacity = '0.4';
+                setTimeout(() => el.style.opacity = '1', 200);
+            });
+        } catch(err) { console.warn('SSE parse error', err); }
+    };
+
+    es.onerror = function() {
+        badge.textContent = 'OFFLINE';
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = 'var(--danger, #ef4444)';
+    };
+
+    // Close SSE when user leaves the page
+    window.addEventListener('beforeunload', () => es.close());
+})();
+</script>
 
 <?php include 'includes/footer.php'; ?>
