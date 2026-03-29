@@ -72,6 +72,11 @@
                 </a>
             </li>
             <li>
+                <a href="about.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="info"></i> About
+                </a>
+            </li>
+            <li>
                 <a href="logout.php" class="btn" style="width: 100%; justify-content: flex-start; color: var(--danger);">
                     <i data-lucide="log-out"></i> Logout
                 </a>
