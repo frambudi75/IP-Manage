@@ -5,7 +5,7 @@ require_once 'includes/db.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -74,7 +74,7 @@ include 'includes/header.php';
             </div>
 
             <div style="margin-top: 2.5rem; display: flex; gap: 1rem;">
-                <a href="index.php" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);">Cancel</a>
+                <a href="index" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);">Cancel</a>
                 <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Update Password</button>
             </div>
         </form>

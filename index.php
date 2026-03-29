@@ -6,7 +6,7 @@ session_start();
 
 // Auth check
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3 style="font-size: 1.125rem;">Recent Subnets</h3>
-            <a href="subnets.php" class="text-primary" style="font-size: 0.875rem;">View All</a>
+            <a href="subnets" class="text-primary" style="font-size: 0.875rem;">View All</a>
         </div>
         <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <?php foreach ($recent_subnets as $subnet): ?>
                             <tr style="border-bottom: 1px solid var(--border);">
                                 <td style="padding: 0.75rem; font-family: monospace;">
-                                    <a href="subnet-details.php?id=<?php echo (int)$subnet['id']; ?>" class="text-primary" style="text-decoration: none;">
+                                    <a href="subnet-details?id=<?php echo (int)$subnet['id']; ?>" class="text-primary" style="text-decoration: none;">
                                         <?php echo htmlspecialchars($subnet['subnet']); ?>/<?php echo (int)$subnet['mask']; ?>
                                     </a>
                                 </td>
@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-            <a href="logs.php" class="btn btn-secondary" style="margin-top: 0.5rem; font-size: 0.75rem; background: var(--surface-light);">
+            <a href="logs" class="btn btn-secondary" style="margin-top: 0.5rem; font-size: 0.75rem; background: var(--surface-light);">
                 <i data-lucide="scroll" style="width: 14px;"></i> View Full Audit Log
             </a>
         </div>
@@ -330,13 +330,13 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="card">
         <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem;">System Quick Links</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 0.8rem;">
-            <a href="add-subnet.php" class="btn btn-primary" style="font-size: 0.875rem;">
+            <a href="add-subnet" class="btn btn-primary" style="font-size: 0.875rem;">
                 <i data-lucide="plus-circle" style="width: 16px;"></i> New Subnet
             </a>
-            <a href="vlans.php" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
+            <a href="vlans" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
                 <i data-lucide="vibrate" style="width: 16px;"></i> VLANs
             </a>
-            <a href="settings.php" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
+            <a href="settings" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
                 <i data-lucide="settings" style="width: 16px;"></i> Settings
             </a>
         </div>
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="card" style="margin-top: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="font-size: 1.125rem;">Needs Attention</h3>
-        <a href="devices.php" class="text-primary" style="font-size: 0.875rem;">Open Devices</a>
+        <a href="devices" class="text-primary" style="font-size: 0.875rem;">Open Devices</a>
     </div>
     <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">

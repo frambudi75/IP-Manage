@@ -9,7 +9,7 @@ require_once 'includes/db.php';
 
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -22,7 +22,7 @@ $stmt->execute([$id]);
 $switch = $stmt->fetch();
 
 if (!$switch) {
-    header('Location: switches.php');
+    header('Location: switches');
     exit;
 }
 
@@ -52,13 +52,13 @@ include 'includes/header.php';
 <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
     <div>
         <nav style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-            <a href="switches.php" style="color: var(--primary); text-decoration: none;">Switches</a> / <?php echo htmlspecialchars($switch['name']); ?>
+            <a href="switches" style="color: var(--primary); text-decoration: none;">Switches</a> / <?php echo htmlspecialchars($switch['name']); ?>
         </nav>
         <h1 style="font-size: 1.75rem;"><?php echo htmlspecialchars($switch['name']); ?></h1>
         <p style="color: var(--text-muted); font-family: monospace;"><?php echo htmlspecialchars($switch['ip_addr']); ?></p>
     </div>
     <div class="header-actions" style="display: flex; gap: 0.75rem;">
-        <button class="btn" onclick="location.href='cron_switch_poll.php?id=<?php echo $id; ?>'" style="background: var(--surface-light);">
+        <button class="btn" onclick="location.href='cron_switch_poll?id=<?php echo $id; ?>'" style="background: var(--surface-light);">
             <i data-lucide="refresh-cw" style="width: 16px;"></i> Force Poll
         </button>
         <button class="btn btn-primary" onclick="window.print()">
@@ -161,7 +161,7 @@ include 'includes/header.php';
                                 </td>
                                 <td style="padding: 1rem;">
                                     <?php if ($port['ip_addr']): ?>
-                                        <a href="devices.php?search=<?php echo urlencode($port['ip_addr']); ?>" style="color: var(--text); text-decoration: none; font-weight: 600; border-bottom: 1px dashed var(--primary);">
+                                        <a href="devices?search=<?php echo urlencode($port['ip_addr']); ?>" style="color: var(--text); text-decoration: none; font-weight: 600; border-bottom: 1px dashed var(--primary);">
                                             <?php echo $port['ip_addr']; ?>
                                         </a>
                                     <?php else: ?>
@@ -245,7 +245,7 @@ include 'includes/header.php';
     }
 
     // Open SSE connection to our stream endpoint
-    const es = new EventSource('api/switch-health-stream.php?id=' + switchId);
+    const es = new EventSource('api/switch-health-stream?id=' + switchId);
 
     es.onopen = function() {
         badge.textContent = 'LIVE';
@@ -341,7 +341,7 @@ include 'includes/header.php';
             btn.style.color      = (h === hours) ? '#fff' : 'var(--text-muted)';
         });
 
-        fetch(`api/switch-history.php?id=${SWITCH_ID}&hours=${hours}`)
+        fetch(`api/switch-history?id=${SWITCH_ID}&hours=${hours}`)
             .then(r => r.json())
             .then(d => {
                 // Update charts

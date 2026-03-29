@@ -7,7 +7,7 @@ require_once 'includes/audit.helper.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -96,7 +96,7 @@ include 'includes/header.php';
 ?>
 
 <div style="margin-bottom: 2.5rem;">
-    <a href="subnets.php" class="text-muted back-link" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
+    <a href="subnets" class="text-muted back-link" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
         <i data-lucide="arrow-left" style="width: 14px;"></i> Back to Subnets
     </a>
     <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
@@ -122,7 +122,7 @@ include 'includes/header.php';
         </div>
         
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <a href="export.php?type=subnet_details&id=<?php echo $subnet_id; ?>" class="btn btn-secondary" style="font-size: 0.8125rem;" title="Export IP list to CSV">
+            <a href="export?type=subnet_details&id=<?php echo $subnet_id; ?>" class="btn btn-secondary" style="font-size: 0.8125rem;" title="Export IP list to CSV">
                 <i data-lucide="download" style="width: 14px;"></i> Export CSV
             </a>
             <button class="btn btn-secondary" style="font-size: 0.8125rem;" onclick="window.print()" title="Generate PDF Report">
@@ -486,7 +486,7 @@ async function scanSubnet(id) {
 
     const scanChunk = async (chunk) => {
         try {
-            const response = await fetch(`api/scan.php?id=${id}&start=${chunk.start}&end=${chunk.end}`);
+            const response = await fetch(`api/scan?id=${id}&start=${chunk.start}&end=${chunk.end}`);
             const data = await response.json();
             if (data.success) {
                 foundCount += data.data.found;
@@ -545,7 +545,7 @@ async function analyzeNetwork(id) {
     routingEl.innerHTML = '<span class="text-muted">Checking...</span>';
 
     try {
-        const response = await fetch(`api/analyze.php?id=${id}`);
+        const response = await fetch(`api/analyze?id=${id}`);
         const data = await response.json();
         if (data.success) {
             const results = data.data;

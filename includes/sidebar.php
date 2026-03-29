@@ -10,37 +10,37 @@
         <p style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px;">Menu</p>
         <ul style="display: flex; flex-direction: column; gap: 0.5rem;">
             <li>
-                <a href="index.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="index" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </a>
             </li>
             <li>
-                <a href="tools.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'tools.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="tools" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'tools.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="wrench"></i> Network Toolbox
                 </a>
             </li>
             <li>
-                <a href="switches.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'switches.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="switches" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'switches.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="server"></i> Managed Switches
                 </a>
             </li>
             <li>
-                <a href="subnets.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'subnets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="subnets" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'subnets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="layers"></i> Subnets
                 </a>
             </li>
             <li>
-                <a href="vlans.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'vlans.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="vlans" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'vlans.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="vibrate"></i> VLANs
                 </a>
             </li>
             <li>
-                <a href="devices.php" class="btn" style="width: 100%; justify-content: flex-start;">
+                <a href="devices" class="btn" style="width: 100%; justify-content: flex-start;">
                     <i data-lucide="monitor"></i> Devices
                 </a>
             </li>
             <li>
-                <a href="ip-calculator.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'ip-calculator.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="ip-calculator" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'ip-calculator.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="calculator"></i> IP Calculator
                 </a>
             </li>
@@ -50,34 +50,34 @@
         <p style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted); margin: 2rem 0 1rem; letter-spacing: 1px;">Admin</p>
         <ul style="display: flex; flex-direction: column; gap: 0.5rem;">
             <li>
-                <a href="users.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="users" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="users"></i> User Management
                 </a>
             </li>
             <li>
-                <a href="logs.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'logs.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="logs" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'logs.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="scroll"></i> Audit Logs
                 </a>
             </li>
             <li>
-                <a href="settings.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="settings" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="settings"></i> System Settings
                 </a>
             </li>
         <?php endif; ?>
         <ul style="display: flex; flex-direction: column; gap: 0.5rem; <?php echo !is_admin() ? 'margin-top: 2rem;' : ''; ?>">
             <li>
-                <a href="change-password.php" class="btn" style="width: 100%; justify-content: flex-start;">
+                <a href="change-password" class="btn" style="width: 100%; justify-content: flex-start;">
                     <i data-lucide="key"></i> Change Password
                 </a>
             </li>
             <li>
-                <a href="about.php" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                <a href="about" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="info"></i> About
                 </a>
             </li>
             <li>
-                <a href="logout.php" class="btn" style="width: 100%; justify-content: flex-start; color: var(--danger);">
+                <a href="logout" class="btn" style="width: 100%; justify-content: flex-start; color: var(--danger);">
                     <i data-lucide="log-out"></i> Logout
                 </a>
             </li>

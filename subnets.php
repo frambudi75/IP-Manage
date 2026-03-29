@@ -5,7 +5,7 @@ require_once 'includes/db.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -67,7 +67,7 @@ if (isset($_GET['delete']) && is_admin()) {
         $stmt = $db->prepare("DELETE FROM subnets WHERE id = ?");
         $stmt->execute([$sid]);
         $db->commit();
-        header('Location: subnets.php?msg=deleted');
+        header('Location: subnets?msg=deleted');
         exit;
     } catch (Exception $e) {
         $db->rollBack();
@@ -96,7 +96,7 @@ include 'includes/header.php';
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1 style="font-size: 1.5rem;">Subnet Management</h1>
     <div style="display: flex; gap: 0.5rem;">
-        <a href="export.php?type=subnets" class="btn btn-secondary" style="font-size: 0.875rem;">
+        <a href="export?type=subnets" class="btn btn-secondary" style="font-size: 0.875rem;">
             <i data-lucide="download" style="width: 14px;"></i> Export CSV
         </a>
         <button class="btn btn-secondary" style="font-size: 0.875rem;" onclick="window.print()">
@@ -157,7 +157,7 @@ include 'includes/header.php';
                                 <p style="font-size: 0.6rem; color: var(--text-muted); margin-top: 4px;"><?php echo (int)$s['used_ips']; ?> / <?php echo $capacity; ?> IPs</p>
                             </td>
                             <td style="padding: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-                                <a href="subnet-details.php?id=<?php echo $s['id']; ?>" class="btn" style="padding: 6px; background: rgba(59, 130, 246, 0.1); color: var(--primary);" title="View Details">
+                                <a href="subnet-details?id=<?php echo $s['id']; ?>" class="btn" style="padding: 6px; background: rgba(59, 130, 246, 0.1); color: var(--primary);" title="View Details">
                                     <i data-lucide="external-link" style="width: 16px;"></i>
                                 </a>
                                 <?php if (is_admin()): ?>

@@ -1,5 +1,4 @@
 # XAMPP / Local environment
-.htaccess
 php.ini
 *.log
 tmp/

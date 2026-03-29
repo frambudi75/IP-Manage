@@ -5,7 +5,7 @@ require_once 'includes/db.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -28,7 +28,7 @@ include 'includes/header.php';
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1 style="font-size: 1.5rem;">Network Devices</h1>
     <div style="display: flex; gap: 0.5rem;">
-        <a href="export.php?type=devices" class="btn btn-secondary" style="font-size: 0.875rem;">
+        <a href="export?type=devices" class="btn btn-secondary" style="font-size: 0.875rem;">
             <i data-lucide="download" style="width: 14px;"></i> Export CSV
         </a>
         <button class="btn btn-secondary" style="font-size: 0.875rem;" onclick="window.print()">

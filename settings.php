@@ -6,7 +6,7 @@ require_once 'includes/notifications.php';
 session_start();
 
 if (!isset($_SESSION['user_id']) || !is_admin()) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -246,7 +246,5 @@ include 'includes/header.php';
         event.currentTarget.classList.add('active');
     }
 </script>
-
-<?php include 'includes/footer.php'; ?>
 
 <?php include 'includes/footer.php'; ?>

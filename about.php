@@ -9,7 +9,7 @@ require_once 'includes/db.php';
 
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -82,7 +82,7 @@ include 'includes/header.php';
             <i data-lucide="code-2" style="width: 18px; color: var(--primary);"></i> Developer
         </h3>
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-            <img src="https://drive.google.com/thumbnail?id=13Yw-n83IkY2XVPg9IXIhuMhhsr_zG8tl&sz=w200" 
+            <img src="https://github.com/frambudi75.png" 
                  style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); flex-shrink: 0;"
                  alt="Habib Frambudi">
             <div>

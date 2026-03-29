@@ -5,7 +5,7 @@ require_once 'includes/db.php';
 session_start();
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header('Location: index.php');
+    header('Location: index');
     exit;
 }
 
@@ -46,7 +46,7 @@ if (isset($_GET['delete_id']) && $_SESSION['role'] === 'admin') {
     if ($_GET['delete_id'] != $_SESSION['user_id']) {
         $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
         $stmt->execute([$_GET['delete_id']]);
-        header('Location: users.php');
+        header('Location: users');
         exit;
     }
 }

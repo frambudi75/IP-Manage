@@ -5,7 +5,7 @@ require_once 'includes/audit.helper.php';
 
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -109,10 +109,10 @@ include 'includes/header.php';
         <?php endif; ?>
         
         <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
-            <button class="btn btn-primary" style="flex: 1; font-size: 0.75rem;" onclick="location.href='switch-details.php?id=<?php echo $switch['id']; ?>'">
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.75rem;" onclick="location.href='switch-details?id=<?php echo $switch['id']; ?>'">
                 <i data-lucide="eye" style="width: 14px; margin-right: 4px;"></i> Details
             </button>
-            <button class="btn" style="background: var(--surface-light); font-size: 0.75rem;" onclick="location.href='cron_switch_poll.php?id=<?php echo $switch['id']; ?>'">
+            <button class="btn" style="background: var(--surface-light); font-size: 0.75rem;" onclick="location.href='cron_switch_poll?id=<?php echo $switch['id']; ?>'">
                 <i data-lucide="refresh-cw" style="width: 14px;"></i> Poll
             </button>
             <form action="" method="POST" onsubmit="return confirm('Remove this switch?');">

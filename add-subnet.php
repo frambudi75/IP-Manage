@@ -5,7 +5,7 @@ require_once 'includes/db.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare("INSERT INTO subnets (subnet, mask, description, vlan_id, section_id, scan_interval) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$subnet, $mask, $description, $vlan_id, $section_id, $scan_interval]);
-            header('Location: subnets.php?msg=added');
+            header('Location: subnets?msg=added');
             exit;
         } catch (Exception $e) {
             $error = 'Error: ' . $e->getMessage();
@@ -45,7 +45,7 @@ include 'includes/header.php';
 
 <div style="max-width: 600px; margin: 0 auto;">
     <div style="margin-bottom: 2rem;">
-        <a href="index.php" class="text-muted" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
+        <a href="index" class="text-muted" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
             <i data-lucide="arrow-left" style="width: 14px;"></i> Back to Dashboard
         </a>
         <h1 style="font-size: 1.75rem;">Add New Subnet</h1>
@@ -98,7 +98,7 @@ include 'includes/header.php';
             </div>
 
             <div style="margin-top: 2.5rem; display: flex; gap: 1rem;">
-                <a href="subnets.php" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);">Cancel</a>
+                <a href="subnets" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);">Cancel</a>
                 <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Create Subnet</button>
             </div>
         </form>
