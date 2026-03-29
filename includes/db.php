@@ -26,6 +26,12 @@ function get_db_connection() {
  * Ensures database structure is up to date
  */
 function run_auto_migrations($db) {
+    // Check if subnets table exists first
+    $tableExists = $db->query("SHOW TABLES LIKE 'subnets'")->rowCount() > 0;
+    if (!$tableExists) {
+        return; // Skip migrations if table hasn't been imported yet
+    }
+
     // 1. Check Subnets table for new columns
     $cols = $db->query("SHOW COLUMNS FROM subnets")->fetchAll(PDO::FETCH_COLUMN);
     if (!in_array('scan_interval', $cols)) {
