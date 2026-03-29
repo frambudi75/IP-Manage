@@ -3,11 +3,16 @@
  * IPManager Pro Configuration
  */
 
-// Database Configuration
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'ipmanage');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') ?: '');
+// Auto-Detection for Docker Environment
+if (getenv('DOCKER_ENV') === '1') {
+    require_once 'config.docker.php';
+} else {
+    // Database Configuration (Default for XAMPP / Local)
+    define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+    define('DB_NAME', getenv('DB_NAME') ?: 'ipmanage');
+    define('DB_USER', getenv('DB_USER') ?: 'root');
+    define('DB_PASS', getenv('DB_PASS') ?: '');
+}
 require_once 'settings.helper.php';
 
 // Dynamic Configuration from Database

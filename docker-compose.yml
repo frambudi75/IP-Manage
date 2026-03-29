@@ -12,6 +12,7 @@ services:
       - DISCOVERY_AGGRESSIVE_MODE=1
       - ENABLE_NMAP_FALLBACK=1
       - OFFLINE_TTL_MINUTES=30
+      - DOCKER_ENV=1
     depends_on:
       db:
         condition: service_healthy
