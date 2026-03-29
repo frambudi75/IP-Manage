@@ -42,9 +42,9 @@ Logout/Login at the initial screen using:
 ## ⚡ Installation Guide
 
 ### Option 1: Docker (Recommended)
-1. Clone the repository.
-2. Run: `docker-compose up -d`
-3. Access: `http://localhost:8080`
+1. Lihat [Panduan Instalasi Docker](DOCKER_INSTALL.md) untuk instruksi mendalam.
+2. Jalankan perintah cepat: `docker-compose up -d`
+3. Akses: `http://localhost:8080`
 
 ### Option 2: XAMPP (Windows)
 1. Copy project to `C:\xampp\htdocs\ipmanage`.
