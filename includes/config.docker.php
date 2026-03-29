@@ -14,3 +14,12 @@ define('DB_PASS', 'ipmanager_pass');
 
 // Environment flag
 define('ENV_DOCKER', true);
+
+// Redis Configuration for Docker
+define('REDIS_HOST', 'redis'); // Linked container name
+
+// OPTIMIZATION: Use Redis for sessions if extension is loaded
+if (extension_loaded('redis')) {
+    ini_set('session.save_handler', 'redis');
+    ini_set('session.save_path', 'tcp://redis:6379');
+}

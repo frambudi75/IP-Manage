@@ -115,13 +115,26 @@ while (true) {
             'source'    => 'db',
         ];
     } else {
-        // Live SNMP
-        $health = poll_live_health($ip, $community, $switch['model'] ?? 'Generic');
+        // Live SNMP with Caching to support multiple concurrent viewers
+        $redis = get_redis_connection();
+        $cache_key = "switch_health_latest_{$id}";
+        $cached_val = ($redis) ? $redis->get($cache_key) : null;
+        
+        if ($cached_val) {
+            $health = json_decode($cached_val, true);
+            $source = 'redis_cache';
+        } else {
+            $health = poll_live_health($ip, $community, $switch['model'] ?? 'Generic');
+            // Cache results for 4 seconds (Stream polls every 5s)
+            if ($redis) $redis->setex($cache_key, 4, json_encode($health));
+            $source = 'live_snmp';
+        }
+
         $payload = [
             'cpu'       => $health['cpu'],
             'mem'       => $health['mem'],
             'last_poll' => date('H:i:s'),
-            'source'    => 'live',
+            'source'    => $source,
         ];
     }
 

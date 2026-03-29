@@ -31,6 +31,7 @@ $query = "
     SELECT 
         m.mac_addr, 
         m.port_name, 
+        m.vlan_id,
         m.updated_at as last_seen_on_port,
         ip.ip_addr,
         ip.hostname,
@@ -125,6 +126,7 @@ include 'includes/header.php';
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border); text-align: left;">
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Interface</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">VLAN</th>
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">MAC Address</th>
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Mapped IP</th>
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Hostname / Vendor</th>
@@ -144,6 +146,15 @@ include 'includes/header.php';
                                         <i data-lucide="zap" style="width: 14px;"></i>
                                         <?php echo htmlspecialchars($port['port_name']); ?>
                                     </div>
+                                </td>
+                                <td style="padding: 1rem;">
+                                    <?php if ($port['vlan_id']): ?>
+                                        <span style="display: inline-block; padding: 2px 8px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                                            ID: <?php echo $port['vlan_id']; ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="padding: 1rem; font-family: monospace; font-size: 0.85rem;">
                                     <?php echo $port['mac_addr']; ?>

@@ -21,7 +21,7 @@ $total_devices  = $db->query("SELECT COUNT(*) FROM ip_addresses")->fetchColumn()
 $total_switches = $db->query("SELECT COUNT(*) FROM switches")->fetchColumn();
 $total_users    = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
-define('APP_VERSION', '2.7.0');
+define('APP_VERSION', '2.8.0');
 define('APP_RELEASE_DATE', '2026-03-29');
 define('APP_AUTHOR', 'Habib Frambudi');
 define('APP_AUTHOR_EMAIL', 'habibframbudi@gmail.com');
@@ -117,7 +117,8 @@ include 'includes/header.php';
             ['name' => 'Lucide Icons',     'desc' => 'UI iconography',               'color' => '#10b981'],
             ['name' => 'SNMP v2c',         'desc' => 'Device health monitoring',     'color' => '#6366f1'],
             ['name' => 'Server-Sent Events','desc' => 'Realtime data streaming',     'color' => '#f59e0b'],
-            ['name' => 'Docker',           'desc' => 'Container deployment',         'color' => '#2563eb'],
+            ['name' => 'Docker + Opcache', 'desc' => 'Container performance optimization', 'color' => '#2563eb'],
+            ['name' => 'Redis 7',          'desc' => 'Advanced data caching (NEW)',  'color' => '#dc2626'],
         ];
         foreach ($stack as $t): ?>
         <div style="display: flex; align-items: center; gap: 0.75rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
@@ -175,9 +176,9 @@ include 'includes/header.php';
     </div>
     <?php
     $versions = [
+        ['ver' => '2.8.0', 'date' => '2026-03-29', 'changes' => ['Optimasi Performa PHP Opcache (No-Lag)', 'Infrastruktur Redis 7 Caching', 'Browser SVG Favicon', 'Fix Fatal Error AuditLogHelper', 'Sanitisasi database data sensitif']],
         ['ver' => '2.7.0', 'date' => '2026-03-29', 'changes' => ['Realtime CPU & Memory via Server-Sent Events', 'Performance History Charts (1h/6h/24h/48h)', 'Period Summary Card dengan Avg & Peak CPU']],
         ['ver' => '2.6.0', 'date' => '2026-03-29', 'changes' => ['Full Docker Compose production setup', 'Dual config system (Docker vs XAMPP auto-detect)', 'Panduan instalasi Docker lengkap']],
-        ['ver' => '2.5.0', 'date' => '2026-03-28', 'changes' => ['L3 ARP Discovery dari ARP cache switch', 'Robust SNMP engine untuk berbagai vendor']],
     ];
     foreach ($versions as $v): ?>
     <div style="display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border);">

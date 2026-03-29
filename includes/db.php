@@ -23,6 +23,30 @@ function get_db_connection() {
 }
 
 /**
+ * IPManager - Global Redis Client Getter
+ * Returns a Redis instance if extension is loaded and connection works.
+ */
+function get_redis_connection() {
+    static $redis_instance = null;
+    
+    // Check if extension is loaded
+    if (!extension_loaded('redis')) return null;
+    
+    // Return existing instance if available
+    if ($redis_instance !== null) return $redis_instance;
+    
+    try {
+        $redis = new Redis();
+        $host = defined('REDIS_HOST') ? REDIS_HOST : '127.0.0.1';
+        $redis->connect($host, 6379, 1.5); // 1.5s timeout
+        $redis_instance = $redis;
+        return $redis_instance;
+    } catch (Exception $e) {
+        return null; // Silent fail if redis is down
+    }
+}
+
+/**
  * Ensures database structure is up to date
  */
 function run_auto_migrations($db) {

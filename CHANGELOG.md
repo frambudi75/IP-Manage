@@ -4,6 +4,19 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.8.0] - 2026-03-29
+### Added
+- **PHP Opcache Optimization**: Aktivasi dan tuning Opcache di Docker untuk mengurangi lag eksekusi PHP secara drastis (2-3x lebih responsif).
+- **Redis Infrastructure**: Penambahan container Redis 7 dan ekstensi `php-redis` untuk dukungan caching session dan data berkinerja tinggi.
+- **Browser Favicon**: Penambahan logo SVG pada header agar muncul di tab browser (favicon).
+- **Developer Profile Photo**: Integrasi foto profil pengembang dari Google Drive pada halaman About.
+
+### Fixed
+- **Fatal Error (AuditLogHelper)**: Perbaikan bug "Class not found" pada `subnet-details.php` saat melakukan alokasi IP.
+- **Database Sanitization**: Pembersihan seluruh token sensitif (Telegram, SMTP) dan data user pribadi dari skema publik `sql/database.sql`.
+
+---
+
 ## [2.7.0] - 2026-03-29
 ### Added
 - **Realtime CPU & Memory Monitoring**: Implementasi Server-Sent Events (SSE) pada halaman Switch Details untuk streaming data CPU dan RAM langsung dari SNMP setiap 5 detik — tanpa perlu refresh halaman.

@@ -39,6 +39,25 @@ Logout/Login at the initial screen using:
 
 ---
 
+## ⚠️ Minimum Requirements (Recommended for No-Lag)
+To ensure smooth realtime monitoring and high-speed parallel scanning, we recommend the following server specifications:
+
+### Hardware
+| Component | Minimum | Recommended |
+| :--- | :--- | :--- |
+| **CPU** | 1 vCPU (2.0GHz) | 2 vCPU+ (For parallel scan) |
+| **RAM** | 1 GB Free RAM | 2 GB+ RAM |
+| **Disk** | 5 GB SSD | 10 GB+ SSD |
+| **Network** | 100 Mbps | 1 Gbps (Low latency SNMP) |
+
+### Software
+- **PHP**: 8.1 or 8.2 (with `php-snmp`, `php-curl`, `php-pdo_mysql`)
+- **Database**: MariaDB 10.6+ or MySQL 8.0+
+- **Tools**: `nmap`, `traceroute`, `snmp` (net-snmp)
+- **Browser**: Modern Chrome / Edge / Firefox (For SSE & Chart.js)
+
+---
+
 ## ⚡ Installation Guide
 
 ### Option 1: Docker (Recommended)
