@@ -20,11 +20,40 @@ graph TD
 
 ---
 
+## ✨ Key Features
+
+### 📡 Real-time Monitoring & Health
+*   **Live SNMP Tracking**: Streaming data CPU, Memory, & Uptime secara realtime via *Server-Sent Events (SSE)*.
+*   **Performance History**: Grafik Chart.js interaktif (1h ke 48h) untuk memantau beban perangkat secara historis.
+*   **Device Health Badges**: Indikator status `LIVE` / `OFFLINE` otomatis pada dashboard.
+*   **Detailed SysInfo**: Penarikan deskripsi sistem hardware secara mendalam langsung dari vendor (MikroTik, Cisco, Generic).
+
+### 🔍 Advanced Discovery & IPAM
+*   **Parallel Subnet Scanning**: Kecepatan tinggi dengan multiple background workers (ICMP + Nmap).
+*   **L3 ARP Logic**: Discovery otomatis host melalui tabel ARP cache pada managed switch/router.
+*   **Physical Port Mapping**: Melacak MAC Address hingga ke nomor port fisik switch secara akurat.
+*   **VLAN Awareness**: Deteksi otomatis ID VLAN untuk setiap perangkat yang terhubung (Dot1q protocol).
+*   **Anti-Ghost IP**: Mekanisme cerdas untuk membedakan host yang benar-benar offline dengan gangguan sementara (Auto-Cleanup).
+
+### ⚡ Architecture & Performance
+*   **Docker Optimized**: Setup satu baris dengan `docker-compose` yang sudah teruji untuk produksi.
+*   **PHP Opcache**: Konfigurasi khusus untuk menghilangkan lag eksekusi PHP (2-3x lebih responsif).
+*   **Redis Caching**: Penyimpanan session dan cache SNMP result di RAM untuk performa ultra-tinggi.
+*   **Responsive UI**: Antarmuka modern (Dark Mode) yang ringan dan kompatibel dengan mobile browser.
+*   **Dual-Config Mode**: Deteksi otomatis lingkungan kerja (Docker vs XAMPP) tanpa ubah kode.
+
+### 🔐 Security & Audit
+*   **Sanitized Schema**: Penggunaan database yang bersih dari data sensitif (tokens/passwords) untuk keamanan repo publik.
+*   **Comprehensive Audit Logs**: Pencatatan setiap aksi user (Add, Edit, Delete, Poll) untuk akuntabilitas.
+*   **RBAC Ready**: Dukungan dasar untuk role Admin dan Viewer.
+
+---
+
 ## 📂 Core Modules
 | Module | Description |
 | :--- | :--- |
 | **📊 Dashboard** | Visual analytics, subnet density, and live usage trends. |
-| **🌐 Switches** | Hardware monitoring (CPU/RAM) and physical port mapping. |
+| **🌐 Switches** | Hardware monitoring (CPU/RAM), physical port mapping, & VLAN detection. |
 | **🗺️ IPAM** | Subnet organization, VLAN tracking, and IP allocation. |
 | **🧰 Toolbox** | Professional diagnostics (Ping, Traceroute, MAC OUI Lookup). |
 | **📜 Audit Logs** | Comprehensive history of all system and user changes. |
