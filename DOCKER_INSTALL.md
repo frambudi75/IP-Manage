@@ -79,3 +79,23 @@ Untuk menghapus data database juga (Hati-hati: ini akan menghapus semua data!):
 ```bash
 docker-compose down -v
 ```
+
+## Troubleshooting
+
+### Error: `failed to connect to the docker API at unix:///var/run/docker.sock`
+Jika Anda melihat pesan error di atas, itu berarti layanan Docker (Docker Daemon) belum berjalan di sistem Anda.
+
+**Solusi (Linux/WSL):**
+1. Jalankan layanan Docker:
+   ```bash
+   sudo systemctl start docker
+   ```
+2. Pastikan Docker berjalan saat boot:
+   ```bash
+   sudo systemctl enable docker
+   ```
+3. Jika Anda menggunakan WSL, pastikan Docker Desktop sudah berjalan di Windows dan opsi "Use the WSL 2 based engine" serta integrasi dengan distro Anda sudah aktif di pengaturan Docker Desktop.
+
+### Warning: `the attribute 'version' is obsolete`
+Jika muncul peringatan ini, abaikan saja atau hapus baris `version: '3.8'` di file `docker-compose.yml`. File ini sudah diperbarui untuk menghapus baris tersebut.
+
