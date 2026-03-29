@@ -82,6 +82,26 @@ docker-compose down -v
 
 ## Troubleshooting
 
+### Error: `php_network_getaddresses: getaddrinfo for db failed`
+Pesan ini menunjukkan bahwa aplikasi PHP tidak dapat menemukan server dengan nama `db`. Hal ini biasanya terjadi karena beberapa alasan:
+
+**1. Anda menjalankan aplikasi menggunakan XAMPP (Bukan Docker)**
+Jika Anda membuka aplikasi melalui `http://localhost/ipmanage` (URL XAMPP), maka PHP yang digunakan adalah PHP milik XAMPP di Windows, bukan PHP di dalam Docker. PHP XAMPP tidak mengenali hostname `db`.
+*   **Solusi:** Gunakan URL `http://localhost:8080` untuk mengakses aplikasi yang berjalan di dalam Docker.
+*   **Alternatif (jika ingin tetap pakai XAMPP):** Ubah `DB_HOST` di file `includes/config.php` dari `db` menjadi `127.0.0.1`.
+
+**2. Kontainer database belum siap atau gagal dijalankan**
+Meskipun kontainer `ipmanager_app` sudah berjalan, servis database di dalam kontainer `ipmanager_db` mungkin masih dalam proses inisialisasi.
+*   **Solusi:** File `docker-compose.yml` terbaru sudah menyertakan `healthcheck` agar aplikasi PHP menunggu sampai database benar-benar aktif. Jika masih error, coba jalankan `docker compose restart`.
+
+**3. Masalah cache DNS di sistem**
+Terkadang Docker mengalami masalah resolusi nama internal.
+*   **Solusi:** Hentikan dan jalankan ulang seluruh layanan:
+   ```bash
+   docker compose down
+   docker compose up -d
+   ```
+
 ### Error: `failed to connect to the docker API at unix:///var/run/docker.sock`
 Jika Anda melihat pesan error di atas, itu berarti layanan Docker (Docker Daemon) belum berjalan di sistem Anda.
 
@@ -95,7 +115,4 @@ Jika Anda melihat pesan error di atas, itu berarti layanan Docker (Docker Daemon
    sudo systemctl enable docker
    ```
 3. Jika Anda menggunakan WSL, pastikan Docker Desktop sudah berjalan di Windows dan opsi "Use the WSL 2 based engine" serta integrasi dengan distro Anda sudah aktif di pengaturan Docker Desktop.
-
-### Warning: `the attribute 'version' is obsolete`
-Jika muncul peringatan ini, abaikan saja atau hapus baris `version: '3.8'` di file `docker-compose.yml`. File ini sudah diperbarui untuk menghapus baris tersebut.
 

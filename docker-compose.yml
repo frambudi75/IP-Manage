@@ -13,17 +13,33 @@ services:
       - ENABLE_NMAP_FALLBACK=1
       - OFFLINE_TTL_MINUTES=30
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - ipmanage_net
 
   db:
     image: mariadb:10.11
     container_name: ipmanager_db
+    ports:
+      - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=ipmanage
     volumes:
       - db_data:/var/lib/mysql
       - ./sql/database.sql:/docker-entrypoint-initdb.d/database.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ipmanage_net
+
+networks:
+  ipmanage_net:
+    driver: bridge
 
 volumes:
   db_data:
