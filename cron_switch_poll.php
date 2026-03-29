@@ -88,6 +88,12 @@ foreach ($switches as $switch) {
     $db->prepare("UPDATE switches SET model = ?, uptime = ?, cpu_usage = ?, memory_usage = ?, system_info = ? WHERE id = ?")
        ->execute([$model, $uptime_str, $cpu, $mem, $system_info, $switch['id']]);
 
+    // Save to History (for graphs) - keep last 24h only
+    $db->prepare("INSERT INTO switch_health_history (switch_id, cpu_usage, memory_usage) VALUES (?, ?, ?)")
+       ->execute([$switch['id'], $cpu, $mem]);
+    $db->prepare("DELETE FROM switch_health_history WHERE switch_id = ? AND recorded_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)")
+       ->execute([$switch['id']]);
+
     // --- Phase 1: Port Mapping (Already Existing Logic) ---
     // OID: .1.3.6.1.2.1.17.1.4.1.2 (dot1basePortIfIndex)
     $port_to_ifindex = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.17.1.4.1.2");

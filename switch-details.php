@@ -173,6 +173,46 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- History Charts Section -->
+<div style="margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.25rem;">📈 Performance History</h2>
+        <div style="display: flex; gap: 0.5rem;" id="history-btns">
+            <?php foreach ([1, 6, 24, 48] as $h): ?>
+            <button onclick="loadHistory(<?php echo $h; ?>)"
+                    id="btn-h<?php echo $h; ?>"
+                    style="padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+                           background: <?php echo $h == 6 ? 'var(--primary)' : 'var(--surface-light)'; ?>;
+                           color: <?php echo $h == 6 ? '#fff' : 'var(--text-muted)'; ?>;
+                           border: 1px solid var(--border);">
+                <?php echo $h; ?>h
+            </button>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="card">
+            <h3 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">CPU Load History</h3>
+            <div style="position: relative; height: 200px;"><canvas id="cpuChart"></canvas></div>
+        </div>
+        <div class="card">
+            <h3 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">Memory Usage History</h3>
+            <div style="position: relative; height: 200px;"><canvas id="memChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Period Summary</h3>
+        <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+            <div><div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="stat-ports">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Active Interfaces</div></div>
+            <div><div style="font-size: 2rem; font-weight: 800; color: var(--success);" id="stat-devices">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Mapped Devices</div></div>
+            <div><div style="font-size: 2rem; font-weight: 800; color: var(--warning);" id="stat-avg-cpu">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Avg CPU</div></div>
+            <div><div style="font-size: 2rem; font-weight: 800; color: var(--danger);" id="stat-peak-cpu">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Peak CPU</div></div>
+        </div>
+    </div>
+</div>
+
 <script>
 (function() {
     const switchId = <?php echo $id; ?>;
@@ -233,6 +273,96 @@ include 'includes/header.php';
 
     // Close SSE when user leaves the page
     window.addEventListener('beforeunload', () => es.close());
+})();
+
+// ── History Charts ──────────────────────────────────────────────────────────
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    const SWITCH_ID = <?php echo $id; ?>;
+
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: 'rgba(15,15,25,0.9)', titleColor: '#aaa', bodyColor: '#fff', padding: 10 }
+        },
+        scales: {
+            x: { ticks: { color: '#888', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { min: 0, max: 100, ticks: { color: '#888', callback: v => v + '%', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+    };
+
+    function makeGradient(ctx, r, g, b) {
+        const grad = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+        grad.addColorStop(0,   `rgba(${r},${g},${b},0.4)`);
+        grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+        return grad;
+    }
+
+    const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+    const memCtx = document.getElementById('memChart').getContext('2d');
+
+    const cpuChart = new Chart(cpuCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'CPU %', data: [], borderColor: '#6366f1', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: (ctx) => makeGradient(ctx, 99, 102, 241), tension: 0.4 }] },
+        options: JSON.parse(JSON.stringify(chartDefaults))
+    });
+
+    const memChart = new Chart(memCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'RAM %', data: [], borderColor: '#22c55e', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: (ctx) => makeGradient(ctx, 34, 197, 94), tension: 0.4 }] },
+        options: JSON.parse(JSON.stringify(chartDefaults))
+    });
+
+    let activeHours = 6;
+
+    window.loadHistory = function(hours) {
+        activeHours = hours;
+        // Update button styles
+        [1,6,24,48].forEach(h => {
+            const btn = document.getElementById('btn-h' + h);
+            if (!btn) return;
+            btn.style.background = (h === hours) ? 'var(--primary)' : 'var(--surface-light)';
+            btn.style.color      = (h === hours) ? '#fff' : 'var(--text-muted)';
+        });
+
+        fetch(`api/switch-history.php?id=${SWITCH_ID}&hours=${hours}`)
+            .then(r => r.json())
+            .then(d => {
+                // Update charts
+                cpuChart.data.labels   = d.labels;
+                cpuChart.data.datasets[0].data = d.cpu;
+                cpuChart.update('active');
+
+                memChart.data.labels   = d.labels;
+                memChart.data.datasets[0].data = d.mem;
+                memChart.update('active');
+
+                // Update summary stats
+                document.getElementById('stat-ports').textContent   = d.port_count   || '0';
+                document.getElementById('stat-devices').textContent = d.device_count || '0';
+
+                if (d.cpu.length > 0) {
+                    const avg  = Math.round(d.cpu.reduce((a,b) => a+b, 0) / d.cpu.length);
+                    const peak = Math.max(...d.cpu);
+                    document.getElementById('stat-avg-cpu').textContent  = avg  + '%';
+                    document.getElementById('stat-peak-cpu').textContent = peak + '%';
+                } else {
+                    document.getElementById('stat-avg-cpu').textContent  = 'N/A';
+                    document.getElementById('stat-peak-cpu').textContent = 'N/A';
+                }
+            })
+            .catch(() => {
+                document.getElementById('stat-avg-cpu').textContent = 'Error';
+            });
+    };
+
+    // Initial load
+    loadHistory(6);
 })();
 </script>
 

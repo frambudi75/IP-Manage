@@ -146,4 +146,15 @@ function run_auto_migrations($db) {
         $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS memory_usage INT DEFAULT 0");
         $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS system_info TEXT");
     } catch(Exception $e) { /* Already exists or not supported */ }
+
+    // 10. Create Switch Health History Table
+    $db->exec("CREATE TABLE IF NOT EXISTS switch_health_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        switch_id INT NOT NULL,
+        cpu_usage INT NOT NULL DEFAULT 0,
+        memory_usage INT NOT NULL DEFAULT 0,
+        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_switch_time (switch_id, recorded_at),
+        FOREIGN KEY (switch_id) REFERENCES switches(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 }
