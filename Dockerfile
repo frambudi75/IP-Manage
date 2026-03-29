@@ -26,4 +26,4 @@ RUN chown -R www-data:www-data /var/www/html && \
 EXPOSE 80
 
 # Use the entrypoint script to run both Apache and background cron
-ENTRYPOINT ["/var/www/html/entrypoint.sh"]
+ENTRYPOINT ["bash", "/var/www/html/entrypoint.sh"]
