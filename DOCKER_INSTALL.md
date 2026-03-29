@@ -114,5 +114,19 @@ Jika Anda melihat pesan error di atas, itu berarti layanan Docker (Docker Daemon
    ```bash
    sudo systemctl enable docker
    ```
-3. Jika Anda menggunakan WSL, pastikan Docker Desktop sudah berjalan di Windows dan opsi "Use the WSL 2 based engine" serta integrasi dengan distro Anda sudah aktif di pengaturan Docker Desktop.
+### Error: `Access denied for user 'root' or 'ipmanager'`
+Jika Anda baru saja mengubah kredensial database di `docker-compose.yml` tetapi aplikasi tetap ditolak aksesnya, hal ini dikarenakan kontainer database masih menyimpan data lama dari *volume* sebelumnya.
+
+**Solusi:**
+Hentikan kontainer dan hapus volume database lama (PERHATIAN: data akan hilang!):
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+### Error: `failed to bind host port 0.0.0.0:3306`
+Pesan ini berarti port `3306` sudah digunakan oleh aplikasi lain (biasanya XAMPP atau MySQL lokal).
+
+**Solusi:**
+File `docker-compose.yml` terbaru sudah dipetakan ke port **`3307`** di sisi host. Anda tidak perlu mengubah apa pun. Cukup jalankan kembali `docker compose up -d`.
 
