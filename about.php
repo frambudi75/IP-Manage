@@ -82,7 +82,9 @@ include 'includes/header.php';
             <i data-lucide="code-2" style="width: 18px; color: var(--primary);"></i> Developer
         </h3>
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-            <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; flex-shrink: 0;">H</div>
+            <img src="https://drive.google.com/thumbnail?id=13Yw-n83IkY2XVPg9IXIhuMhhsr_zG8tl&sz=w200" 
+                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); flex-shrink: 0;"
+                 alt="Habib Frambudi">
             <div>
                 <div style="font-size: 1.1rem; font-weight: 700;"><?php echo APP_AUTHOR; ?></div>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">Network Engineer & Developer</div>
