@@ -9,13 +9,16 @@ How IPManager Pro maintains its high-accuracy network map:
 
 ```mermaid
 graph TD
-    A[Scanner Engine] -->|Parallel Workers| B(Ping / Nmap / ARP)
+    A[Scanner Engine] -->|Parallel Workers| B(Ping / Nmap / ARP / Port Probe)
     C[Health Poller] -->|SNMP| D(CPU / RAM / Uptime)
     E[Switch Poller] -->|L3 ARP Cache| F(MAC-Port-IP Mapping)
-    B -->|Found Hosts| G[(Central Intelligence DB)]
+    G[(Central Intelligence DB)]
+    R[(Redis Caching)]
+    B -->|Found Hosts| G
     D -->|Health Stats| G
     F -->|Port Locations| G
-    G --> H[Premium Dashboard]
+    G <--> R
+    R --> H[Premium Dashboard]
 ```
 
 ---
@@ -29,7 +32,8 @@ graph TD
 *   **Detailed SysInfo**: Penarikan deskripsi sistem hardware secara mendalam langsung dari vendor (MikroTik, Cisco, Generic).
 
 ### 🔍 Advanced Discovery & IPAM
-*   **Parallel Subnet Scanning**: Kecepatan tinggi dengan multiple background workers (ICMP + Nmap).
+*   **Parallel Subnet Scanning**: Kecepatan tinggi dengan multiple background workers (`scanner_worker.php`).
+*   **Stealth Discovery (Multi-signal)**: Deteksi akurat via kombinasi Ping, Nmap, ARP, dan **TCP Port Probing** (tetap terdeteksi meski ICMP/ping ditutup).
 *   **L3 ARP Logic**: Discovery otomatis host melalui tabel ARP cache pada managed switch/router.
 *   **Physical Port Mapping**: Melacak MAC Address hingga ke nomor port fisik switch secara akurat.
 *   **VLAN Awareness**: Deteksi otomatis ID VLAN untuk setiap perangkat yang terhubung (Dot1q protocol).
@@ -80,8 +84,9 @@ To ensure smooth realtime monitoring and high-speed parallel scanning, we recomm
 | **Network** | 100 Mbps | 1 Gbps (Low latency SNMP) |
 
 ### Software
-- **PHP**: 8.1 or 8.2 (with `php-snmp`, `php-curl`, `php-pdo_mysql`)
+- **PHP**: 8.1 or 8.2 (with `php-snmp`, `php-curl`, `php-pdo_mysql`, **`php-redis`**)
 - **Database**: MariaDB 10.6+ or MySQL 8.0+
+- **Caching**: **Redis 7.0+** (Highly Recommended for No-Lag SSE)
 - **Tools**: `nmap`, `traceroute`, `snmp` (net-snmp)
 - **Browser**: Modern Chrome / Edge / Firefox (For SSE & Chart.js)
 

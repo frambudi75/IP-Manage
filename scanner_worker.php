@@ -29,14 +29,17 @@ $stmt->execute([$subnet_id]);
 $subnet = $stmt->fetch();
 if (!$subnet) die("Subnet not found.\n");
 
-$is_local = !is_remote_subnet($subnet['subnet'], $subnet['mask']);
-$nmap_enabled = Settings::enabled('nmap_enabled');
 
 for ($i = $start_long; $i <= $end_long; $i++) {
     $ip = long2ip($i);
     
-    // Perform discovery
-    $signals = detect_host_signals($ip, $is_local, $nmap_enabled);
+    // Perform discovery with ARP caching for efficiency
+    static $arp_cache = null;
+    if ($arp_cache === null) {
+        $arp_cache = refresh_arp_map();
+    }
+
+    $signals = detect_host_signals($ip, $arp_cache);
     
     if ($signals['active']) {
         // Fetch existing record

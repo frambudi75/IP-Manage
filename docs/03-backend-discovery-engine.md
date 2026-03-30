@@ -34,8 +34,8 @@ Sinyal yang dipakai:
 
 - `ping` (dengan retry);
 - `arp` (dari ARP map);
-- `port` probe ke daftar port umum: `80,443,22,445,3389`.
-- `nmap` fallback opsional untuk host borderline (hanya jika diaktifkan).
+- `port` probe ke daftar port umum: `80, 443, 22, 445, 135, 139, 3389, 8000`.
+- `nmap` fallback berbasis binary system untuk host "siluman".
 
 Tambahan anti-miss:
 
@@ -48,8 +48,8 @@ Tambahan anti-miss:
 Sistem mendukung dua mode tambahan via `includes/config.php`:
 
 1. **DISCOVERY_AGGRESSIVE_MODE** (`true`):
-   - Menambah daftar port probe menjadi: `80, 443, 22, 445, 3389, 53, 139, 161`.
-   - Sangat berguna untuk mendeteksi perangkat jaringan (DNS, SAMBA, SNMP).
+   - Menambah daftar port probe menjadi: `80, 443, 22, 445, 135, 139, 3389, 53, 161, 8000, 8080, 8443, 554, 37777`.
+   - Melibatkan pengecekan ke port khusus IoT, CCTV (554/37777), dan High-port Web (8000/8080/8443).
 
 2. **ENABLE_NMAP_FALLBACK** (`true`):
    - Menggunakan `nmap -sn -n` sebagai langkah pamungkas jika Ping/ARP/Port gagal.

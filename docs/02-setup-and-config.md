@@ -9,6 +9,9 @@
 4. Import `sql/database.sql`.
 5. Buka aplikasi:
    - `http://localhost/ipmanage`
+12. **Konfigurasi Khusus (No-Lag)**:
+    - Instal **Redis** di Windows (via Docker Desktop atau WSL2).
+    - Aktifkan ekstensi `php_redis` dan `php_opcache` di `php.ini`.
 
 ## 2) Setup Docker
 
@@ -32,6 +35,7 @@ Parameter penting:
 - `DB_NAME` (default: `ipmanage`)
 - `DB_USER` (default: `root`)
 - `DB_PASS` (default: kosong)
+- `REDIS_HOST` (default: `127.0.0.1` / `redis`)
 - `OFFLINE_TTL_MINUTES` (default: `30`)
 - `DISCOVERY_AGGRESSIVE_MODE` (default: `1`)
 - `ENABLE_NMAP_FALLBACK` (default: `0`, opsional)
