@@ -63,7 +63,8 @@ CREATE TABLE `ip_addresses` (
   `os` varchar(100) DEFAULT NULL,
   `conflict_detected` tinyint(1) NOT NULL DEFAULT 0,
   `confidence_score` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
-  `data_sources` varchar(100) DEFAULT NULL
+  `data_sources` varchar(100) DEFAULT NULL,
+  `fail_count` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
@@ -115,7 +116,9 @@ INSERT INTO `settings` (`id`, `key`, `value`, `updated_at`) VALUES
 (4, 'email_enabled', '0', '2026-03-29 06:00:00'),
 (5, 'admin_email', '', '2026-03-29 06:00:00'),
 (6, 'nmap_enabled', '0', '2026-03-29 06:00:00'),
-(7, 'discovery_aggressive', '0', '2026-03-29 06:00:00');
+(7, 'discovery_aggressive', '1', '2026-03-31 07:30:00'),
+(41, 'subnet_limit_threshold', '80', '2026-03-31 07:30:00'),
+(42, 'offline_fail_threshold', '3', '2026-03-31 07:30:00');
 
 -- --------------------------------------------------------
 
