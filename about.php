@@ -21,8 +21,8 @@ $total_devices  = $db->query("SELECT COUNT(*) FROM ip_addresses")->fetchColumn()
 $total_switches = $db->query("SELECT COUNT(*) FROM switches")->fetchColumn();
 $total_users    = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
-define('APP_VERSION', '2.8.0');
-define('APP_RELEASE_DATE', '2026-03-29');
+define('APP_VERSION', '2.9.0');
+define('APP_RELEASE_DATE', '2026-03-31');
 define('APP_AUTHOR', 'Habib Frambudi');
 define('APP_AUTHOR_EMAIL', 'habibframbudi@gmail.com');
 define('APP_GITHUB', 'https://github.com/frambudi75/IP-Manage');
@@ -176,6 +176,7 @@ include 'includes/header.php';
     </div>
     <?php
     $versions = [
+        ['ver' => '2.9.0', 'date' => '2026-03-31', 'changes' => ['Smart Offline Detection (Fail Counter)', 'Intensive Verification Probe (Multi-Signal)', 'Customizable Fail Threshold Settings', 'Fix Subdirectory URL Routing (.htaccess)']],
         ['ver' => '2.8.0', 'date' => '2026-03-29', 'changes' => ['Optimasi Performa PHP Opcache (No-Lag)', 'Infrastruktur Redis 7 Caching', 'Browser SVG Favicon', 'Fix Fatal Error AuditLogHelper', 'Sanitisasi database data sensitif']],
         ['ver' => '2.7.0', 'date' => '2026-03-29', 'changes' => ['Realtime CPU & Memory via Server-Sent Events', 'Performance History Charts (1h/6h/24h/48h)', 'Period Summary Card dengan Avg & Peak CPU']],
         ['ver' => '2.6.0', 'date' => '2026-03-29', 'changes' => ['Full Docker Compose production setup', 'Dual config system (Docker vs XAMPP auto-detect)', 'Panduan instalasi Docker lengkap']],
