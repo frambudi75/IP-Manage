@@ -4,6 +4,20 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.9.0] - 2026-03-31
+### Added
+- **Smart Offline Detection (Fail Counter)**: Mekanisme baru yang mencegah IP ditandai sebagai *offline* secara instan. Menggunakan kolom `fail_count` untuk melacak kegagalan scan berturut-turut.
+- **Intensive Verification Probe**: Saat IP menghilang, sistem otomatis menjalankan verifikasi mendalam (Multi-ping, Deep Port Scan, forced ARP refresh, dan Nmap fallback) sebelum menaikkan angka kegagalan.
+- **Customizable Fail Threshold**: Pengaturan ambang batas kegagalan scan (default: 3) yang dapat dikonfigurasi melalui menu UI Settings.
+
+### Fixed
+- **Subdirectory URL Routing**: Perbaikan file `.htaccess` untuk mendukung Clean URL (`/login`, `/index`) secara stabil saat aplikasi diinstal di sub-folder (seperti `/ipmanage/`).
+
+### Removed
+- **Time-based Bulk Cleanup**: Penghapusan logika pembersihan massal berbasis waktu (12 jam) yang tidak akurat, digantikan sepenuhnya oleh logika per-IP yang lebih cerdas.
+
+---
+
 ## [2.8.0] - 2026-03-29
 ### Added
 - **PHP Opcache Optimization**: Aktivasi dan tuning Opcache di Docker untuk mengurangi lag eksekusi PHP secara drastis (2-3x lebih responsif).

@@ -1,12 +1,11 @@
 <IfModule mod_rewrite.c>
     # Enable Rewrite Engine
     RewriteEngine On
-    RewriteBase /
 
-    # 1. Externally redirect /file.php to /file
+    # 1. Externally redirect /file.php to /file (Handle subdirectories)
     # This prevents users from accessing the .php version directly.
-    RewriteCond %{THE_REQUEST} "^[A-Z]{3,9}\ /([^/.]+)\.php\ HTTP/" [NC]
-    RewriteRule ^(.+)\.php$ /%1 [R=301,L,NE]
+    RewriteCond %{THE_REQUEST} "^[A-Z]{3,9}\ .+\/([^/.]+)\.php\ HTTP/" [NC]
+    RewriteRule ^(.+)\.php$ $1 [R=301,L,NE]
 
     # 2. Internally rewrite /file to /file.php
     # This allows the app to load file.php when /file is requested.

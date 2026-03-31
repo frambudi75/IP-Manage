@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
         'smtp_pass' => $_POST['smtp_pass'] ?? '',
         'mail_from' => $_POST['mail_from'] ?? '',
         'nmap_enabled' => isset($_POST['nmap_enabled']) ? '1' : '0',
-        'discovery_aggressive' => isset($_POST['discovery_aggressive']) ? '1' : '0'
+        'discovery_aggressive' => isset($_POST['discovery_aggressive']) ? '1' : '0',
+        'offline_fail_threshold' => $_POST['offline_fail_threshold'] ?? '3'
     ];
 
     try {
@@ -144,6 +145,11 @@ include 'includes/header.php';
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                     <input type="checkbox" name="discovery_aggressive" value="1" <?php echo ($settings['discovery_aggressive'] ?? '1') == '1' ? 'checked' : ''; ?>> Aggressive Mode (More Ports)
                 </label>
+            </div>
+            <div class="input-group" style="margin-top: 1.5rem;">
+                <label>Offline Fail Threshold</label>
+                <input type="number" name="offline_fail_threshold" class="input-control" value="<?php echo htmlspecialchars($settings['offline_fail_threshold'] ?? '3'); ?>" min="1" max="10">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Jumlah kegagalan scan berturut-turut sebelum IP ditandai sebagai OFFLINE.</p>
             </div>
         </div>
     </div>

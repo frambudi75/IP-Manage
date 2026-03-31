@@ -41,13 +41,13 @@ for ($i = $start_long; $i <= $end_long; $i++) {
 
     $signals = detect_host_signals($ip, $arp_cache);
     
+    // Fetch existing record
+    $stmt = $db->prepare("SELECT * FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
+    $stmt->execute([$subnet_id, $ip]);
+    $existing = $stmt->fetch();
+
     if ($signals['active']) {
-        // Fetch existing record
-        $stmt = $db->prepare("SELECT * FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
-        $stmt->execute([$subnet_id, $ip]);
-        $existing = $stmt->fetch();
-        
-        $new_mac = $signals['mac'];
+        $new_mac = $signals['mac'] ?? null;
         $conflict_detected = 0;
         
         if ($existing && !empty($existing['mac_addr']) && !empty($new_mac)) {
@@ -57,10 +57,10 @@ for ($i = $start_long; $i <= $end_long; $i++) {
             }
         }
         
-        // Update DB
+        // Update DB: Mark ACTIVE, Reset fail_count
         $stmt = $db->prepare("
-            INSERT INTO ip_addresses (subnet_id, ip_addr, mac_addr, vendor, os, state, confidence_score, data_sources, conflict_detected, last_seen) 
-            VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO ip_addresses (subnet_id, ip_addr, mac_addr, vendor, os, state, confidence_score, data_sources, conflict_detected, fail_count, last_seen) 
+            VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, 0, CURRENT_TIMESTAMP)
             ON DUPLICATE KEY UPDATE 
                 mac_addr = IF(VALUES(mac_addr) IS NOT NULL, VALUES(mac_addr), mac_addr),
                 vendor = IF(VALUES(vendor) IS NOT NULL, VALUES(vendor), vendor),
@@ -69,6 +69,7 @@ for ($i = $start_long; $i <= $end_long; $i++) {
                 confidence_score = VALUES(confidence_score),
                 data_sources = VALUES(data_sources),
                 conflict_detected = VALUES(conflict_detected),
+                fail_count = 0,
                 last_seen = CURRENT_TIMESTAMP
         ");
         
@@ -76,15 +77,43 @@ for ($i = $start_long; $i <= $end_long; $i++) {
             $subnet_id, 
             $ip, 
             $new_mac, 
-            $signals['vendor'], 
+            $signals['vendor'] ?? 'Unknown', 
             $signals['os'] ?? null,
-            $signals['confidence'],
-            implode(',', $signals['sources']),
+            $signals['confidence'] ?? 0,
+            implode(',', $signals['sources'] ?? []),
             $conflict_detected
         ]);
         
         if (!$existing) {
-            NotificationHelper::notifyNewDevice($ip, $new_mac, $signals['vendor'], $subnet['subnet'] . '/' . $subnet['mask']);
+            NotificationHelper::notifyNewDevice($ip, $new_mac, $signals['vendor'] ?? 'Unknown', $subnet['subnet'] . '/' . $subnet['mask']);
+        }
+    } else {
+        // If not detected by regular scan, but was previously active
+        if ($existing && $existing['state'] === 'active') {
+            // Run Intensive Verification
+            $intensive = intensive_detect_host($ip, $arp_cache);
+            
+            if ($intensive['active']) {
+                // False negative fixed by intensive scan! Update last_seen and reset fail_count
+                $db->prepare("UPDATE ip_addresses SET last_seen = CURRENT_TIMESTAMP, fail_count = 0, data_sources = CONCAT(data_sources, ',intensive') WHERE id = ?")
+                   ->execute([$existing['id']]);
+            } else {
+                // Truly not responding. Increment fail count.
+                $new_fail_count = (int)$existing['fail_count'] + 1;
+                $threshold = (int)Settings::get('offline_fail_threshold', 3);
+                
+                if ($new_fail_count >= $threshold) {
+                    // Mark OFFLINE only after threshold reached
+                    $db->prepare("UPDATE ip_addresses SET state = 'offline', fail_count = ? WHERE id = ?")
+                       ->execute([$new_fail_count, $existing['id']]);
+                    echo "IP $ip marked OFFLINE (Fail count: $new_fail_count)\n";
+                } else {
+                    // Keep ACTIVE but increment fail_count
+                    $db->prepare("UPDATE ip_addresses SET fail_count = ? WHERE id = ?")
+                       ->execute([$new_fail_count, $existing['id']]);
+                    echo "IP $ip missed scan. Fail count: $new_fail_count / $threshold\n";
+                }
+            }
         }
     }
 }

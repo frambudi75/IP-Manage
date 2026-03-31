@@ -78,6 +78,10 @@ function run_auto_migrations($db) {
         $db->exec("ALTER TABLE ip_addresses ADD COLUMN conflict_detected tinyint(1) NOT NULL DEFAULT 0 AFTER os");
     }
 
+    if (!in_array('fail_count', $ip_cols)) {
+        $db->exec("ALTER TABLE ip_addresses ADD COLUMN fail_count int(11) NOT NULL DEFAULT 0 AFTER data_sources");
+    }
+
     // 3. Settings table
     try {
         $db->query("SELECT 1 FROM settings LIMIT 1");
@@ -107,7 +111,8 @@ function run_auto_migrations($db) {
             ('mail_from', ''),
             ('nmap_enabled', '0'),
             ('discovery_aggressive', '1'),
-            ('subnet_limit_threshold', '80');
+            ('subnet_limit_threshold', '80'),
+            ('offline_fail_threshold', '3');
         ");
     }
 

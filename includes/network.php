@@ -308,6 +308,52 @@ function detect_host_signals($ip, &$arp_map) {
 }
 
 /**
+ * Intensive detection for uncertain hosts (used before marking offline).
+ */
+function intensive_detect_host($ip, &$arp_map) {
+    echo "Running intensive detection for $ip...\n";
+    $ip = normalize_ipv4($ip);
+    if (!$ip) return ['active' => false];
+
+    // Stage 1: Multiple High-Wait Pings
+    if (ping_ip($ip, 4, 800)) {
+        return ['active' => true, 'source' => 'intensive_ping'];
+    }
+
+    // Stage 2: Scan more common ports
+    $ports = [80, 443, 22, 445, 135, 139, 3389, 53, 161, 8000, 8080, 554, 137, 138, 21, 23, 25, 110, 143, 993, 3306, 5432, 6379];
+    foreach ($ports as $port) {
+        if (check_port($ip, $port, 0.6, 1)) {
+            return ['active' => true, 'source' => 'intensive_port'];
+        }
+    }
+
+    // Stage 3: Nmap Fallback (if available)
+    if (has_nmap_binary()) {
+        $target = escapeshellarg($ip);
+        // Try specialized host-up check
+        $cmd = "nmap -sn -PS22,80,443,445 --host-timeout 5s {$target}";
+        exec($cmd, $output, $code);
+        foreach ($output as $line) {
+            if (stripos($line, 'Host is up') !== false) {
+                return ['active' => true, 'source' => 'intensive_nmap'];
+            }
+        }
+    }
+
+    // Stage 4: Force ARP refresh after traffic injection
+    // Sending a packet to a high port to trigger ARP resolution
+    @fsockopen($ip, 49999, $errno, $errstr, 0.1); 
+    $fresh_arp = refresh_arp_map();
+    if (isset($fresh_arp[$ip])) {
+        $arp_map = $fresh_arp;
+        return ['active' => true, 'source' => 'intensive_arp'];
+    }
+
+    return ['active' => false];
+}
+
+/**
  * Resolve hostname using reverse DNS and normalize result.
  */
 function resolve_hostname($ip) {

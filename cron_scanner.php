@@ -79,13 +79,7 @@ foreach ($subnets as $subnet) {
     // Wait for final batch
     usleep(4000000);
 
-    // After all workers, perform offline reconciliation (TTL cleanup)
-    $offline_ttl = (int)Settings::get('offline_ttl_minutes', 30);
-    $db->prepare("
-        UPDATE ip_addresses SET state = 'offline' 
-        WHERE subnet_id = ? AND state = 'active' 
-        AND TIMESTAMPDIFF(MINUTE, last_seen, CURRENT_TIMESTAMP) >= ?
-    ")->execute([$subnet['id'], $offline_ttl]);
+    // After all workers, perform capacity alert check
 
     // Update last_scan timestamp
     $db->prepare("UPDATE subnets SET last_scan = CURRENT_TIMESTAMP WHERE id = ?")
