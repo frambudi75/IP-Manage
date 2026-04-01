@@ -4,6 +4,18 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.10.0] - 2026-04-01
+### Added
+- **Manual Network Topology Manager**: Antarmuka terpusat baru untuk mendefinisikan koneksi fisik antar switch dan switch-ke-subnet secara eksplisit.
+- **Hirarki Visual Pintar**: Visualisasi peta jaringan kini mengikuti alur **Switch -> VLAN -> Subnet** yang lebih logis dan rapi.
+- **Polished UI rendering**: Implementasi *loading screen* dan pencegahan *flicker* kode Mermaid.js untuk pengalaman pengguna yang lebih premium.
+- **Asset Externalization**: Pemindahan logika filter ke file JS eksternal (`assets/js/topo-manager.js`) untuk mematuhi kebijakan keamanan browser (CSP).
+
+### Fixed
+- **Self-linking Logic**: Pencegahan pemilihan switch yang sama sebagai sumber dan tujuan koneksi melalui filter *real-time*.
+
+---
+
 ## [2.9.0] - 2026-03-31
 ### Added
 - **Smart Offline Detection (Fail Counter)**: Mekanisme baru yang mencegah IP ditandai sebagai *offline* secara instan. Menggunakan kolom `fail_count` untuk melacak kegagalan scan berturut-turut.

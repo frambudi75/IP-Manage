@@ -82,10 +82,19 @@ function run_auto_migrations($db) {
         $db->exec("ALTER TABLE ip_addresses ADD COLUMN fail_count int(11) NOT NULL DEFAULT 0 AFTER data_sources");
     }
 
+    if (!in_array('asset_tag', $ip_cols)) {
+        $db->exec("ALTER TABLE ip_addresses ADD COLUMN asset_tag varchar(100) DEFAULT NULL AFTER fail_count");
+    }
+
+    if (!in_array('owner', $ip_cols)) {
+        $db->exec("ALTER TABLE ip_addresses ADD COLUMN owner varchar(100) DEFAULT NULL AFTER asset_tag");
+    }
+
     // 3. Settings table
     try {
         $db->query("SELECT 1 FROM settings LIMIT 1");
     } catch (Exception $e) {
+// ... (lines 88-117)
         $db->exec("
             CREATE TABLE IF NOT EXISTS `settings` (
             `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -117,56 +126,7 @@ function run_auto_migrations($db) {
     }
 
     // 4. Create Audit Logs table
-    $db->exec("CREATE TABLE IF NOT EXISTS audit_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NULL,
-        action VARCHAR(100) NOT NULL,
-        target_type VARCHAR(50) NULL,
-        target_id INT NULL,
-        details TEXT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
-
-    // 5. Build Performance Indexes
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_mac ON ip_addresses(mac_addr)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_host ON ip_addresses(hostname)");
-
-    // 6. Create Switches Table
-    $db->exec("CREATE TABLE IF NOT EXISTS switches (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        ip_addr VARCHAR(45) NOT NULL,
-        community VARCHAR(100) DEFAULT 'public',
-        snmp_version ENUM('1', '2c', '3') DEFAULT '2c',
-        model VARCHAR(100),
-        uptime VARCHAR(100),
-        cpu_usage INT DEFAULT 0,
-        memory_usage INT DEFAULT 0,
-        system_info TEXT,
-        last_poll TIMESTAMP NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
-
-    // 7. Create Switch Port Mapping Table
-    $db->exec("CREATE TABLE IF NOT EXISTS switch_port_map (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        mac_addr VARCHAR(100) NOT NULL,
-        switch_id INT NOT NULL,
-        port_name VARCHAR(100) NOT NULL,
-        vlan_id INT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY `mac_switch` (`mac_addr`, `switch_id`),
-        FOREIGN KEY (switch_id) REFERENCES switches(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
-
-    // 8. Create Stats History Table
-    $db->exec("CREATE TABLE IF NOT EXISTS stats_history (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        snapshot_date DATE NOT NULL,
-        total_active INT NOT NULL,
-        UNIQUE KEY `unique_date` (`snapshot_date`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
-
+// ... (lines 120-170)
     // 9. Add missing columns to switches (Migration)
     try {
         $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS model VARCHAR(100)");
@@ -174,9 +134,19 @@ function run_auto_migrations($db) {
         $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS cpu_usage INT DEFAULT 0");
         $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS memory_usage INT DEFAULT 0");
         $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS system_info TEXT");
+        $db->exec("ALTER TABLE switches ADD COLUMN IF NOT EXISTS parent_switch_id INT DEFAULT NULL");
     } catch(Exception $e) { /* Already exists or not supported */ }
 
-    // 10. Create Switch Health History Table
+    // 10. Subnets Utilization Threshold & Manual Topology (New)
+    $db_cols = $db->query("SHOW COLUMNS FROM subnets")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('utilization_threshold', $db_cols)) {
+        $db->exec("ALTER TABLE subnets ADD COLUMN utilization_threshold INT DEFAULT NULL AFTER last_limit_alert");
+    }
+    if (!in_array('parent_switch_id', $db_cols)) {
+        $db->exec("ALTER TABLE subnets ADD COLUMN parent_switch_id INT DEFAULT NULL AFTER utilization_threshold");
+    }
+
+    // 11. Create Switch Health History Table
     $db->exec("CREATE TABLE IF NOT EXISTS switch_health_history (
         id INT AUTO_INCREMENT PRIMARY KEY,
         switch_id INT NOT NULL,
@@ -185,5 +155,15 @@ function run_auto_migrations($db) {
         recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_switch_time (switch_id, recorded_at),
         FOREIGN KEY (switch_id) REFERENCES switches(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+    // 12. Manual Topology Links Table (New)
+    $db->exec("CREATE TABLE IF NOT EXISTS topology_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        parent_switch_id INT NOT NULL,
+        target_type ENUM('switch', 'subnet') NOT NULL,
+        target_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY (parent_switch_id, target_type, target_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 }

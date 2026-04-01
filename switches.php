@@ -19,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ip = $_POST['ip_addr'];
         $community = $_POST['community'] ?: 'public';
         $version = $_POST['snmp_version'] ?: '2c';
+        $parent_id = (isset($_POST['parent_switch_id']) && $_POST['parent_switch_id'] !== '') ? (int)$_POST['parent_switch_id'] : null;
         
-        $stmt = $db->prepare("INSERT INTO switches (name, ip_addr, community, snmp_version) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$name, $ip, $community, $version]);
+        $stmt = $db->prepare("INSERT INTO switches (name, ip_addr, community, snmp_version, parent_switch_id) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $ip, $community, $version, $parent_id]);
         AuditLogHelper::log("add_switch", "switch", $db->lastInsertId(), "Added switch $name ($ip)");
         $message = "Switch added successfully!";
     }
@@ -152,6 +153,15 @@ include 'includes/header.php';
                     <option value="1">v1</option>
                     <option value="2c" selected>v2c</option>
                     <option value="3">v3 (TBD)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Upstream / Parent Switch (Optional)</label>
+                <select name="parent_switch_id" class="input-control">
+                    <option value="">-- No Parent (Root Switch) --</option>
+                    <?php foreach ($switches as $s): ?>
+                        <option value="<?php echo $s['id']; ?>"><?php echo htmlspecialchars($s['name']); ?> (<?php echo $s['ip_addr']; ?>)</option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <button type="submit" name="add_switch" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;">

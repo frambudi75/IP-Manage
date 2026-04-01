@@ -24,6 +24,7 @@ if (!$subnet) {
 }
 
 $all_vlans = $db->query("SELECT id, number, name FROM vlans ORDER BY number ASC")->fetchAll();
+$all_switches = $db->query("SELECT id, name, ip_addr FROM switches ORDER BY name ASC")->fetchAll();
 
 $page_title = 'Subnet Details: ' . $subnet['subnet'] . '/' . $subnet['mask'];
 
@@ -33,6 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip'])) {
     $description = $_POST['description'];
     $hostname = $_POST['hostname'];
     $state = $_POST['state'] ?? 'active';
+    $asset_tag = $_POST['asset_tag'] ?? null;
+    $owner = $_POST['owner'] ?? null;
 
     // Fetch old info for logging
     $stmt = $db->prepare("SELECT * FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
@@ -40,11 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip'])) {
     $old_info = $stmt->fetch();
 
     try {
-        $stmt = $db->prepare("INSERT INTO ip_addresses (subnet_id, ip_addr, description, hostname, state) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE description=VALUES(description), hostname=VALUES(hostname), state=VALUES(state)");
-        $stmt->execute([$subnet_id, $ip_addr, $description, $hostname, $state]);
+        $stmt = $db->prepare("INSERT INTO ip_addresses (subnet_id, ip_addr, description, hostname, state, asset_tag, owner) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE description=VALUES(description), hostname=VALUES(hostname), state=VALUES(state), asset_tag=VALUES(asset_tag), owner=VALUES(owner)");
+        $stmt->execute([$subnet_id, $ip_addr, $description, $hostname, $state, $asset_tag, $owner]);
         
         // Log the change
-        $new_info = ['hostname' => $hostname, 'description' => $description, 'state' => $state];
+        $new_info = ['hostname' => $hostname, 'description' => $description, 'state' => $state, 'asset_tag' => $asset_tag, 'owner' => $owner];
         AuditLogHelper::logIpUpdate($ip_addr, $old_info, $new_info);
     } catch (Exception $e) {}
 }
@@ -54,10 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subnet_setting
     $scan_interval = (int)$_POST['scan_interval'];
     $description = $_POST['description'] ?? '';
     $vlan_id = (isset($_POST['vlan_id']) && $_POST['vlan_id'] !== '') ? (int)$_POST['vlan_id'] : null;
+    $utilization_threshold = (isset($_POST['utilization_threshold']) && $_POST['utilization_threshold'] !== '') ? (int)$_POST['utilization_threshold'] : null;
+    $parent_switch_id = (isset($_POST['parent_switch_id']) && $_POST['parent_switch_id'] !== '') ? (int)$_POST['parent_switch_id'] : null;
 
     try {
-        $stmt = $db->prepare("UPDATE subnets SET scan_interval = ?, description = ?, vlan_id = ? WHERE id = ?");
-        $stmt->execute([$scan_interval, $description, $vlan_id, $subnet_id]);
+        $stmt = $db->prepare("UPDATE subnets SET scan_interval = ?, description = ?, vlan_id = ?, utilization_threshold = ?, parent_switch_id = ? WHERE id = ?");
+        $stmt->execute([$scan_interval, $description, $vlan_id, $utilization_threshold, $parent_switch_id, $subnet_id]);
         $stmt = $db->prepare("SELECT s.*, v.number as vlan_number FROM subnets s LEFT JOIN vlans v ON s.vlan_id = v.id WHERE s.id = ?");
         $stmt->execute([$subnet_id]);
         $subnet = $stmt->fetch();
@@ -248,6 +253,7 @@ include 'includes/header.php';
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">IP Address</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Status</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Hostname</th>
+                    <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Asset / Owner</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">MAC / Vendor</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">Switch Port</th>
                     <th style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">OS / Device</th>
@@ -313,6 +319,16 @@ include 'includes/header.php';
                         <td style="padding: 1rem; font-size: 0.875rem;"><?php echo ($info['hostname'] ?? '') ?: '<span style="opacity: 0.3">-</span>'; ?></td>
                         <td style="padding: 1rem; font-size: 0.875rem;">
                             <?php if ($info): ?>
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <div style="font-weight: 600; color: var(--primary);"><?php echo $info['asset_tag'] ?? '<span style="opacity: 0.3">-</span>'; ?></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);"><?php echo $info['owner'] ?? ''; ?></div>
+                                </div>
+                            <?php else: ?>
+                                <span style="opacity: 0.3">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td style="padding: 1rem; font-size: 0.875rem;">
+                            <?php if ($info): ?>
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <span style="font-weight: 700; color: <?php echo $confidence_color; ?>;"><?php echo $confidence; ?>%</span>
                                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
@@ -368,7 +384,7 @@ include 'includes/header.php';
                         <td style="padding: 1rem; font-size: 0.875rem; color: var(--text-muted);"><?php echo ($info['description'] ?? '') ?: '<span style="opacity: 0.3">-</span>'; ?></td>
                         <td class="no-print" style="padding: 1rem; text-align: right;">
                             <?php if (is_admin()): ?>
-                            <button class="btn" style="padding: 6px; background: var(--surface-light); color: var(--text-muted);" onclick="openEditModal('<?php echo $ip; ?>', '<?php echo $info['hostname'] ?? ''; ?>', '<?php echo $info['description'] ?? ''; ?>', '<?php echo $info['state'] ?? 'active'; ?>')">
+                            <button class="btn" style="padding: 6px; background: var(--surface-light); color: var(--text-muted);" onclick="openEditModal('<?php echo $ip; ?>', '<?php echo $info['hostname'] ?? ''; ?>', '<?php echo $info['description'] ?? ''; ?>', '<?php echo $info['state'] ?? 'active'; ?>', '<?php echo $info['asset_tag'] ?? ''; ?>', '<?php echo $info['owner'] ?? ''; ?>')">
                                 <i data-lucide="edit-3" style="width: 14px;"></i>
                             </button>
                             <?php endif; ?>
@@ -413,6 +429,21 @@ include 'includes/header.php';
                     <option value="1440" <?php echo ($subnet['scan_interval'] ?? 0) == 1440 ? 'selected' : ''; ?>>Every 24 Hours</option>
                 </select>
             </div>
+            <div class="input-group">
+                <label>Utilization Alert Threshold (%)</label>
+                <input type="number" name="utilization_threshold" class="input-control" value="<?php echo htmlspecialchars($subnet['utilization_threshold'] ?? ''); ?>" placeholder="System Default (<?php echo Settings::get('subnet_limit_threshold', 80); ?>%)" min="1" max="100">
+            </div>
+            <div class="input-group">
+                <label>Upstream / Gateway Switch (Manual Topology)</label>
+                <select name="parent_switch_id" class="input-control" style="appearance: none;">
+                    <option value="" <?php echo empty($subnet['parent_switch_id']) ? 'selected' : ''; ?>>-- Automatic (via VLAN) --</option>
+                    <?php foreach ($all_switches as $sw): ?>
+                        <option value="<?php echo (int)$sw['id']; ?>" <?php echo (isset($subnet['parent_switch_id']) && (int)$subnet['parent_switch_id'] === (int)$sw['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($sw['name']); ?> (<?php echo $sw['ip_addr']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="button" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);" onclick="document.getElementById('settingsModal').style.display='none'">Cancel</button>
                 <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Save Settings</button>
@@ -444,6 +475,16 @@ include 'includes/header.php';
                     <option value="offline">Offline</option>
                     <option value="dhcp">DHCP Pool</option>
                 </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="input-group">
+                    <label>Asset Tag</label>
+                    <input type="text" name="asset_tag" id="modalAssetTag" class="input-control" placeholder="E.g. SRV-001">
+                </div>
+                <div class="input-group">
+                    <label>Owner / Dept</label>
+                    <input type="text" name="owner" id="modalOwner" class="input-control" placeholder="E.g. IT Department">
+                </div>
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="button" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
@@ -589,12 +630,14 @@ async function analyzeNetwork(id) {
     }
 }
 
-function openEditModal(ip, hostname, desc, state) {
+function openEditModal(ip, hostname, desc, state, asset, owner) {
     document.getElementById('modalTitle').innerText = 'Manage IP: ' + ip;
     document.getElementById('modalIp').value = ip;
-    document.getElementById('modalHostname').value = hostname;
-    document.getElementById('modalDescription').value = desc;
-    document.getElementById('modalState').value = state;
+    document.getElementById('modalHostname').value = hostname || '';
+    document.getElementById('modalDescription').value = desc || '';
+    document.getElementById('modalState').value = state || 'active';
+    document.getElementById('modalAssetTag').value = asset || '';
+    document.getElementById('modalOwner').value = owner || '';
     document.getElementById('editModal').style.display = 'flex';
 }
 </script>

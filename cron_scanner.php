@@ -90,7 +90,8 @@ foreach ($subnets as $subnet) {
     $stmt->execute([$subnet['id']]);
     $active_count = $stmt->fetchColumn();
     
-    $threshold = (int)Settings::get('subnet_limit_threshold', 80);
+    // Utilization threshold: Subnet override OR global setting
+    $threshold = (int)($subnet['utilization_threshold'] ?? Settings::get('subnet_limit_threshold', 80));
     $capacity = pow(2, (32 - (int)$subnet['mask']));
     if ((int)$subnet['mask'] < 31) $capacity -= 2;
     
@@ -98,6 +99,7 @@ foreach ($subnets as $subnet) {
     
     if ($usage_percent >= $threshold) {
         $last_alert = $subnet['last_limit_alert'] ? strtotime($subnet['last_limit_alert']) : 0;
+        // Alert once every 24 hours
         if (time() - $last_alert > 86400) {
             NotificationHelper::notifySubnetFull($subnet['subnet'], $subnet['mask'], round($usage_percent, 1), $active_count, $capacity);
             $db->prepare("UPDATE subnets SET last_limit_alert = CURRENT_TIMESTAMP WHERE id = ?")->execute([$subnet['id']]);

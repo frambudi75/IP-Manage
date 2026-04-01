@@ -40,8 +40,13 @@
                 </a>
             </li>
             <li>
-                <a href="ip-calculator" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'ip-calculator.php' ? 'var(--surface-light)' : 'transparent'; ?>">
-                    <i data-lucide="calculator"></i> IP Calculator
+                <a href="topology" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'topology.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="map"></i> Network Map
+                </a>
+            </li>
+            <li>
+                <a href="topology-manager" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'topology-manager.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="settings-2"></i> Manage Links
                 </a>
             </li>
         </ul>

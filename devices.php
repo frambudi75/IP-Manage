@@ -47,6 +47,7 @@ include 'includes/header.php';
                 <tr style="border-bottom: 1px solid var(--border);">
                     <th style="padding: 1rem; color: var(--text-muted);">IP Address</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Hostname</th>
+                    <th style="padding: 1rem; color: var(--text-muted);">Asset / Owner</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Confidence</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Subnet</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Status</th>
@@ -84,6 +85,12 @@ include 'includes/header.php';
                         <tr style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 1rem; font-family: monospace; font-weight: 600;"><?php echo $d['ip_addr']; ?></td>
                             <td style="padding: 1rem;"><?php echo $d['hostname'] ?: '<span class="text-muted">No hostname</span>'; ?></td>
+                            <td style="padding: 1rem; font-size: 0.875rem;">
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <div style="font-weight: 600; color: var(--primary);"><?php echo $d['asset_tag'] ?: '<span style="opacity: 0.3">-</span>'; ?></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);"><?php echo $d['owner'] ?? ''; ?></div>
+                                </div>
+                            </td>
                             <td style="padding: 1rem; font-size: 0.875rem;">
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <span style="font-weight: 700; color: <?php echo $confidence_color; ?>;"><?php echo $confidence; ?>%</span>
