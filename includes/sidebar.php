@@ -61,7 +61,11 @@
             </li>
             <li>
                 <a href="settings" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'var(--surface-light)' : 'transparent'; ?>">
-                    <i data-lucide="settings"></i> System Settings
+                    <i data-lucide="settings"></i> 
+                    System Settings
+                    <?php if (Updater::isUpdateAvailable()): ?>
+                        <span style="margin-left: auto; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 8px var(--primary);"></span>
+                    <?php endif; ?>
                 </a>
             </li>
         <?php endif; ?>
@@ -74,6 +78,9 @@
             <li>
                 <a href="about" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="info"></i> About
+                    <?php if (Updater::isUpdateAvailable()): ?>
+                        <span style="margin-left: auto; background: var(--primary); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: 700;">NEW</span>
+                    <?php endif; ?>
                 </a>
             </li>
             <li>

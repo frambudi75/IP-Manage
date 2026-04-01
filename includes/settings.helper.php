@@ -33,4 +33,16 @@ class Settings {
     public static function enabled($key) {
         return self::get($key, '0') === '1';
     }
+
+    public static function set($key, $value) {
+        try {
+            self::init();
+            $stmt = self::$db->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)");
+            $stmt->execute([$key, $value]);
+            self::$cached_settings[$key] = $value;
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
 }

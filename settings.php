@@ -2,6 +2,7 @@
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/notifications.php';
+require_once 'includes/updater.php';
 
 session_start();
 
@@ -14,8 +15,15 @@ $db = get_db_connection();
 $page_title = 'System Settings';
 $message = '';
 
+// Handle manual update check
+if (isset($_POST['check_update'])) {
+    Updater::check(true);
+    $message = 'System update check completed.';
+}
+
 // Handle save settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
+// ... (rest of the post handling remains same)
     $to_save = [
         'telegram_enabled' => isset($_POST['telegram_enabled']) ? '1' : '0',
         'telegram_bot_token' => $_POST['telegram_bot_token'] ?? '',
@@ -108,6 +116,13 @@ include 'includes/header.php';
     .tab-content.active {
         display: block;
     }
+    .update-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
 </style>
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -124,6 +139,7 @@ include 'includes/header.php';
     <div class="tab-btn active" onclick="showTab('tab-umum')"><i data-lucide="layout"></i> UMUM</div>
     <div class="tab-btn" onclick="showTab('tab-notif')"><i data-lucide="send"></i> NOTIFIKASI</div>
     <div class="tab-btn" onclick="showTab('tab-email')"><i data-lucide="mail"></i> EMAIL</div>
+    <div class="tab-btn" onclick="showTab('tab-system')"><i data-lucide="settings"></i> SISTEM</div>
 </div>
 
 <form method="POST">
@@ -236,6 +252,66 @@ include 'includes/header.php';
         </div>
     </div>
 
+    <!-- SISTEM TAB (NEW) -->
+    <div id="tab-system" class="tab-content">
+        <div class="card" style="max-width: 600px; border-top: 4px solid var(--primary);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+                <div style="background: rgba(99, 102, 241, 0.1); padding: 8px; border-radius: 50%; color: var(--primary);">
+                    <i data-lucide="info"></i>
+                </div>
+                <h3>System Information</h3>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="update-card" style="text-align: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Versi Sekarang</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: white;">v<?php echo APP_VERSION; ?></div>
+                </div>
+                <div class="update-card" style="text-align: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Versi Terbaru</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">v<?php echo Updater::getLatestVersion(); ?></div>
+                </div>
+            </div>
+
+            <div style="padding: 1.25rem; background: rgba(255,255,255,0.02); border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-muted);">Status Update:</span>
+                    <?php if (Updater::isUpdateAvailable()): ?>
+                        <span style="color: var(--warning); font-weight: 700; display: flex; align-items: center; gap: 5px;">
+                            <i data-lucide="alert-triangle" style="width: 14px;"></i> Update Tersedia
+                        </span>
+                    <?php else: ?>
+                        <span style="color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 5px;">
+                            <i data-lucide="check-circle" style="width: 14px;"></i> System Up to Date
+                        </span>
+                    <?php endif; ?>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                    <span style="color: var(--text-muted);">Terakhir Dicek:</span>
+                    <span style="color: white; font-weight: 600;">
+                        <?php 
+                        $lc = Settings::get('last_update_check', 0);
+                        echo $lc ? date('d M Y H:i', $lc) : 'Never'; 
+                        ?>
+                    </span>
+                </div>
+            </div>
+
+            <?php if (Updater::isUpdateAvailable()): ?>
+                <div style="margin-bottom: 1.5rem;">
+                    <a href="<?php echo Updater::getUpdateUrl(); ?>" target="_blank" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                        <i data-lucide="download"></i> Download v<?php echo Updater::getLatestVersion(); ?> dari GitHub
+                    </a>
+                </div>
+            <?php endif; ?>
+
+            <button type="submit" name="check_update" class="btn btn-secondary" style="width: 100%;">
+                <i data-lucide="refresh-cw"></i> Cek Update Sekarang
+            </button>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; text-align: center;">Update dicek secara otomatis setiap 24 jam via GitHub API.</p>
+        </div>
+    </div>
+
     <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
         <button type="submit" name="save_settings" class="btn btn-primary" style="padding: 1rem 3rem;">
             <i data-lucide="check-circle-2"></i> Simpan Semua Pengaturan
@@ -249,7 +325,14 @@ include 'includes/header.php';
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         
         document.getElementById(tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        // event.currentTarget is more robust but may fail if called directly
+        if(window.event) window.event.currentTarget.classList.add('active');
+    }
+
+    // Persist tab on refresh if possible
+    const lastTab = localStorage.getItem('active_settings_tab');
+    if (lastTab) {
+        // showTab(lastTab); // Enable this if you want persistence
     }
 </script>
 

@@ -13,7 +13,9 @@ if (getenv('DOCKER_ENV') === '1') {
     define('DB_USER', getenv('DB_USER') ?: 'root');
     define('DB_PASS', getenv('DB_PASS') ?: '');
 }
+require_once 'version.php';
 require_once 'settings.helper.php';
+require_once 'updater.php';
 
 // Dynamic Configuration from Database
 define('DISCOVERY_AGGRESSIVE_MODE', Settings::enabled('discovery_aggressive'));

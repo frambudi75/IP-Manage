@@ -6,6 +6,7 @@
 
 require_once 'includes/config.php';
 require_once 'includes/db.php';
+require_once 'includes/updater.php';
 
 session_start();
 if (!isset($_SESSION['user_id'])) {
@@ -14,6 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $db = get_db_connection();
+Updater::check(); // Check for updates (cached 24h)
 
 // Pull some live stats for display
 $total_subnets  = $db->query("SELECT COUNT(*) FROM subnets")->fetchColumn();
@@ -21,11 +23,9 @@ $total_devices  = $db->query("SELECT COUNT(*) FROM ip_addresses")->fetchColumn()
 $total_switches = $db->query("SELECT COUNT(*) FROM switches")->fetchColumn();
 $total_users    = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
-define('APP_VERSION', '2.9.0');
-define('APP_RELEASE_DATE', '2026-03-31');
 define('APP_AUTHOR', 'Habib Frambudi');
 define('APP_AUTHOR_EMAIL', 'habibframbudi@gmail.com');
-define('APP_GITHUB', 'https://github.com/frambudi75/IP-Manage');
+define('APP_GITHUB', GITHUB_URL);
 define('APP_SAWERIA', 'https://saweria.co/Habibframbudi');
 define('APP_PAYPAL', 'https://paypal.me/habibframbudi');
 
@@ -36,6 +36,26 @@ include 'includes/header.php';
 <!-- Hero Section -->
 <div style="text-align: center; padding: 3rem 1rem 2rem; position: relative; overflow: hidden;">
     <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%); pointer-events: none;"></div>
+    
+    <?php if (Updater::isUpdateAvailable()): ?>
+    <!-- Update Alert Banner -->
+    <div style="max-width: 600px; margin: 0 auto 2rem; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 1.25rem; display: flex; align-items: center; gap: 1.25rem; text-align: left; animation: slideIn 0.5s ease-out;">
+        <div style="background: var(--primary); color: white; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
+            <i data-lucide="arrow-up-circle"></i>
+        </div>
+        <div style="flex-grow: 1;">
+            <div style="font-weight: 700; color: white; font-size: 1rem;">Update Tersedia: v<?php echo Updater::getLatestVersion(); ?></div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">Versi baru telah dirilis dengan peningkatan fitur dan stabilitas.</div>
+        </div>
+        <a href="<?php echo Updater::getUpdateUrl(); ?>" target="_blank" class="btn btn-primary" style="font-size: 0.8rem; padding: 8px 16px; border-radius: 8px; white-space: nowrap;">
+            Update Sekarang
+        </a>
+    </div>
+    <style>
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+    <?php endif; ?>
+
     <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 20px; margin-bottom: 1.5rem; box-shadow: 0 8px 32px rgba(99,102,241,0.4);">
         <i data-lucide="network" style="width: 40px; height: 40px; color: white;"></i>
     </div>
