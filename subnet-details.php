@@ -70,19 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subnet_setting
 }
 
 
-// Fetch assigned IPs
-$stmt = $db->prepare("SELECT * FROM ip_addresses WHERE subnet_id = ?");
-$stmt->execute([$subnet_id]);
-$assigned_ips = [];
-$assigned_stats = ['active' => 0, 'reserved' => 0, 'offline' => 0, 'dhcp' => 0];
-
-while ($row = $stmt->fetch()) {
-    $assigned_ips[$row['ip_addr']] = $row;
-    if (isset($assigned_stats[$row['state']])) {
-        $assigned_stats[$row['state']]++;
-    }
-}
-
 // Subnet Range & Pagination Logic
 list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
 $total_hosts = ($end_long - $start_long) + 1;
@@ -90,15 +77,40 @@ $block_size = 256;
 $total_blocks = ceil($total_hosts / $block_size);
 $current_block = isset($_GET['block']) ? max(0, min($total_blocks - 1, (int)$_GET['block'])) : 0;
 
-// Calculate stats for the ENTIRE subnet
-$stats = $assigned_stats;
-$stats['free'] = max(0, $total_hosts - ($stats['active'] + $stats['reserved'] + $stats['offline'] + $stats['dhcp']));
+// 1. Fetch Stats for the ENTIRE subnet range (Calculated in SQL for performance & accuracy)
+$stmt = $db->prepare("
+    SELECT state, COUNT(*) as count 
+    FROM ip_addresses 
+    WHERE subnet_id = ? 
+    AND INET_ATON(ip_addr) BETWEEN ? AND ? 
+    GROUP BY state
+");
+$stmt->execute([$subnet_id, $start_long, $end_long]);
+$stats = ['active' => 0, 'reserved' => 0, 'offline' => 0, 'dhcp' => 0];
+$assigned_total = 0;
+while ($row = $stmt->fetch()) {
+    $stats[$row['state']] = (int)$row['count'];
+    $assigned_total += (int)$row['count'];
+}
+$stats['free'] = max(0, $total_hosts - $assigned_total);
 
-// IPs for current display block
-$current_ips = [];
+// 2. Fetch Detailed Info ONLY for the current block (Saves memory for /16 subnets)
 $block_start = $start_long + ($current_block * $block_size);
 $block_end = min($end_long, $block_start + $block_size - 1);
 
+$stmt = $db->prepare("
+    SELECT * FROM ip_addresses 
+    WHERE subnet_id = ? 
+    AND INET_ATON(ip_addr) BETWEEN ? AND ?
+");
+$stmt->execute([$subnet_id, $block_start, $block_end]);
+$assigned_ips = [];
+while ($row = $stmt->fetch()) {
+    $assigned_ips[$row['ip_addr']] = $row;
+}
+
+// IPs for current display block grid
+$current_ips = [];
 for ($i = $block_start; $i <= $block_end; $i++) {
     $current_ips[] = long2ip($i);
 }

@@ -4,6 +4,13 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.11.2] - 2026-04-02
+### Optimized
+- **Memory Optimization**: Perombakan query SQL di `subnet-details.php` agar hanya mengambil data IP per blok (256 IP), mencegah crash/lag pada subnet besar seperti `/16`.
+- **Statistics Accuracy**: Perhitungan statistik (Active/Free IP) kini dilakukan di sisi database menggunakan `INET_ATON` untuk memastikan hanya IP di dalam rentang valid yang terhitung.
+
+---
+
 ## [2.11.1] - 2026-04-02
 ### Added
 - **Standalone Setup Guide**: Panduan instalasi mendalam (`STANDALONE_INSTALL.md`) untuk XAMPP (Windows) dan server Linux (Apache/MySQL/PHP).
