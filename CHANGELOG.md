@@ -4,6 +4,17 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.11.0] - 2026-04-02
+### Added
+- **Block-based Subnet Pagination**: Implementasi sistem navigasi blok `/24` (256 IP) untuk subnet besar seperti `/21` agar tetap ringan dan responsif.
+- **Global Subnet Stats**: Bar utilisasi IP kini menghitung seluruh kapasitas subnet ($2.048$ host untuk `/21`) meskipun sedang melihat satu blok tertentu.
+- **Smart Chunked Scanning**: Fungsi pemindaian otomatis kini menyesuaikan dengan blok yang sedang dibuka untuk meminimalkan beban server.
+
+### Fixed
+- **IP Display Limit**: Perbaikan bug di mana subnet yang lebih besar dari `/24` hanya menampilkan 256 IP pertama.
+
+---
+
 ## [2.10.0] - 2026-04-01
 ### Added
 - **Manual Network Topology Manager**: Antarmuka terpusat baru untuk mendefinisikan koneksi fisik antar switch dan switch-ke-subnet secara eksplisit.

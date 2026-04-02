@@ -74,28 +74,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subnet_setting
 $stmt = $db->prepare("SELECT * FROM ip_addresses WHERE subnet_id = ?");
 $stmt->execute([$subnet_id]);
 $assigned_ips = [];
+$assigned_stats = ['active' => 0, 'reserved' => 0, 'offline' => 0, 'dhcp' => 0];
+
 while ($row = $stmt->fetch()) {
     $assigned_ips[$row['ip_addr']] = $row;
-}
-
-// Generate IP range (Display first 256 IPs for safety if subnet is larger)
-list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
-$display_limit = 256;
-$current_ips = [];
-$stats = ['active' => 0, 'reserved' => 0, 'offline' => 0, 'dhcp' => 0, 'free' => 0];
-
-for ($i = $start_long; $i <= min($end_long, $start_long + $display_limit - 1); $i++) {
-    $ip = long2ip($i);
-    $current_ips[] = $ip;
-    if (isset($assigned_ips[$ip])) {
-        $stats[$assigned_ips[$ip]['state']]++;
-    } else {
-        $stats['free']++;
+    if (isset($assigned_stats[$row['state']])) {
+        $assigned_stats[$row['state']]++;
     }
 }
 
+// Subnet Range & Pagination Logic
+list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
+$total_hosts = ($end_long - $start_long) + 1;
+$block_size = 256;
+$total_blocks = ceil($total_hosts / $block_size);
+$current_block = isset($_GET['block']) ? max(0, min($total_blocks - 1, (int)$_GET['block'])) : 0;
+
+// Calculate stats for the ENTIRE subnet
+$stats = $assigned_stats;
+$stats['free'] = max(0, $total_hosts - ($stats['active'] + $stats['reserved'] + $stats['offline'] + $stats['dhcp']));
+
+// IPs for current display block
+$current_ips = [];
+$block_start = $start_long + ($current_block * $block_size);
+$block_end = min($end_long, $block_start + $block_size - 1);
+
+for ($i = $block_start; $i <= $block_end; $i++) {
+    $current_ips[] = long2ip($i);
+}
+
 $total_displayed = count($current_ips);
-$used_percentage = round((($total_displayed - $stats['free']) / $total_displayed) * 100, 1);
+$used_percentage = round((($total_hosts - $stats['free']) / $total_hosts) * 100, 1);
 
 include 'includes/header.php';
 ?>
@@ -145,13 +154,13 @@ include 'includes/header.php';
 <!-- Usage Bar -->
 <div class="no-print" style="margin-bottom: 3rem;">
     <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.875rem;">
-        <span>IP Utilization Space (<?php echo ($total_displayed - $stats['free']); ?> / <?php echo $total_displayed; ?>)</span>
-        <span class="text-muted">Total Available: <?php echo $stats['free']; ?></span>
+        <span>Subnet Utilization Space (<?php echo ($total_hosts - $stats['free']); ?> / <?php echo $total_hosts; ?>)</span>
+        <span class="text-muted">Total Subnet Available: <?php echo $stats['free']; ?></span>
     </div>
     <div style="height: 12px; background: var(--surface-light); border-radius: 6px; overflow: hidden; display: flex;">
-        <div style="width: <?php echo ($stats['active'] / $total_displayed) * 100; ?>%; background: var(--success);" title="Active"></div>
-        <div style="width: <?php echo ($stats['reserved'] / $total_displayed) * 100; ?>%; background: var(--warning);" title="Reserved"></div>
-        <div style="width: <?php echo ($stats['dhcp'] / $total_displayed) * 100; ?>%; background: var(--primary);" title="DHCP"></div>
+        <div style="width: <?php echo ($stats['active'] / $total_hosts) * 100; ?>%; background: var(--success);" title="Active"></div>
+        <div style="width: <?php echo ($stats['reserved'] / $total_hosts) * 100; ?>%; background: var(--warning);" title="Reserved"></div>
+        <div style="width: <?php echo ($stats['dhcp'] / $total_hosts) * 100; ?>%; background: var(--primary);" title="DHCP"></div>
     </div>
     <div style="display: flex; gap: 1.5rem; margin-top: 1rem;">
         <div style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted);">
@@ -201,9 +210,38 @@ include 'includes/header.php';
 
 <!-- Visual Grid -->
 <div class="card no-print" style="margin-bottom: 2rem;">
-    <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="grid-3x3" style="width: 18px;"></i> Visual IP Grid
-    </h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+        <h3 style="font-size: 1.125rem; display: flex; align-items: center; gap: 8px; margin-bottom: 0;">
+            <i data-lucide="grid-3x3" style="width: 18px;"></i> Visual IP Grid
+        </h3>
+        
+        <?php if ($total_blocks > 1): ?>
+            <div style="display: flex; align-items: center; gap: 10px; background: rgba(59, 130, 246, 0.05); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.1);">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Viewing Block:</span>
+                <select onchange="location.href='?id=<?php echo $subnet_id; ?>&block=' + this.value" style="background: transparent; border: none; color: var(--primary); font-weight: 700; font-size: 0.875rem; outline: none; cursor: pointer;">
+                    <?php for ($b = 0; $b < $total_blocks; $b++): ?>
+                        <?php 
+                            $b_start = long2ip($start_long + ($b * $block_size));
+                            $b_end = long2ip(min($end_long, $start_long + ($b + 1) * $block_size - 1));
+                            $b_parts = explode('.', $b_start);
+                            $display_range = $b_parts[0] . '.' . $b_parts[1] . '.' . $b_parts[2] . '.x';
+                        ?>
+                        <option value="<?php echo $b; ?>" <?php echo $current_block == $b ? 'selected' : ''; ?>>
+                            <?php echo $display_range; ?> (<?php echo $b_start; ?> - <?php echo $b_end; ?>)
+                        </option>
+                    <?php endfor; ?>
+                </select>
+                <div style="display: flex; gap: 5px; margin-left: 5px; border-left: 1px solid rgba(59, 130, 246, 0.2); padding-left: 10px;">
+                    <button onclick="location.href='?id=<?php echo $subnet_id; ?>&block=<?php echo max(0, $current_block - 1); ?>'" class="btn" style="padding: 2px; background: transparent; <?php echo $current_block == 0 ? 'opacity: 0.3; pointer-events: none;' : ''; ?>" title="Previous Block">
+                        <i data-lucide="chevron-left" style="width: 16px;"></i>
+                    </button>
+                    <button onclick="location.href='?id=<?php echo $subnet_id; ?>&block=<?php echo min($total_blocks - 1, $current_block + 1); ?>'" class="btn" style="padding: 2px; background: transparent; <?php echo $current_block >= $total_blocks - 1 ? 'opacity: 0.3; pointer-events: none;' : ''; ?>" title="Next Block">
+                        <i data-lucide="chevron-right" style="width: 16px;"></i>
+                    </button>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 8px;">
         <?php foreach ($current_ips as $ip): ?>
             <?php 
@@ -500,25 +538,21 @@ async function scanSubnet(id) {
     const status = document.getElementById('scanStatus');
     const statusText = document.getElementById('scanStatusText');
     
-    // Subnet range info (simplified for first 256 IPs)
-    const subnetAddr = "<?php echo $subnet['subnet']; ?>";
-    const mask = <?php echo $subnet['mask']; ?>;
-    
-    // Convert IP to long for chunking (simplified)
-    const ipParts = subnetAddr.split('.').map(Number);
-    const startLong = (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3];
-    const totalToScan = Math.min(256, Math.pow(2, 32 - mask));
+    // Subnet range info for CURRENT block
+    const startLong = <?php echo $block_start; ?>;
+    const endLong = <?php echo $block_end; ?>;
+    const totalToScan = (endLong - startLong) + 1;
     
     btn.disabled = true;
     status.style.display = 'flex';
-    statusText.innerText = `Starting parallel scan of ${totalToScan} IPs...`;
+    statusText.innerText = `Starting parallel scan of current block (${totalToScan} IPs)...`;
 
     const chunkSize = 16;
     const chunks = [];
     for (let i = 0; i < totalToScan; i += chunkSize) {
         chunks.push({
             start: startLong + i,
-            end: Math.min(startLong + i + chunkSize - 1, startLong + totalToScan - 1)
+            end: Math.min(startLong + i + chunkSize - 1, endLong)
         });
     }
 
