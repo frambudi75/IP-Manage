@@ -99,16 +99,10 @@ To ensure smooth realtime monitoring and high-speed parallel scanning, we recomm
 2. Jalankan perintah cepat: `docker-compose up -d`
 3. Akses: `http://localhost:2025`
 
-### Option 2: XAMPP (Windows)
-1. Copy project to `C:\xampp\htdocs\ipmanage`.
-2. **Setup PHP**: Edit `C:\xampp\php\php.ini`, remove `;` from `extension=snmp` and `extension=curl`.
-3. **Database**: Create `ipmanage` in phpMyAdmin and import `sql/database.sql`.
-4. Access: `http://localhost/ipmanage`
-
-### Option 3: Linux (Ubuntu/Debian)
-1. Install: `apt install apache2 mariadb-server php-mysql php-snmp nmap traceroute`.
-2. Create DB and import `sql/database.sql`.
-3. Set permissions: `chown -R www-data:www-data /var/www/html/ipmanage`.
+### Option 2: XAMPP (Windows) & Linux (Apache/NGINX)
+1. Lihat [Panduan Instalasi Standalone](STANDALONE_INSTALL.md) untuk instruksi mendalam bagi instalasi tanpa Docker.
+2. Pastikan file `.htaccess` diizinkan lewat pengaturan `AllowOverride All`.
+3. Akses: `http://localhost/ipmanage`
 
 ---
 

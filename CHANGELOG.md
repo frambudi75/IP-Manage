@@ -4,6 +4,13 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.11.1] - 2026-04-02
+### Added
+- **Standalone Setup Guide**: Panduan instalasi mendalam (`STANDALONE_INSTALL.md`) untuk XAMPP (Windows) dan server Linux (Apache/MySQL/PHP).
+- **Tata cara konfigurasi**: Dokumentasi khusus untuk modul Apache, penjadwalan Cron Job, dan optimasi PHP.
+
+---
+
 ## [2.11.0] - 2026-04-02
 ### Added
 - **Block-based Subnet Pagination**: Implementasi sistem navigasi blok `/24` (256 IP) untuk subnet besar seperti `/21` agar tetap ringan dan responsif.
