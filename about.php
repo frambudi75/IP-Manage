@@ -195,6 +195,14 @@ include 'includes/header.php';
         </h3>
     </div>
     <?php
+    $versions = [
+        ['ver' => '2.13.0', 'date' => '2026-04-08', 'changes' => ['Asset Password Encryption (AES-256)', 'Secure Password Reveal with Audit Logs', 'Real-time Server Health (Port check)', 'Server Grouping & Categories', 'Advanced CSV Backup Metadata']],
+        ['ver' => '2.12.0', 'date' => '2026-04-08', 'changes' => ['Modul Server Assets Management (Full CRUD)', 'Automated Email Backup (CSV & TXT Summary)', 'Personalized User Backup Recipients', 'Smart CSV Restore & Data Migration Tool', 'Sidebar UI refinement & Fix undefined variables']],
+        ['ver' => '2.11.2', 'date' => '2026-04-02', 'changes' => ['Memory Optimization for large subnets (/16)', 'INET_ATON-based IP statistics calculation', 'Improved rendering transitions for Mermaid.js']],
+        ['ver' => '2.11.0', 'date' => '2026-04-02', 'changes' => ['Block-based Subnet Pagination for large networks', 'Global Subnet Utilization stats calculation', 'Smart Chunked Scanning for improved performance']],
+        ['ver' => '2.10.0', 'date' => '2026-04-01', 'changes' => ['Manual Network Topology Manager', 'Mermaid.js Hierarchical Visualization', 'Smart Link Filtering (No Self-Link)', 'CSP Compliance (External JS Assets)']],
+        ['ver' => '2.9.0', 'date' => '2026-03-31', 'changes' => ['Smart Offline Detection (Fail Counter)', 'Intensive Verification Probe (Multi-Signal)', 'Customizable Fail Threshold Settings', 'Fix Subdirectory URL Routing (.htaccess)']],
+    ];
     foreach ($versions as $v): ?>
     <div style="display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap;">
         <div style="flex-shrink: 0; text-align: left; min-width: 100px;">
