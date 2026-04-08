@@ -17,6 +17,7 @@ define('ENV_DOCKER', true);
 
 // Redis Configuration for Docker
 define('REDIS_HOST', 'redis'); // Linked container name
+if (!defined('ENCRYPTION_KEY')) define('ENCRYPTION_KEY', '27ffed91f93d4e8eaf12a66852b4a156');
 
 // OPTIMIZATION: Use Redis for sessions if extension is loaded
 if (extension_loaded('redis')) {

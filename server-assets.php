@@ -150,77 +150,97 @@ include 'includes/header.php';
         </div>
     <?php endif; ?>
     
+    
     <?php foreach ($assets as $asset): ?>
-    <div class="card" style="position: relative; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <div>
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <h3 style="font-size: 1.125rem;"><?php echo htmlspecialchars($asset['hostname']); ?></h3>
-                    <span style="background: rgba(99,102,241,0.1); color: var(--primary); font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                        <?php echo htmlspecialchars($asset['category'] ?: 'General'); ?>
-                    </span>
-                    <div id="status-badge-<?php echo $asset['id']; ?>" class="badge badge-<?php echo $asset['status'] === 'ONLINE' ? 'success' : ($asset['status'] === 'OFFLINE' ? 'danger' : 'secondary'); ?>" style="font-size: 0.65rem; padding: 2px 8px;">
-                        <?php echo $asset['status']; ?>
-                    </div>
-                </div>
-                <code style="color: var(--primary); font-weight: 700;"><?php echo htmlspecialchars($asset['ip_address']); ?>:<?php echo $asset['port']; ?></code>
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button class="btn" style="background: var(--surface-light); padding: 5px 8px;" onclick="refreshStatus(<?php echo $asset['id']; ?>)" id="refresh-btn-<?php echo $asset['id']; ?>">
+    <div class="card asset-card" style="position: relative; display: flex; flex-direction: column; padding: 1.5rem; border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;">
+        
+        <!-- Header: Hostname & Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 1rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: white; overflow-wrap: break-word; word-break: break-word; margin: 0; line-height: 1.2; flex: 1;">
+                <?php echo htmlspecialchars($asset['hostname']); ?>
+            </h3>
+            <div class="asset-actions" style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+                <button class="btn-icon" onclick="refreshStatus(<?php echo $asset['id']; ?>)" id="refresh-btn-<?php echo $asset['id']; ?>" title="Refresh Status">
                     <i data-lucide="refresh-cw" style="width: 14px;"></i>
                 </button>
-                <button class="btn" style="background: var(--surface-light); padding: 5px 8px;" onclick='openEditModal(<?php echo json_encode($asset); ?>)'>
+                <button class="btn-icon" onclick='openEditModal(<?php echo json_encode($asset); ?>)' title="Edit Asset">
                     <i data-lucide="edit-3" style="width: 14px;"></i>
                 </button>
                 <form action="" method="POST" onsubmit="return confirm('Remove this server asset?');" style="display: inline;">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
-                    <button type="submit" class="btn" style="background: var(--surface-light); color: var(--danger); padding: 5px 8px;">
+                    <button type="submit" class="btn-icon btn-icon-danger" title="Delete Asset">
                         <i data-lucide="trash-2" style="width: 14px;"></i>
                     </button>
                 </form>
             </div>
         </div>
 
-        <div style="background: rgba(0,0,0,0.03); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Login Credentials</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i data-lucide="user" style="width: 14px; color: var(--text-muted);"></i>
-                    <span style="font-size: 0.875rem; font-family: monospace;"><?php echo htmlspecialchars($asset['username'] ?: '-'); ?></span>
+        <!-- Meta Row: Status, IP, Category -->
+        <div style="display: flex; align-items: center; gap: 10px; row-gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap;">
+            <div id="status-badge-<?php echo $asset['id']; ?>" class="status-indicator <?php echo $asset['status'] === 'ONLINE' ? 'is-online' : ($asset['status'] === 'OFFLINE' ? 'is-offline' : ''); ?>" title="Last check: <?php echo $asset['last_check'] ?: 'Never'; ?>">
+                <span class="pulse-dot"></span>
+                <span class="status-text"><?php echo $asset['status']; ?></span>
+            </div>
+            <code style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; color: var(--primary); font-weight: 700;">
+                <?php echo htmlspecialchars($asset['ip_address']); ?>:<?php echo $asset['port']; ?>
+            </code>
+            <span style="background: rgba(99,102,241,0.1); color: var(--primary); font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(99,102,241,0.2);">
+                <?php echo htmlspecialchars($asset['category'] ?: 'General'); ?>
+            </span>
+        </div>
+
+        <!-- Credentials Block -->
+        <div style="background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="user" style="width: 16px; color: var(--text-muted);"></i>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin: 0; letter-spacing: 0.5px;">Username</p>
+                        <p style="font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; margin: 0; font-weight: 500;"><?php echo htmlspecialchars($asset['username'] ?: '-'); ?></p>
+                    </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i data-lucide="key" style="width: 14px; color: var(--text-muted);"></i>
-                    <span style="font-size: 0.875rem; font-family: monospace; display: flex; align-items: center; gap: 8px;">
-                        <span class="pw-hidden" id="pw-<?php echo $asset['id']; ?>">••••••••</span>
-                        <span class="pw-visible" id="pw-real-<?php echo $asset['id']; ?>" style="display: none; font-weight: 700; color: var(--primary);"></span>
-                        <button type="button" style="background: none; border: none; cursor: pointer; color: var(--primary); padding: 0;" onclick="togglePassword(<?php echo $asset['id']; ?>)">
-                            <i data-lucide="eye" id="eye-icon-<?php echo $asset['id']; ?>" style="width: 14px;"></i>
-                        </button>
-                    </span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="key" style="width: 16px; color: var(--text-muted);"></i>
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <p style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin: 0; letter-spacing: 0.5px;">Security Key</p>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="pw-<?php echo $asset['id']; ?>" style="font-size: 1rem; letter-spacing: 2px; color: var(--text-muted); line-height: 1;">••••••••</span>
+                            <span id="pw-real-<?php echo $asset['id']; ?>" style="display: none; font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary);"></span>
+                            <button type="button" class="btn-reveal" onclick="togglePassword(<?php echo $asset['id']; ?>)">
+                                <i data-lucide="eye" id="eye-icon-<?php echo $asset['id']; ?>" style="width: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-                <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--success); margin-bottom: 0.5rem; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
-                    <i data-lucide="check-circle-2" style="width: 12px;"></i> Installed
-                </p>
-                <div style="font-size: 0.8rem; color: var(--text); background: rgba(16, 185, 129, 0.05); padding: 0.5rem; border-radius: 6px; min-height: 50px; white-space: pre-wrap;"><?php echo htmlspecialchars($asset['installed_apps'] ?: '-'); ?></div>
+        <!-- Software Inventory -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div class="inventory-box inv-installed">
+                <p class="inv-label"><i data-lucide="check-circle" style="width: 12px; color: var(--success);"></i> INSTALLED</p>
+                <div class="inv-content"><?php echo htmlspecialchars($asset['installed_apps'] ?: '-'); ?></div>
             </div>
-            <div>
-                <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--warning); margin-bottom: 0.5rem; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
-                    <i data-lucide="circle-dashed" style="width: 12px;"></i> Missing/Pending
-                </p>
-                <div style="font-size: 0.8rem; color: var(--text); background: rgba(245, 158, 11, 0.05); padding: 0.5rem; border-radius: 6px; min-height: 50px; white-space: pre-wrap;"><?php echo htmlspecialchars($asset['missing_apps'] ?: '-'); ?></div>
+            <div class="inventory-box inv-pending">
+                <p class="inv-label"><i data-lucide="circle-dashed" style="width: 12px; color: var(--warning);"></i> PENDING</p>
+                <div class="inv-content"><?php echo htmlspecialchars($asset['missing_apps'] ?: '-'); ?></div>
             </div>
         </div>
 
         <?php if (!empty($asset['notes'])): ?>
         <div style="margin-top: auto;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Notes</p>
-            <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; background: var(--surface-light); padding: 0.75rem; border-radius: 6px;"><?php echo htmlspecialchars($asset['notes']); ?></div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                <i data-lucide="info" style="width: 14px; color: var(--text-muted);"></i>
+                <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">Technical Notes</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border-left: 2px solid var(--border); line-height: 1.4;">
+                <?php echo htmlspecialchars($asset['notes']); ?>
+            </div>
         </div>
         <?php endif; ?>
     </div>
@@ -403,8 +423,116 @@ async function refreshStatus(id) {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
 .spin-animation i {
     animation: spin 1s linear infinite;
+}
+
+.asset-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+    border-color: var(--primary) !important;
+}
+
+.btn-icon {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-icon:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.btn-icon-danger:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.status-indicator.is-online {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.2);
+}
+.status-indicator.is-offline {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.2);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    border-radius: 50%;
+}
+.is-online .pulse-dot {
+    animation: pulse 2s infinite;
+}
+
+.btn-reveal {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--primary);
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.btn-reveal:hover {
+    background: rgba(99,102,241,0.1);
+}
+
+.inventory-box {
+    padding: 1rem;
+    border-radius: 12px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.inv-installed { background: rgba(34, 197, 94, 0.03); }
+.inv-pending { background: rgba(245, 158, 11, 0.03); }
+
+.inv-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.inv-content {
+    font-size: 0.8rem;
+    color: var(--text);
+    white-space: pre-wrap;
+    line-height: 1.4;
 }
 </style>
 

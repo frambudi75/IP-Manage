@@ -26,14 +26,16 @@ if (php_sapi_name() !== 'cli') {
     }
 }
 
-echo "[ " . date('Y-m-d H:i:s') . " ] Server Assets Backup Started\n";
+if (php_sapi_name() === 'cli') {
+    echo "[ " . date('Y-m-d H:i:s') . " ] Server Assets Backup Started\n";
+}
 
 $last_backup = (int)Settings::get('last_server_backup', 0);
 $force = isset($_GET['force']) || (isset($argv) && in_array('--force', $argv));
 
 // Check if 3 days (259200 seconds) have passed
 if (!$force && (time() - $last_backup < 259200)) {
-    echo "Backup skipped. Last backup was " . date('Y-m-d H:i:s', $last_backup) . "\n";
+    if (php_sapi_name() === 'cli') echo "Backup skipped. Last backup was " . date('Y-m-d H:i:s', $last_backup) . "\n";
     exit;
 }
 
@@ -42,7 +44,7 @@ $stmt = $db->query("SELECT * FROM server_assets ORDER BY hostname ASC");
 $assets = $stmt->fetchAll();
 
 if (empty($assets)) {
-    echo "No assets found to backup.\n";
+    if (php_sapi_name() === 'cli') echo "No assets found to backup.\n";
     exit;
 }
 
@@ -107,10 +109,10 @@ $success = NotificationHelper::sendEmailWithAttachments($subject, $body, $attach
 if ($success) {
     Settings::set('last_server_backup', time());
     $msg = "Backup successful and email sent!";
-    echo $msg . "\n";
+    if (php_sapi_name() === 'cli') echo $msg . "\n";
 } else {
     $msg = "ERROR: Failed to send backup email. Check SMTP settings.";
-    echo $msg . "\n";
+    if (php_sapi_name() === 'cli') echo $msg . "\n";
 }
 
 // Redirect back if triggered via browser
