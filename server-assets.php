@@ -98,12 +98,12 @@ $page_title = "Server Assets Management";
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1.5rem;">
     <div>
         <h1 style="font-size: 1.5rem;">Server Assets & Access</h1>
         <p style="color: var(--text-muted); font-size: 0.875rem;">Manage server login credentials and software inventory</p>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <button class="btn btn-secondary" onclick="document.getElementById('importModal').style.display='flex'">
             <i data-lucide="upload" style="width: 14px;"></i> Import CSV
         </button>
@@ -130,7 +130,7 @@ include 'includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem;">
+<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
     <?php if (empty($assets)): ?>
         <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4rem; opacity: 0.5;">
             <i data-lucide="database" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -206,8 +206,8 @@ include 'includes/header.php';
 </div>
 
 <!-- Add/Edit Modal -->
-<div id="assetModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-    <div class="card" style="width: 600px; max-height: 90vh; overflow-y: auto; padding: 2.5rem; position: relative;">
+<div id="assetModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="card" style="width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative;">
         <button onclick="closeModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
             <i data-lucide="x"></i>
         </button>
@@ -216,7 +216,7 @@ include 'includes/header.php';
             <input type="hidden" name="action" id="modalAction" value="add">
             <input type="hidden" name="id" id="assetId" value="">
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                 <div class="input-group">
                     <label>Hostname / Server Name</label>
                     <input type="text" name="hostname" id="f_hostname" class="input-control" placeholder="e.g. Production Web" required>
@@ -227,7 +227,7 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 80px; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
                 <div class="input-group">
                     <label>Username</label>
                     <input type="text" name="username" id="f_username" class="input-control" placeholder="root">
@@ -325,8 +325,8 @@ function togglePassword(id) {
 </script>
 
 <!-- Import Modal -->
-<div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-    <div class="card" style="width: 450px; padding: 2.5rem; position: relative;">
+<div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="card" style="width: 100%; max-width: 450px; padding: 2rem; position: relative;">
         <button onclick="document.getElementById('importModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
             <i data-lucide="x"></i>
         </button>

@@ -54,7 +54,7 @@ $page_title = 'Account Settings';
 include 'includes/header.php';
 ?>
 
-<div style="max-width: 600px; margin: 0 auto;">
+<div style="max-width: 600px; margin: 0 auto; width: 100%;">
     <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">Account Settings</h1>
     <p style="color: var(--text-muted); margin-bottom: 2rem;">Manage your profile and security credentials.</p>
 

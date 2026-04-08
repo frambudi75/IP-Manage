@@ -75,7 +75,7 @@ include 'includes/header.php';
 </div>
 
 <!-- Live Stats -->
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
     <?php
     $stats = [
         ['icon' => 'layers',  'value' => $total_subnets,  'label' => 'Subnets',  'color' => 'var(--primary)'],
@@ -141,10 +141,10 @@ include 'includes/header.php';
             ['name' => 'Redis 7',          'desc' => 'Advanced data caching (NEW)',  'color' => '#dc2626'],
         ];
         foreach ($stack as $t): ?>
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); flex-wrap: wrap;">
             <span style="width: 10px; height: 10px; border-radius: 50%; background: <?php echo $t['color']; ?>; flex-shrink: 0;"></span>
-            <span style="font-weight: 600; font-size: 0.875rem; min-width: 160px;"><?php echo $t['name']; ?></span>
-            <span style="font-size: 0.8rem; color: var(--text-muted);"><?php echo $t['desc']; ?></span>
+            <span style="font-weight: 600; font-size: 0.875rem; min-width: 140px; flex: 1;"><?php echo $t['name']; ?></span>
+            <span style="font-size: 0.8rem; color: var(--text-muted); width: 100%; margin-left: 20px;"><?php echo $t['desc']; ?></span>
         </div>
         <?php endforeach; ?>
     </div>
@@ -203,12 +203,12 @@ include 'includes/header.php';
         ['ver' => '2.9.0', 'date' => '2026-03-31', 'changes' => ['Smart Offline Detection (Fail Counter)', 'Intensive Verification Probe (Multi-Signal)', 'Customizable Fail Threshold Settings', 'Fix Subdirectory URL Routing (.htaccess)']],
     ];
     foreach ($versions as $v): ?>
-    <div style="display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border);">
-        <div style="flex-shrink: 0; text-align: center;">
-            <span style="display: block; background: rgba(99,102,241,0.15); color: var(--primary); font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3);">v<?php echo $v['ver']; ?></span>
+    <div style="display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap;">
+        <div style="flex-shrink: 0; text-align: left; min-width: 100px;">
+            <span style="display: inline-block; background: rgba(99,102,241,0.15); color: var(--primary); font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3);">v<?php echo $v['ver']; ?></span>
             <span style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; white-space: nowrap;"><?php echo date('d M Y', strtotime($v['date'])); ?></span>
         </div>
-        <ul style="margin: 0; padding: 0 0 0 1rem; display: flex; flex-direction: column; gap: 4px;">
+        <ul style="margin: 0; padding: 0 0 0 1rem; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 250px;">
             <?php foreach ($v['changes'] as $c): ?>
             <li style="font-size: 0.875rem; color: var(--text-muted);"><?php echo htmlspecialchars($c); ?></li>
             <?php endforeach; ?>
