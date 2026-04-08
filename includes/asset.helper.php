@@ -21,12 +21,18 @@ class AssetHelper {
      */
     public static function decrypt($data) {
         if (empty($data)) return $data;
-        $key = pack('H*', ENCRYPTION_KEY);
-        $data = base64_decode($data);
+        $key = @pack('H*', ENCRYPTION_KEY);
+        $decoded = @base64_decode($data);
+        if (!$decoded) return $data; // Not base64
+        
         $iv_size = openssl_cipher_iv_length('aes-256-cbc');
-        $iv = substr($data, 0, $iv_size);
-        $encrypted = substr($data, $iv_size);
-        return openssl_decrypt($encrypted, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+        if (strlen($decoded) <= $iv_size) return $data; // Too short to have an IV
+        
+        $iv = substr($decoded, 0, $iv_size);
+        $encrypted = substr($decoded, $iv_size);
+        $decrypted = @openssl_decrypt($encrypted, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+        
+        return ($decrypted === false) ? $data : $decrypted;
     }
 
     /**

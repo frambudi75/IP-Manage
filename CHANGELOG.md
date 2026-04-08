@@ -4,6 +4,16 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.14.0] - 2026-04-08
+### Added
+- **Universal Search (Cmd/Ctrl + K)**: A high-performance spotlight-style search bar accessible from any page.
+- **Batch Asset Operations**: Multi-select checkboxes for server assets with bulk status checking.
+- **Professional PDF Export**: Export selected server assets into a clean, printable PDF report.
+- **Enhanced Data-at-Rest Encryption**: All sensitive fields (Username, Notes, App Lists) are now encrypted in the database.
+- **Visual Analytics Dashboard**: Added Server Asset health cards and category distribution charts to the main dashboard.
+
+---
+
 ## [2.13.0] - 2026-04-08
 ### Added
 - **Asset Password Encryption**: Implementasi enkripsi AES-256-CBC untuk kredensial server guna meningkatkan keamanan data at rest.
