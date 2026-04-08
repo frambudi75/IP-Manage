@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="assets/js/universal-search.js" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -20,6 +22,11 @@
                     </button>
                     <div class="breadcrumb">
                         <span class="text-muted">Pages</span> / <span><?php echo isset($page_title) ? $page_title : 'Dashboard'; ?></span>
+                    </div>
+                    <div class="search-trigger" onclick="openSearch()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;">
+                        <i data-lucide="search" style="width: 14px; color: var(--text-muted);"></i>
+                        <span style="color: var(--text-muted); font-size: 0.8rem; letter-spacing: 0.5px;">Search...</span>
+                        <kbd style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-family: sans-serif;">⌘K</kbd>
                     </div>
                 </div>
                 <div class="user-menu">
@@ -35,3 +42,24 @@
                 <p>Generated on: <?php echo date('d M Y H:i:s'); ?> | User: <?php echo $_SESSION['username']; ?></p>
             </div>
             <div class="content-wrapper mt-4">
+
+<!-- Universal Search Modal -->
+<div id="search-modal" class="search-overlay" style="display:none;">
+    <div class="search-container">
+        <div class="search-header">
+            <i data-lucide="search" style="width: 20px; color: var(--primary);"></i>
+            <input type="text" id="search-input" placeholder="Search for servers, subnets, or switches..." autocomplete="off">
+            <kbd onclick="closeSearch()">ESC</kbd>
+        </div>
+        <div id="search-results" class="search-results">
+            <div class="search-empty">Type at least 2 characters to search...</div>
+        </div>
+        <div class="search-footer">
+            <div style="display: flex; gap: 15px;">
+                <span><kbd>↑↓</kbd> Navigate</span>
+                <span><kbd>↵</kbd> Select</span>
+            </div>
+            <span><kbd>ESC</kbd> Close</span>
+        </div>
+    </div>
+</div>

@@ -71,15 +71,26 @@ foreach ($assets as $a) {
 $txt_content = "SERVER ASSETS BACKUP - " . date('Y-m-d H:i:s') . "\n";
 $txt_content .= "==========================================\n\n";
 foreach ($assets as $a) {
-    $pass = $a['password'];
-    if ($a['is_encrypted']) $pass = AssetHelper::decrypt($pass);
+    if ($a['is_encrypted']) {
+        $pass = AssetHelper::decrypt($a['password']);
+        $user = AssetHelper::decrypt($a['username']);
+        $notes = AssetHelper::decrypt($a['notes']);
+        $installed = str_replace("\n", ", ", AssetHelper::decrypt($a['installed_apps']));
+        $missing = str_replace("\n", ", ", AssetHelper::decrypt($a['missing_apps']));
+    } else {
+        $pass = $a['password'];
+        $user = $a['username'];
+        $notes = $a['notes'];
+        $installed = str_replace("\n", ", ", $a['installed_apps']);
+        $missing = str_replace("\n", ", ", $a['missing_apps']);
+    }
     
     $txt_content .= "Server: " . $a['hostname'] . " (" . $a['ip_address'] . ":" . $a['port'] . ") [" . $a['category'] . "]\n";
     $txt_content .= "Status: " . $a['status'] . " (Last: " . $a['last_check'] . ")\n";
-    $txt_content .= "Login: " . $a['username'] . " / " . $pass . "\n";
-    $txt_content .= "Installed: " . str_replace("\n", ", ", $a['installed_apps']) . "\n";
-    $txt_content .= "Missing: " . str_replace("\n", ", ", $a['missing_apps']) . "\n";
-    $txt_content .= "Notes: " . $a['notes'] . "\n";
+    $txt_content .= "Login: " . $user . " / " . $pass . "\n";
+    $txt_content .= "Installed: " . $installed . "\n";
+    $txt_content .= "Missing: " . $missing . "\n";
+    $txt_content .= "Notes: " . $notes . "\n";
     $txt_content .= "------------------------------------------\n\n";
 }
 

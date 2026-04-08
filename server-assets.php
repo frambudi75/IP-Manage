@@ -30,12 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $missing_apps = $_POST['missing_apps'];
             $notes = $_POST['notes'];
             
-            // Encrypt password if not empty
-            $is_encrypted = 0;
-            if (!empty($password)) {
-                $password = AssetHelper::encrypt($password);
-                $is_encrypted = 1;
-            }
+            // Encrypt all sensitive fields
+            $is_encrypted = 1;
+            $password = !empty($password) ? AssetHelper::encrypt($password) : '';
+            $username = AssetHelper::encrypt($username);
+            $notes = AssetHelper::encrypt($notes);
+            $installed_apps = AssetHelper::encrypt($installed_apps);
+            $missing_apps = AssetHelper::encrypt($missing_apps);
             
             if ($action === 'add') {
                 $stmt = $db->prepare("INSERT INTO server_assets (hostname, ip_address, category, username, password, is_encrypted, port, installed_apps, missing_apps, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -151,8 +152,25 @@ include 'includes/header.php';
     <?php endif; ?>
     
     
-    <?php foreach ($assets as $asset): ?>
-    <div class="card asset-card" style="position: relative; display: flex; flex-direction: column; padding: 1.5rem; border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;">
+    <?php foreach ($assets as $asset): 
+        // Auto-decrypt sensitive fields for display if encrypted
+        if ($asset['is_encrypted']) {
+            $disp_user = AssetHelper::decrypt($asset['username']);
+            $disp_notes = AssetHelper::decrypt($asset['notes']);
+            $disp_installed = AssetHelper::decrypt($asset['installed_apps']);
+            $disp_missing = AssetHelper::decrypt($asset['missing_apps']);
+        } else {
+            $disp_user = $asset['username'];
+            $disp_notes = $asset['notes'];
+            $disp_installed = $asset['installed_apps'];
+            $disp_missing = $asset['missing_apps'];
+        }
+    ?>
+    <div class="card asset-card" data-asset-id="<?php echo $asset['id']; ?>" style="position: relative; display: flex; flex-direction: column; padding: 1.5rem; border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;">
+        <!-- Multi-select checkbox -->
+        <div class="checkbox-wrapper" style="position: absolute; top: -8px; left: -8px; z-index: 10;">
+            <input type="checkbox" class="asset-checkbox" value="<?php echo $asset['id']; ?>" onchange="updateBatchBar()" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary);">
+        </div>
         
         <!-- Header: Hostname & Actions -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 1rem;">
@@ -229,22 +247,32 @@ include 'includes/header.php';
             <div class="inventory-box inv-pending">
                 <p class="inv-label"><i data-lucide="circle-dashed" style="width: 12px; color: var(--warning);"></i> PENDING</p>
                 <div class="inv-content"><?php echo htmlspecialchars($asset['missing_apps'] ?: '-'); ?></div>
+                <div class="inv-content"><?php echo htmlspecialchars($disp_missing ?: '-'); ?></div>
             </div>
         </div>
 
         <?php if (!empty($asset['notes'])): ?>
         <div style="margin-top: auto;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
-                <i data-lucide="info" style="width: 14px; color: var(--text-muted);"></i>
-                <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">Technical Notes</span>
-            </div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border-left: 2px solid var(--border); line-height: 1.4;">
-                <?php echo htmlspecialchars($asset['notes']); ?>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; background: rgba(0,0,0,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+            <i data-lucide="user" style="width: 14px; color: var(--text-muted);"></i>
+            <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary); letter-spacing: 0.5px;">
+                <?php echo htmlspecialchars($disp_user); ?>
+            </span>
+        </div>
+    <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border-left: 2px solid var(--border); line-height: 1.4;">
+                <?php echo htmlspecialchars($disp_notes); ?>
             </div>
         </div>
         <?php endif; ?>
     </div>
     <?php endforeach; ?>
+</div>
+
+<!-- Batch Action Bar -->
+<div id="batchBar" style="display: none; position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--card-bg); padding: 1rem 2rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 3000; align-items: center; gap: 1rem;">
+    <span id="batchCount">0 selected</span>
+    <button class="btn btn-danger" onclick="batchDelete()">Delete Selected</button>
+    <button class="btn btn-secondary" onclick="clearSelection()">Cancel</button>
 </div>
 
 <!-- Add/Edit Modal -->
@@ -347,12 +375,14 @@ function openEditModal(data) {
     document.getElementById('f_hostname').value = data.hostname;
     document.getElementById('f_ip_address').value = data.ip_address;
     document.getElementById('f_category').value = data.category || '';
-    document.getElementById('f_username').value = data.username;
-    document.getElementById('f_password').value = data.password;
+    
+    // Use Decrypted values for form editing
+    document.getElementById('f_username').value = data.disp_user || data.username;
+    document.getElementById('f_password').value = data.password_clean || ''; // We would need to set this if we want full editability
     document.getElementById('f_port').value = data.port;
-    document.getElementById('f_installed_apps').value = data.installed_apps;
-    document.getElementById('f_missing_apps').value = data.missing_apps;
-    document.getElementById('f_notes').value = data.notes;
+    document.getElementById('f_installed_apps').value = data.disp_installed || data.installed_apps;
+    document.getElementById('f_missing_apps').value = data.disp_missing || data.missing_apps;
+    document.getElementById('f_notes').value = data.disp_notes || data.notes;
     
     document.getElementById('assetModal').style.display = 'flex';
 }
@@ -399,6 +429,100 @@ async function refreshStatus(id) {
     
     try {
         const response = await fetch('api/asset-health?id=' + id);
+        const data = await response.json();
+        
+        badge.innerText = data.status || 'ERROR';
+        badge.className = (data.status === 'ONLINE') ? 'badge badge-success is-online' : 'badge badge-danger';
+        
+        // Update pulse dot
+        const card = document.querySelector(`.asset-card[data-asset-id="${id}"]`);
+        if (card) {
+            if (data.status === 'ONLINE') card.classList.add('is-online');
+            else card.classList.remove('is-online');
+        }
+        
+    } catch (e) {
+        badge.innerText = 'ERROR';
+        badge.className = 'badge badge-danger';
+    } finally {
+        btn.classList.remove('spin-animation');
+        lucide.createIcons();
+    }
+}
+
+// BATCH ACTIONS
+function toggleAllAssets(master) {
+    const checkboxes = document.querySelectorAll('.asset-checkbox');
+    checkboxes.forEach(cb => cb.checked = master.checked);
+    updateBatchBar();
+}
+
+function updateBatchBar() {
+    const selected = document.querySelectorAll('.asset-checkbox:checked');
+    const bar = document.getElementById('batch-action-bar');
+    const count = document.getElementById('selected-count');
+    
+    if (selected.length > 0) {
+        bar.style.display = 'flex';
+        count.innerText = selected.length;
+    } else {
+        bar.style.display = 'none';
+        document.getElementById('select-all-assets').checked = false;
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.asset-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('select-all-assets').checked = false;
+    updateBatchBar();
+}
+
+async function batchCheckStatus() {
+    const selected = document.querySelectorAll('.asset-checkbox:checked');
+    const ids = Array.from(selected).map(cb => cb.value);
+    
+    // Disable Batch Bar during operation
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin-animation"><i data-lucide="refresh-cw"></i></span> Running...';
+    lucide.createIcons();
+    
+    for (const id of ids) {
+        await refreshStatus(id);
+    }
+    
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    lucide.createIcons();
+}
+
+function generateAssetsPDF() {
+    const selected = document.querySelectorAll('.asset-checkbox:checked');
+    const ids = Array.from(selected).map(cb => cb.value);
+    
+    // Hide all cards that are not selected
+    const allCards = document.querySelectorAll('.asset-card');
+    allCards.forEach(card => {
+        const id = card.getAttribute('data-asset-id');
+        if (!ids.includes(id)) {
+            card.classList.add('no-print');
+        } else {
+            card.classList.remove('no-print');
+        }
+    });
+
+    // Special class for print layout
+    document.body.classList.add('printing-assets');
+    
+    window.print();
+    
+    // Cleanup after print
+    setTimeout(() => {
+        allCards.forEach(card => card.classList.remove('no-print'));
+        document.body.classList.remove('printing-assets');
+    }, 1000);
+}
         const data = await response.json();
         
         badge.innerText = data.status;
@@ -535,6 +659,24 @@ async function refreshStatus(id) {
     line-height: 1.4;
 }
 </style>
+
+<!-- Batch Action Bar -->
+<div id="batch-action-bar" style="display: none; position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--primary); border-radius: 50px; padding: 0.75rem 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; align-items: center; gap: 1.5rem; animation: slideUp 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="selected-count" style="background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">0</span>
+        <span style="font-size: 0.9rem; font-weight: 600;">Selected</span>
+    </div>
+    <div style="width: 1px; height: 24px; background: var(--border);"></div>
+    <div style="display: flex; gap: 0.75rem;">
+        <button class="btn" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); font-size: 0.8rem;" onclick="batchCheckStatus()">
+            <i data-lucide="refresh-cw" style="width: 14px;"></i> Bulk Check Status
+        </button>
+        <button class="btn" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border: 1px solid rgba(99,102,241,0.2); font-size: 0.8rem;" onclick="generateAssetsPDF()">
+            <i data-lucide="file-text" style="width: 14px;"></i> Export PDF
+        </button>
+        <button class="btn" style="background: none; border: none; color: var(--text-muted); font-size: 0.8rem;" onclick="clearSelection()">Cancel</button>
+    </div>
+</div>
 
 <!-- Import Modal -->
 <div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">

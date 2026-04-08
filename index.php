@@ -20,6 +20,19 @@ try {
     $ip_count = $db->query("SELECT COUNT(*) FROM ip_addresses")->fetchColumn() ?: 0;
     $vlan_count = $db->query("SELECT COUNT(*) FROM vlans")->fetchColumn() ?: 0;
 
+    // Server Assets Stats
+    $asset_count = $db->query("SELECT COUNT(*) FROM server_assets")->fetchColumn() ?: 0;
+    $asset_online = $db->query("SELECT COUNT(*) FROM server_assets WHERE status = 'ONLINE'")->fetchColumn() ?: 0;
+    $asset_offline = $db->query("SELECT COUNT(*) FROM server_assets WHERE status = 'OFFLINE'")->fetchColumn() ?: 0;
+    
+    // Asset Category distribution
+    $asset_categories = $db->query("
+        SELECT COALESCE(category, 'General') as cat, COUNT(*) as count 
+        FROM server_assets 
+        GROUP BY category 
+        ORDER BY count DESC
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
     $active_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'active'")->fetchColumn() ?: 0;
     $offline_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'offline'")->fetchColumn() ?: 0;
     $avg_confidence = $db->query("SELECT ROUND(AVG(confidence_score), 1) FROM ip_addresses WHERE state IN ('active', 'reserved', 'dhcp')")->fetchColumn();
@@ -98,9 +111,54 @@ try {
 } catch (Exception $e) {
     $subnet_count = 0; $ip_count = 0; $vlan_count = 0;
     $active_count = 0; $offline_count = 0; $avg_confidence = 0; $low_confidence_count = 0;
+    $asset_count = 0; $asset_online = 0; $asset_offline = 0; $asset_categories = [];
     $recent_subnets = []; $needs_attention = [];
 }
 ?>
+
+<!-- Asset Monitoring Overview -->
+<div style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+        <i data-lucide="server" style="color: var(--primary);"></i> Server Asset Health
+    </h2>
+    <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary); background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);">
+            <div style="background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
+                <i data-lucide="database" style="width: 32px; height: 32px;"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Total Assets</p>
+                <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $asset_count; ?></h3>
+            </div>
+        </div>
+
+        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #10b981;">
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 12px; color: #10b981;">
+                <i data-lucide="check-circle" style="width: 32px; height: 32px;"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Servers Online</p>
+                <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $asset_online; ?></h3>
+            </div>
+        </div>
+
+        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #f87171;">
+            <div style="background: rgba(248, 113, 113, 0.1); padding: 1rem; border-radius: 12px; color: #f87171;">
+                <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Servers Offline</p>
+                <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $asset_offline; ?></h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 2rem; opacity: 0.5;">
+
+<h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+    <i data-lucide="network" style="color: var(--success);"></i> Network & IPAM Overview
+</h2>
 
 <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Stat Cards -->
@@ -149,9 +207,17 @@ try {
     </div>
 </div>
 
-<div class="card" style="margin-bottom: 2rem; height: 300px; display: flex; flex-direction: column;">
-    <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Densest Subnets (%)</h3>
-    <div style="flex-grow: 1; position: relative;"><canvas id="densityChart"></canvas></div>
+<div class="grid-2-1" style="margin-bottom: 2rem;">
+    <!-- Asset Category Distribution (New) -->
+    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Asset Category Distribution</h3>
+        <div style="flex-grow: 1; position: relative;"><canvas id="assetCategoryChart"></canvas></div>
+    </div>
+
+    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Densest Subnets (%)</h3>
+        <div style="flex-grow: 1; position: relative;"><canvas id="densityChart"></canvas></div>
+    </div>
 </div>
 
 <script>
@@ -238,6 +304,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: { 
                     grid: { display: false }, 
                     ticks: { color: '#94a3b8' }
+                }
+            }
+        }
+    });
+    // Asset Category Chart
+    new Chart(document.getElementById('assetCategoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: [<?php echo implode(',', array_map(function($c) { return "'".$c."'"; }, array_keys($asset_categories))); ?>],
+            datasets: [{
+                data: [<?php echo implode(',', array_values($asset_categories)); ?>],
+                backgroundColor: ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'],
+                borderColor: 'rgba(30, 41, 59, 0.5)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '70%',
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: {
+                    ...chartDefaults.plugins.legend,
+                    position: 'bottom'
                 }
             }
         }
