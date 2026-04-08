@@ -25,6 +25,11 @@
                 </a>
             </li>
             <li>
+                <a href="server-assets" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'server-assets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="database"></i> Server Assets
+                </a>
+            </li>
+            <li>
                 <a href="subnets" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'subnets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="layers"></i> Subnets
                 </a>
@@ -76,8 +81,8 @@
         <?php endif; ?>
         <ul style="display: flex; flex-direction: column; gap: 0.5rem; <?php echo !is_admin() ? 'margin-top: 2rem;' : ''; ?>">
             <li>
-                <a href="change-password" class="btn" style="width: 100%; justify-content: flex-start;">
-                    <i data-lucide="key"></i> Change Password
+                <a href="change-password" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'change-password.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="user-cog"></i> Account Settings
                 </a>
             </li>
             <li>

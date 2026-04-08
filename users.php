@@ -13,14 +13,15 @@ $db = get_db_connection();
 $page_title = 'User Management';
 
 // Handle user addition
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
     $username = $_POST['username'];
+    $email = $_POST['email'];
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $role = $_POST['role'];
     
     try {
-        $stmt = $db->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
-        $stmt->execute([$username, $password, $role]);
+        $stmt = $db->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$username, $email, $password, $role]);
     } catch (Exception $e) {
         $error = "Error adding user: " . $e->getMessage();
     }
@@ -122,6 +123,10 @@ include 'includes/header.php';
             <div class="input-group">
                 <label>Username</label>
                 <input type="text" name="username" class="input-control" required>
+            </div>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" name="email" class="input-control" required>
             </div>
             <div class="input-group">
                 <label>Password</label>

@@ -196,11 +196,11 @@ include 'includes/header.php';
     </div>
     <?php
     $versions = [
-        ['ver' => '2.11.0', 'date' => '2026-04-02', 'changes' => ['Block-based Subnet Pagination for large networks', 'Global Subnet Utilization stats calculation', 'Smart Chunked Scanning for improved performance', 'Fix IP Display Limit for subnets > /24']],
+        ['ver' => '2.12.0', 'date' => '2026-04-08', 'changes' => ['Modul Server Assets Management (Full CRUD)', 'Automated Email Backup (CSV & TXT Summary)', 'Personalized User Backup Recipients', 'Smart CSV Restore & Data Migration Tool', 'Sidebar UI refinement & Fix undefined variables']],
+        ['ver' => '2.11.2', 'date' => '2026-04-02', 'changes' => ['Memory Optimization for large subnets (/16)', 'INET_ATON-based IP statistics calculation', 'Improved rendering transitions for Mermaid.js']],
+        ['ver' => '2.11.0', 'date' => '2026-04-02', 'changes' => ['Block-based Subnet Pagination for large networks', 'Global Subnet Utilization stats calculation', 'Smart Chunked Scanning for improved performance']],
         ['ver' => '2.10.0', 'date' => '2026-04-01', 'changes' => ['Manual Network Topology Manager', 'Mermaid.js Hierarchical Visualization', 'Smart Link Filtering (No Self-Link)', 'CSP Compliance (External JS Assets)']],
         ['ver' => '2.9.0', 'date' => '2026-03-31', 'changes' => ['Smart Offline Detection (Fail Counter)', 'Intensive Verification Probe (Multi-Signal)', 'Customizable Fail Threshold Settings', 'Fix Subdirectory URL Routing (.htaccess)']],
-        ['ver' => '2.8.0', 'date' => '2026-03-29', 'changes' => ['Optimasi Performa PHP Opcache (No-Lag)', 'Infrastruktur Redis 7 Caching', 'Browser SVG Favicon', 'Fix Fatal Error AuditLogHelper', 'Sanitisasi database data sensitif']],
-        ['ver' => '2.7.0', 'date' => '2026-03-29', 'changes' => ['Realtime CPU & Memory via Server-Sent Events', 'Performance History Charts (1h/6h/24h/48h)', 'Period Summary Card dengan Avg & Peak CPU']],
     ];
     foreach ($versions as $v): ?>
     <div style="display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border);">

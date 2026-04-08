@@ -121,7 +121,8 @@ function run_auto_migrations($db) {
             ('nmap_enabled', '0'),
             ('discovery_aggressive', '1'),
             ('subnet_limit_threshold', '80'),
-            ('offline_fail_threshold', '3');
+            ('offline_fail_threshold', '3'),
+            ('last_server_backup', '0');
         ");
     }
 
@@ -165,5 +166,20 @@ function run_auto_migrations($db) {
         target_id INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY (parent_switch_id, target_type, target_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+    // 13. Server Assets Table (New)
+    $db->exec("CREATE TABLE IF NOT EXISTS server_assets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        hostname VARCHAR(100) NOT NULL,
+        ip_address VARCHAR(45) NOT NULL,
+        username VARCHAR(100) DEFAULT NULL,
+        password VARCHAR(255) DEFAULT NULL,
+        port INT DEFAULT 22,
+        installed_apps TEXT DEFAULT NULL,
+        missing_apps TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 }

@@ -1,8 +1,3 @@
-# IPManager Pro: Development & Update History
-
-All major functional changes, enhancements, and critical fixes are documented here.
-
----
 
 ## [2.11.2] - 2026-04-02
 ### Optimized

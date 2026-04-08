@@ -168,15 +168,63 @@ class NotificationHelper {
     }
 
     /**
-     * Manual SMTP implementation to avoid massive dependencies like PHPMailer
+     * Send email with attachments (CSV, TXT)
      */
-    private static function sendSmtpEmail($host, $port, $user, $pass, $from, $to, $subject, $message) {
+    public static function sendEmailWithAttachments($subject, $body, $attachments = [], $to = null) {
+        if ($to === null) {
+            $to = Settings::get('admin_email');
+        }
+        
+        if (!$to || !Settings::enabled('email_enabled')) return false;
+
+        $from = Settings::get('mail_from', 'notifications@example.com');
+        $boundary = "PHP-mixed-" . md5(time());
+        $newline = "\r\n";
+
+        // Headers
+        $headers = "From: " . APP_NAME . " <{$from}>" . $newline;
+        $headers .= "MIME-Version: 1.0" . $newline;
+        $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"" . $newline;
+
+        // Message body
+        $message = "--{$boundary}" . $newline;
+        $message .= "Content-Type: text/html; charset=UTF-8" . $newline;
+        $message .= "Content-Transfer-Encoding: 8bit" . $newline . $newline;
+        $message .= $body . $newline . $newline;
+
+        // Attachments
+        foreach ($attachments as $filename => $content) {
+            $message .= "--{$boundary}" . $newline;
+            $message .= "Content-Type: application/octet-stream; name=\"{$filename}\"" . $newline;
+            $message .= "Content-Description: {$filename}" . $newline;
+            $message .= "Content-Disposition: attachment; filename=\"{$filename}\"; size=" . strlen($content) . ";" . $newline;
+            $message .= "Content-Transfer-Encoding: base64" . $newline . $newline;
+            $message .= chunk_split(base64_encode($content)) . $newline;
+        }
+
+        $message .= "--{$boundary}--";
+
+        // Use SMTP if configured
+        $smtp_host = Settings::get('smtp_host');
+        if (!empty($smtp_host) && $smtp_host !== 'localhost') {
+            $smtp_port = Settings::get('smtp_port');
+            $smtp_user = Settings::get('smtp_user');
+            $smtp_pass = Settings::get('smtp_pass');
+            return self::sendSmtpRaw($smtp_host, $smtp_port, $smtp_user, $smtp_pass, $from, $to, $subject, $message, $headers);
+        }
+
+        return @mail($to, $subject, $message, $headers);
+    }
+
+    /**
+     * Raw SMTP sender to handle custom headers and multipart body
+     */
+    private static function sendSmtpRaw($host, $port, $user, $pass, $from, $to, $subject, $message, $extra_headers) {
         $timeout = 10;
         $newline = "\r\n";
         
         $smtp_host = ($port == 465) ? "ssl://{$host}" : $host;
         $socket = @fsockopen($smtp_host, $port, $errno, $errstr, $timeout);
-
         if (!$socket) return false;
 
         $response = function($socket) {
@@ -193,7 +241,7 @@ class NotificationHelper {
             return $response($socket);
         };
 
-        $response($socket); // Initial greeting
+        $response($socket); 
         $exec($socket, "EHLO " . $_SERVER['SERVER_NAME']);
         
         if (!empty($user) && !empty($pass)) {
@@ -206,13 +254,9 @@ class NotificationHelper {
         $exec($socket, "RCPT TO: <{$to}>");
         $exec($socket, "DATA");
 
-        $headers = "MIME-Version: 1.0" . $newline;
-        $headers .= "Content-type:text/html;charset=UTF-8" . $newline;
-        $headers .= "From: " . APP_NAME . " <{$from}>" . $newline;
-        $headers .= "To: <{$to}>" . $newline;
-        $headers .= "Subject: {$subject}" . $newline;
-
-        fputs($socket, $headers . $newline . $message . $newline . "." . $newline);
+        fputs($socket, "Subject: {$subject}" . $newline);
+        fputs($socket, $extra_headers . $newline);
+        fputs($socket, $message . $newline . "." . $newline);
         $response($socket);
 
         $exec($socket, "QUIT");
