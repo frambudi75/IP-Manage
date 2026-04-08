@@ -1,3 +1,21 @@
+# IPManager Pro: Development & Update History
+
+All major functional changes, enhancements, and critical fixes are documented here.
+
+---
+
+## [2.12.0] - 2026-04-08
+### Added
+- **Server Assets Management**: Modul baru untuk mendata login akses (SSH/Web), spesifikasi software, dan status instalasi aplikasi pada server.
+- **Automated Asset Backup**: Pengiriman backup berkala (setiap 3 hari) ke email admin/user dalam format CSV dan Teks Summary.
+- **Smart CSV Restore**: Fitur import data dari file CSV backup untuk pemulihan cepat atau migrasi data aset server.
+- **Personalized Backups**: Dukungan alamat email per-user untuk pengiriman backup yang lebih relevan dan aman.
+
+### Fixed
+- **Sidebar UI refinement**: Perbaikan tautan About dan penataan ulang menu navigasi agar lebih konsisten.
+- **Security Check**: Penambahan verifikasi sesi dan otentikasi pada skrip background cron.
+
+---
 
 ## [2.11.2] - 2026-04-02
 ### Optimized
@@ -94,7 +112,6 @@
 - **Robust Migration**: Skrip `db.php` kini memeriksa keberadaan tabel sebelum menjalankan migrasi, mencegah crash saat database baru diinisialisasi.
 
 ---
-
 
 ## [2.5.0] - 2026-03-28
 ### Added
