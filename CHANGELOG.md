@@ -4,6 +4,19 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.13.0] - 2026-04-08
+### Added
+- **Asset Password Encryption**: Implementasi enkripsi AES-256-CBC untuk kredensial server guna meningkatkan keamanan data at rest.
+- **Secure Password Reveal**: Password hanya didekripsi saat dibutuhkan via AJAX dan mencatat kejadian akses ke Audit Logs.
+- **Server Health Check (Uptime)**: Indikator status ONLINE/OFFLINE real-time untuk setiap aset server menggunakan pengecekan port TCP.
+- **Server Grouping (Category)**: Dukungan pengelompokan server berdasarkan kategori/tag (misal: Production, Database, Apps).
+- **Advanced CSV Backup/Restore**: Pembaruan sistem backup agar mendukung metadata kategori, status, dan flag keamanan terbaru.
+
+### Fixed
+- **Responsive Layout Improvement**: Penataan ulang elemen UI pada modal dan grid list agar lebih optimal di perangkat mobile.
+
+---
+
 ## [2.12.0] - 2026-04-08
 ### Added
 - **Server Assets Management**: Modul baru untuk mendata login akses (SSH/Web), spesifikasi software, dan status instalasi aplikasi pada server.

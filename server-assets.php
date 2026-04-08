@@ -2,6 +2,7 @@
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/audit.helper.php';
+require_once 'includes/asset.helper.php';
 
 session_start();
 if (!isset($_SESSION['user_id'])) {
@@ -21,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'add' || $action === 'edit') {
             $hostname = $_POST['hostname'];
             $ip_address = $_POST['ip_address'];
+            $category = $_POST['category'] ?: 'General';
             $username = $_POST['username'];
             $password = $_POST['password'];
             $port = (int)$_POST['port'] ?: 22;
@@ -28,15 +30,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $missing_apps = $_POST['missing_apps'];
             $notes = $_POST['notes'];
             
+            // Encrypt password if not empty
+            $is_encrypted = 0;
+            if (!empty($password)) {
+                $password = AssetHelper::encrypt($password);
+                $is_encrypted = 1;
+            }
+            
             if ($action === 'add') {
-                $stmt = $db->prepare("INSERT INTO server_assets (hostname, ip_address, username, password, port, installed_apps, missing_apps, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$hostname, $ip_address, $username, $password, $port, $installed_apps, $missing_apps, $notes]);
+                $stmt = $db->prepare("INSERT INTO server_assets (hostname, ip_address, category, username, password, is_encrypted, port, installed_apps, missing_apps, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$hostname, $ip_address, $category, $username, $password, $is_encrypted, $port, $installed_apps, $missing_apps, $notes]);
                 AuditLogHelper::log("add_server_asset", "server_asset", $db->lastInsertId(), "Added server asset $hostname ($ip_address)");
                 $message = "Server asset added successfully!";
             } else {
                 $id = (int)$_POST['id'];
-                $stmt = $db->prepare("UPDATE server_assets SET hostname = ?, ip_address = ?, username = ?, password = ?, port = ?, installed_apps = ?, missing_apps = ?, notes = ? WHERE id = ?");
-                $stmt->execute([$hostname, $ip_address, $username, $password, $port, $installed_apps, $missing_apps, $notes, $id]);
+                $stmt = $db->prepare("UPDATE server_assets SET hostname = ?, ip_address = ?, category = ?, username = ?, password = ?, is_encrypted = ?, port = ?, installed_apps = ?, missing_apps = ?, notes = ? WHERE id = ?");
+                $stmt->execute([$hostname, $ip_address, $category, $username, $password, $is_encrypted, $port, $installed_apps, $missing_apps, $notes, $id]);
                 AuditLogHelper::log("edit_server_asset", "server_asset", $id, "Updated server asset $hostname ($ip_address)");
                 $message = "Server asset updated successfully!";
             }
@@ -56,15 +65,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                     if (count($data) < 9) continue;
                     
-                    // Format: 0:id, 1:hostname, 2:ip, 3:username, 4:password, 5:port, 6:installed, 7:missing, 8:notes
+                    // Format: 0:id, 1:hostname, 2:ip, 3:category, 4:username, 5:password, 6:is_encrypted, 7:port, 8:status, 9:last_check, 10:installed, 11:missing, 12:notes
                     $hostname = $data[1];
                     $ip = $data[2];
-                    $username = $data[3];
-                    $password = $data[4];
-                    $port = (int)$data[5];
-                    $installed = $data[6];
-                    $missing = $data[7];
-                    $notes = $data[8];
+                    $category = $data[3];
+                    $username = $data[4];
+                    $password = $data[5];
+                    $is_encrypted = (int)$data[6];
+                    $port = (int)$data[7];
+                    $installed = $data[10];
+                    $missing = $data[11];
+                    $notes = $data[12];
 
                     // Check if exists by hostname + IP
                     $check = $db->prepare("SELECT id FROM server_assets WHERE hostname = ? AND ip_address = ?");
@@ -72,12 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $existing_id = $check->fetchColumn();
 
                     if ($existing_id) {
-                        $stmt = $db->prepare("UPDATE server_assets SET username = ?, password = ?, port = ?, installed_apps = ?, missing_apps = ?, notes = ? WHERE id = ?");
-                        $stmt->execute([$username, $password, $port, $installed, $missing, $notes, $existing_id]);
+                        $stmt = $db->prepare("UPDATE server_assets SET category = ?, username = ?, password = ?, is_encrypted = ?, port = ?, installed_apps = ?, missing_apps = ?, notes = ? WHERE id = ?");
+                        $stmt->execute([$category, $username, $password, $is_encrypted, $port, $installed, $missing, $notes, $existing_id]);
                         $updated++;
                     } else {
-                        $stmt = $db->prepare("INSERT INTO server_assets (hostname, ip_address, username, password, port, installed_apps, missing_apps, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                        $stmt->execute([$hostname, $ip, $username, $password, $port, $installed, $missing, $notes]);
+                        $stmt = $db->prepare("INSERT INTO server_assets (hostname, ip_address, category, username, password, is_encrypted, port, installed_apps, missing_apps, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([$hostname, $ip, $category, $username, $password, $is_encrypted, $port, $installed, $missing, $notes]);
                         $imported++;
                     }
                 }
@@ -143,10 +154,21 @@ include 'includes/header.php';
     <div class="card" style="position: relative; display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
             <div>
-                <h3 style="font-size: 1.125rem;"><?php echo htmlspecialchars($asset['hostname']); ?></h3>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <h3 style="font-size: 1.125rem;"><?php echo htmlspecialchars($asset['hostname']); ?></h3>
+                    <span style="background: rgba(99,102,241,0.1); color: var(--primary); font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                        <?php echo htmlspecialchars($asset['category'] ?: 'General'); ?>
+                    </span>
+                    <div id="status-badge-<?php echo $asset['id']; ?>" class="badge badge-<?php echo $asset['status'] === 'ONLINE' ? 'success' : ($asset['status'] === 'OFFLINE' ? 'danger' : 'secondary'); ?>" style="font-size: 0.65rem; padding: 2px 8px;">
+                        <?php echo $asset['status']; ?>
+                    </div>
+                </div>
                 <code style="color: var(--primary); font-weight: 700;"><?php echo htmlspecialchars($asset['ip_address']); ?>:<?php echo $asset['port']; ?></code>
             </div>
             <div style="display: flex; gap: 0.5rem;">
+                <button class="btn" style="background: var(--surface-light); padding: 5px 8px;" onclick="refreshStatus(<?php echo $asset['id']; ?>)" id="refresh-btn-<?php echo $asset['id']; ?>">
+                    <i data-lucide="refresh-cw" style="width: 14px;"></i>
+                </button>
                 <button class="btn" style="background: var(--surface-light); padding: 5px 8px;" onclick='openEditModal(<?php echo json_encode($asset); ?>)'>
                     <i data-lucide="edit-3" style="width: 14px;"></i>
                 </button>
@@ -171,7 +193,7 @@ include 'includes/header.php';
                     <i data-lucide="key" style="width: 14px; color: var(--text-muted);"></i>
                     <span style="font-size: 0.875rem; font-family: monospace; display: flex; align-items: center; gap: 8px;">
                         <span class="pw-hidden" id="pw-<?php echo $asset['id']; ?>">••••••••</span>
-                        <span class="pw-visible" id="pw-real-<?php echo $asset['id']; ?>" style="display: none;"><?php echo htmlspecialchars($asset['password'] ?: '-'); ?></span>
+                        <span class="pw-visible" id="pw-real-<?php echo $asset['id']; ?>" style="display: none; font-weight: 700; color: var(--primary);"></span>
                         <button type="button" style="background: none; border: none; cursor: pointer; color: var(--primary); padding: 0;" onclick="togglePassword(<?php echo $asset['id']; ?>)">
                             <i data-lucide="eye" id="eye-icon-<?php echo $asset['id']; ?>" style="width: 14px;"></i>
                         </button>
@@ -216,7 +238,7 @@ include 'includes/header.php';
             <input type="hidden" name="action" id="modalAction" value="add">
             <input type="hidden" name="id" id="assetId" value="">
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
                 <div class="input-group">
                     <label>Hostname / Server Name</label>
                     <input type="text" name="hostname" id="f_hostname" class="input-control" placeholder="e.g. Production Web" required>
@@ -224,6 +246,17 @@ include 'includes/header.php';
                 <div class="input-group">
                     <label>IP Address</label>
                     <input type="text" name="ip_address" id="f_ip_address" class="input-control" placeholder="192.168.1.10" required>
+                </div>
+                <div class="input-group">
+                    <label>Category (Group)</label>
+                    <input type="text" name="category" id="f_category" class="input-control" list="category_list" placeholder="e.g. Production">
+                    <datalist id="category_list">
+                        <option value="Production">
+                        <option value="Development">
+                        <option value="Staging">
+                        <option value="Database">
+                        <option value="Core Infrastructure">
+                    </datalist>
                 </div>
             </div>
 
@@ -274,6 +307,7 @@ function openAddModal() {
     // Clear form
     document.getElementById('f_hostname').value = '';
     document.getElementById('f_ip_address').value = '';
+    document.getElementById('f_category').value = '';
     document.getElementById('f_username').value = '';
     document.getElementById('f_password').value = '';
     document.getElementById('f_port').value = '22';
@@ -292,6 +326,7 @@ function openEditModal(data) {
     
     document.getElementById('f_hostname').value = data.hostname;
     document.getElementById('f_ip_address').value = data.ip_address;
+    document.getElementById('f_category').value = data.category || '';
     document.getElementById('f_username').value = data.username;
     document.getElementById('f_password').value = data.password;
     document.getElementById('f_port').value = data.port;
@@ -306,7 +341,7 @@ function closeModal() {
     document.getElementById('assetModal').style.display = 'none';
 }
 
-function togglePassword(id) {
+async function togglePassword(id) {
     const hidden = document.getElementById('pw-' + id);
     const visible = document.getElementById('pw-real-' + id);
     const icon = document.getElementById('eye-icon-' + id);
@@ -316,13 +351,62 @@ function togglePassword(id) {
         visible.style.display = 'none';
         icon.setAttribute('data-lucide', 'eye');
     } else {
+        // If password is not loaded yet, fetch it from API
+        if (visible.innerText === '') {
+            visible.innerText = 'Decrypting...';
+            try {
+                const response = await fetch('api/get-asset-password?id=' + id);
+                const data = await response.json();
+                visible.innerText = data.password || '-';
+            } catch (e) {
+                visible.innerText = 'Error Decrypting';
+            }
+        }
         hidden.style.display = 'none';
         visible.style.display = 'inline';
         icon.setAttribute('data-lucide', 'eye-off');
     }
     lucide.createIcons();
 }
+
+async function refreshStatus(id) {
+    const badge = document.getElementById('status-badge-' + id);
+    const btn = document.getElementById('refresh-btn-' + id);
+    
+    badge.innerText = 'Checking...';
+    badge.className = 'badge badge-secondary';
+    btn.classList.add('spin-animation');
+    
+    try {
+        const response = await fetch('api/asset-health?id=' + id);
+        const data = await response.json();
+        
+        badge.innerText = data.status;
+        badge.className = 'badge badge-' + (data.status === 'ONLINE' ? 'success' : 'danger');
+        
+        if (data.status === 'ONLINE') {
+            badge.title = 'Latency: ' + data.latency;
+        } else {
+            badge.title = 'Error: ' + data.error;
+        }
+    } catch (e) {
+        badge.innerText = 'ERROR';
+        badge.className = 'badge badge-danger';
+    } finally {
+        btn.classList.remove('spin-animation');
+    }
+}
 </script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin-animation i {
+    animation: spin 1s linear infinite;
+}
+</style>
 
 <!-- Import Modal -->
 <div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">

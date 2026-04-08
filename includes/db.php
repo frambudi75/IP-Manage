@@ -168,18 +168,39 @@ function run_auto_migrations($db) {
         UNIQUE KEY (parent_switch_id, target_type, target_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 
-    // 13. Server Assets Table (New)
+    // 13. Server Assets Table (Advanced)
     $db->exec("CREATE TABLE IF NOT EXISTS server_assets (
         id INT AUTO_INCREMENT PRIMARY KEY,
         hostname VARCHAR(100) NOT NULL,
         ip_address VARCHAR(45) NOT NULL,
+        category VARCHAR(50) DEFAULT 'General',
         username VARCHAR(100) DEFAULT NULL,
         password VARCHAR(255) DEFAULT NULL,
+        is_encrypted TINYINT(1) DEFAULT 0,
         port INT DEFAULT 22,
+        status VARCHAR(20) DEFAULT 'UNKNOWN',
+        last_check TIMESTAMP NULL DEFAULT NULL,
         installed_apps TEXT DEFAULT NULL,
         missing_apps TEXT DEFAULT NULL,
         notes TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+    // Check for missing columns in existing server_assets table
+    try {
+        $asset_cols = $db->query("SHOW COLUMNS FROM server_assets")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('category', $asset_cols)) {
+            $db->exec("ALTER TABLE server_assets ADD COLUMN category VARCHAR(50) DEFAULT 'General' AFTER ip_address");
+        }
+        if (!in_array('is_encrypted', $asset_cols)) {
+            $db->exec("ALTER TABLE server_assets ADD COLUMN is_encrypted TINYINT(1) DEFAULT 0 AFTER password");
+        }
+        if (!in_array('status', $asset_cols)) {
+            $db->exec("ALTER TABLE server_assets ADD COLUMN status VARCHAR(20) DEFAULT 'UNKNOWN' AFTER port");
+        }
+        if (!in_array('last_check', $asset_cols)) {
+            $db->exec("ALTER TABLE server_assets ADD COLUMN last_check TIMESTAMP NULL DEFAULT NULL AFTER status");
+        }
+    } catch (Exception $e) {}
 }

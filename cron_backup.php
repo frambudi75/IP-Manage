@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/settings.helper.php';
 require_once __DIR__ . '/includes/notifications.php';
+require_once __DIR__ . '/includes/asset.helper.php';
 
 $db = get_db_connection();
 
@@ -45,27 +46,35 @@ if (empty($assets)) {
     exit;
 }
 
-// 2. Generate CSV
-$csv_content = "ID,Hostname,IP Address,Username,Password,Port,Installed Apps,Missing Apps,Notes,Updated At\n";
+// 2. Generate CSV (Updated for Advanced Schema)
+$csv_content = "ID,Hostname,IP Address,Category,Username,Password,Is Encrypted,Port,Status,Last Check,Installed Apps,Missing Apps,Notes,Updated At\n";
 foreach ($assets as $a) {
     $csv_content .= '"' . str_replace('"', '""', $a['id']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['hostname']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['ip_address']) . '",';
+    $csv_content .= '"' . str_replace('"', '""', $a['category']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['username']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['password']) . '",';
+    $csv_content .= '"' . str_replace('"', '""', $a['is_encrypted']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['port']) . '",';
+    $csv_content .= '"' . str_replace('"', '""', $a['status']) . '",';
+    $csv_content .= '"' . str_replace('"', '""', $a['last_check']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['installed_apps']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['missing_apps']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['notes']) . '",';
     $csv_content .= '"' . str_replace('"', '""', $a['updated_at']) . "\"\n";
 }
 
-// 3. Generate Text Summary (Human Readable)
+// 3. Generate Text Summary (Human Readable & Decrypted)
 $txt_content = "SERVER ASSETS BACKUP - " . date('Y-m-d H:i:s') . "\n";
 $txt_content .= "==========================================\n\n";
 foreach ($assets as $a) {
-    $txt_content .= "Server: " . $a['hostname'] . " (" . $a['ip_address'] . ":" . $a['port'] . ")\n";
-    $txt_content .= "Login: " . $a['username'] . " / " . $a['password'] . "\n";
+    $pass = $a['password'];
+    if ($a['is_encrypted']) $pass = AssetHelper::decrypt($pass);
+    
+    $txt_content .= "Server: " . $a['hostname'] . " (" . $a['ip_address'] . ":" . $a['port'] . ") [" . $a['category'] . "]\n";
+    $txt_content .= "Status: " . $a['status'] . " (Last: " . $a['last_check'] . ")\n";
+    $txt_content .= "Login: " . $a['username'] . " / " . $pass . "\n";
     $txt_content .= "Installed: " . str_replace("\n", ", ", $a['installed_apps']) . "\n";
     $txt_content .= "Missing: " . str_replace("\n", ", ", $a['missing_apps']) . "\n";
     $txt_content .= "Notes: " . $a['notes'] . "\n";
