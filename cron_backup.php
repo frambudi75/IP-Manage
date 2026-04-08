@@ -94,20 +94,32 @@ foreach ($assets as $a) {
     $txt_content .= "------------------------------------------\n\n";
 }
 
-// 4. Determine Recipient
+// 4. Generate ZIP Archive for "Safe Keeping"
+$zip_filename = 'server_assets_backup_' . date('Y-m-d') . '.zip';
+$zip_path = __DIR__ . '/tmp/' . $zip_filename;
+if (!is_dir(__DIR__ . '/tmp')) mkdir(__DIR__ . '/tmp');
+
+$zip = new ZipArchive();
+if ($zip->open($zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+    $zip->addFromString('backup.csv', $csv_content);
+    $zip->addFromString('summary.txt', $txt_content);
+    $zip->close();
+}
+
+// 5. Determine Recipient
 $to = Settings::get('admin_email');
 if (php_sapi_name() !== 'cli' && isset($_SESSION['user_id'])) {
     $stmt = $db->prepare("SELECT email FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
-    $u_email = $check_email = $stmt->fetchColumn();
+    $u_email = $stmt->fetchColumn();
     if (!empty($u_email)) $to = $u_email;
 }
 
-$subject = "📁 Server Assets Backup - " . date('d M Y');
+$subject = "📁 Server Assets Backup & Archive - " . date('d M Y');
 $body = "<h2>Server Assets Automated Backup</h2>";
 $body .= "<p>Hello, here are the backup files you requested for your server assets records.</p>";
-$body .= "<p><b>CSV File:</b> Use this to restore or import data back into the system.</p>";
-$body .= "<p><b>TXT File:</b> Human-readable summary of all server access details.</p>";
+$body .= "<p><b>ZIP Archive:</b> Best for long-term storage and safe-keeping.</p>";
+$body .= "<p><b>CSV/TXT Files:</b> For quick inspection and restore.</p>";
 $body .= "<br><p>Sent from: " . APP_NAME . "</p>";
 
 $attachments = [
@@ -115,7 +127,14 @@ $attachments = [
     'server_assets_summary_' . date('Y-m-d') . '.txt' => $txt_content
 ];
 
+if (file_exists($zip_path)) {
+    $attachments[$zip_filename] = file_get_contents($zip_path);
+}
+
 $success = NotificationHelper::sendEmailWithAttachments($subject, $body, $attachments, $to); 
+
+// Cleanup ZIP
+if (file_exists($zip_path)) unlink($zip_path);
 
 if ($success) {
     Settings::set('last_server_backup', time());
