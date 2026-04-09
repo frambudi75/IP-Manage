@@ -64,13 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($target)) {
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem;">
-                    <button type="submit" name="action" value="ping" class="btn btn-primary" style="justify-content: flex-start;">
+                    <?php 
+                        $active_action = $_POST['action'] ?? 'ping'; 
+                    ?>
+                    <button type="submit" name="action" value="ping" class="btn <?php echo $active_action === 'ping' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'ping' ? 'background: var(--surface-light);' : ''; ?>">
                         <i data-lucide="radio" style="width: 16px;"></i> Ping Utility
                     </button>
-                    <button type="submit" name="action" value="trace" class="btn" style="justify-content: flex-start; background: var(--surface-light);">
+                    <button type="submit" name="action" value="trace" class="btn <?php echo $active_action === 'trace' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'trace' ? 'background: var(--surface-light);' : ''; ?>">
                         <i data-lucide="git-merge" style="width: 16px;"></i> Traceroute
                     </button>
-                    <button type="submit" name="action" value="oui" class="btn" style="justify-content: flex-start; background: var(--surface-light);">
+                    <button type="submit" name="action" value="oui" class="btn <?php echo $active_action === 'oui' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'oui' ? 'background: var(--surface-light);' : ''; ?>">
                         <i data-lucide="search" style="width: 16px;"></i> OUI Lookup (MAC)
                     </button>
                 </div>

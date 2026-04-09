@@ -4,7 +4,10 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
-## [2.15.0] - 2026-04-09
+## [2.15.1] - 2026-04-09
+### Fixed
+- **UI/UX**: Resolved an issue in the Network Toolbox where the active tool highlighting (blue box) did not update upon switching tools.
+- **Header**: Refined activation telemetry to include better technical context.
 ### Added
 - **Bug Reporting System**: Internal utility for administrators to report issues directly to the developer, including automated system state capture (PHP version, OS, browser info).
 - **Activation Telemetry**: One-time background notification to developer upon new installations to track active deployments.
