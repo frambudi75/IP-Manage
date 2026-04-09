@@ -66,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                     if (count($data) < 9) continue;
                     
-                    // Format: 0:id, 1:hostname, 2:ip, 3:category, 4:username, 5:password, 6:is_encrypted, 7:port, 8:status, 9:last_check, 10:installed, 11:missing, 12:notes
                     $hostname = $data[1];
                     $ip = $data[2];
                     $category = $data[3];
@@ -78,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $missing = $data[11];
                     $notes = $data[12];
 
-                    // Check if exists by hostname + IP
                     $check = $db->prepare("SELECT id FROM server_assets WHERE hostname = ? AND ip_address = ?");
                     $check->execute([$hostname, $ip]);
                     $existing_id = $check->fetchColumn();
@@ -110,20 +108,23 @@ $page_title = "Server Assets Management";
 include 'includes/header.php';
 ?>
 
-<div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1.5rem;">
+<div class="header-actions" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-        <h1 style="font-size: 1.5rem;">Server Assets & Access</h1>
-        <p style="color: var(--text-muted); font-size: 0.875rem;">Manage server login credentials and software inventory</p>
+        <div class="breadcrumb">
+            <span class="text-muted">Assets</span> / <span>Server Inventory</span>
+        </div>
+        <h1 style="font-size: 1.5rem; margin-top: 0.5rem;">Server Assets & Access</h1>
     </div>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <label class="btn" style="background: var(--surface-light); cursor: pointer; padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="select-all-assets" onchange="toggleAllAssets(this)" style="width: 14px; height: 14px;">
+            <span>Select All</span>
+        </label>
         <button class="btn btn-secondary" onclick="document.getElementById('importModal').style.display='flex'">
-            <i data-lucide="upload" style="width: 14px;"></i> Import CSV
-        </button>
-        <button class="btn btn-secondary" onclick="location.href='cron_backup?force=1'" title="Last backup: <?php echo $last_backup ? date('d M Y H:i', $last_backup) : 'Never'; ?>">
-            <i data-lucide="mail" style="width: 14px;"></i> Backup Now
+            <i data-lucide="upload" style="width: 14px;"></i> Import
         </button>
         <button class="btn btn-primary" onclick="openAddModal()">
-            <i data-lucide="plus"></i> Add Server
+            <i data-lucide="plus" style="width: 16px;"></i> Add Server
         </button>
     </div>
 </div>
@@ -151,9 +152,7 @@ include 'includes/header.php';
         </div>
     <?php endif; ?>
     
-    
     <?php foreach ($assets as $asset): 
-        // Auto-decrypt sensitive fields for display if encrypted
         if ($asset['is_encrypted']) {
             $disp_user = AssetHelper::decrypt($asset['username']);
             $disp_notes = AssetHelper::decrypt($asset['notes']);
@@ -167,12 +166,10 @@ include 'includes/header.php';
         }
     ?>
     <div class="card asset-card" data-asset-id="<?php echo $asset['id']; ?>" style="position: relative; display: flex; flex-direction: column; padding: 1.5rem; border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;">
-        <!-- Multi-select checkbox -->
         <div class="checkbox-wrapper" style="position: absolute; top: -8px; left: -8px; z-index: 10;">
             <input type="checkbox" class="asset-checkbox" value="<?php echo $asset['id']; ?>" onchange="updateBatchBar()" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary);">
         </div>
         
-        <!-- Header: Hostname & Actions -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 1rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: white; overflow-wrap: break-word; word-break: break-word; margin: 0; line-height: 1.2; flex: 1;">
                 <?php echo htmlspecialchars($asset['hostname']); ?>
@@ -181,7 +178,7 @@ include 'includes/header.php';
                 <button class="btn-icon" onclick="refreshStatus(<?php echo $asset['id']; ?>)" id="refresh-btn-<?php echo $asset['id']; ?>" title="Refresh Status">
                     <i data-lucide="refresh-cw" style="width: 14px;"></i>
                 </button>
-                <button class="btn-icon" onclick='openEditModal(<?php echo json_encode($asset); ?>)' title="Edit Asset">
+                <button class="btn-icon" onclick='openEditModal(<?php echo json_encode(array_merge($asset, ["disp_user"=>$disp_user, "disp_notes"=>$disp_notes, "disp_installed"=>$disp_installed, "disp_missing"=>$disp_missing])); ?>)' title="Edit Asset">
                     <i data-lucide="edit-3" style="width: 14px;"></i>
                 </button>
                 <form action="" method="POST" onsubmit="return confirm('Remove this server asset?');" style="display: inline;">
@@ -194,88 +191,58 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <!-- Meta Row: Status, IP, Category -->
         <div style="display: flex; align-items: center; gap: 10px; row-gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap;">
-            <div id="status-badge-<?php echo $asset['id']; ?>" class="status-indicator <?php echo $asset['status'] === 'ONLINE' ? 'is-online' : ($asset['status'] === 'OFFLINE' ? 'is-offline' : ''); ?>" title="Last check: <?php echo $asset['last_check'] ?: 'Never'; ?>">
+            <div id="status-badge-<?php echo $asset['id']; ?>" class="status-indicator <?php echo $asset['status'] === 'ONLINE' ? 'is-online' : ($asset['status'] === 'OFFLINE' ? 'is-offline' : ''); ?>">
                 <span class="pulse-dot"></span>
                 <span class="status-text"><?php echo $asset['status']; ?></span>
             </div>
             <code style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; color: var(--primary); font-weight: 700;">
                 <?php echo htmlspecialchars($asset['ip_address']); ?>:<?php echo $asset['port']; ?>
             </code>
-            <span style="background: rgba(99,102,241,0.1); color: var(--primary); font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(99,102,241,0.2);">
+            <span style="background: rgba(99,102,241,0.1); color: var(--primary); font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; font-weight: 700; text-transform: uppercase;">
                 <?php echo htmlspecialchars($asset['category'] ?: 'General'); ?>
             </span>
         </div>
 
-        <!-- Credentials Block -->
-        <div style="background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
-            <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
-                        <i data-lucide="user" style="width: 16px; color: var(--text-muted);"></i>
-                    </div>
-                    <div>
-                        <p style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin: 0; letter-spacing: 0.5px;">Username</p>
-                        <p style="font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; margin: 0; font-weight: 500;"><?php echo htmlspecialchars($asset['username'] ?: '-'); ?></p>
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
-                        <i data-lucide="key" style="width: 16px; color: var(--text-muted);"></i>
-                    </div>
-                    <div style="flex-grow: 1;">
-                        <p style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin: 0; letter-spacing: 0.5px;">Security Key</p>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span id="pw-<?php echo $asset['id']; ?>" style="font-size: 1rem; letter-spacing: 2px; color: var(--text-muted); line-height: 1;">••••••••</span>
-                            <span id="pw-real-<?php echo $asset['id']; ?>" style="display: none; font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary);"></span>
-                            <button type="button" class="btn-reveal" onclick="togglePassword(<?php echo $asset['id']; ?>)">
-                                <i data-lucide="eye" id="eye-icon-<?php echo $asset['id']; ?>" style="width: 16px;"></i>
-                            </button>
-                        </div>
-                    </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <i data-lucide="user" style="width: 14px; color: var(--text-muted);"></i>
+                <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary);"><?php echo htmlspecialchars($disp_user); ?></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <i data-lucide="key" style="width: 14px; color: var(--text-muted);"></i>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="pw-<?php echo $asset['id']; ?>" style="color: var(--text-muted);">••••••••</span>
+                    <span id="pw-real-<?php echo $asset['id']; ?>" style="display: none; font-family: monospace; font-weight: 700; color: white;"></span>
+                    <button type="button" class="btn-reveal" onclick="togglePassword(<?php echo $asset['id']; ?>)">
+                        <i data-lucide="eye" id="eye-icon-<?php echo $asset['id']; ?>" style="width: 14px;"></i>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Software Inventory -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
             <div class="inventory-box inv-installed">
-                <p class="inv-label"><i data-lucide="check-circle" style="width: 12px; color: var(--success);"></i> INSTALLED</p>
-                <div class="inv-content"><?php echo htmlspecialchars($asset['installed_apps'] ?: '-'); ?></div>
+                <p class="inv-label"><i data-lucide="check-circle" style="width: 12px;"></i> INSTALLED</p>
+                <div class="inv-content"><?php echo htmlspecialchars($disp_installed ?: '-'); ?></div>
             </div>
             <div class="inventory-box inv-pending">
-                <p class="inv-label"><i data-lucide="circle-dashed" style="width: 12px; color: var(--warning);"></i> PENDING</p>
-                <div class="inv-content"><?php echo htmlspecialchars($asset['missing_apps'] ?: '-'); ?></div>
+                <p class="inv-label"><i data-lucide="circle-dashed" style="width: 12px;"></i> PENDING</p>
                 <div class="inv-content"><?php echo htmlspecialchars($disp_missing ?: '-'); ?></div>
             </div>
         </div>
 
-        <?php if (!empty($asset['notes'])): ?>
         <div style="margin-top: auto;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; background: rgba(0,0,0,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
-            <i data-lucide="user" style="width: 14px; color: var(--text-muted);"></i>
-            <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary); letter-spacing: 0.5px;">
-                <?php echo htmlspecialchars($disp_user); ?>
-            </span>
-        </div>
-    <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border-left: 2px solid var(--border); line-height: 1.4;">
-                <?php echo htmlspecialchars($disp_notes); ?>
+            <p class="inv-label" style="margin-bottom: 0.5rem;">TECHNICAL NOTES</p>
+            <div class="inv-content" style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 8px; font-size: 0.8rem; font-style: italic;">
+                <?php echo nl2br(htmlspecialchars($disp_notes ?: 'No technical notes recorded.')); ?>
             </div>
         </div>
-        <?php endif; ?>
     </div>
     <?php endforeach; ?>
 </div>
 
-<!-- Batch Action Bar -->
-<div id="batchBar" style="display: none; position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--card-bg); padding: 1rem 2rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 3000; align-items: center; gap: 1rem;">
-    <span id="batchCount">0 selected</span>
-    <button class="btn btn-danger" onclick="batchDelete()">Delete Selected</button>
-    <button class="btn btn-secondary" onclick="clearSelection()">Cancel</button>
-</div>
-
-<!-- Add/Edit Modal -->
+<!-- Modals -->
 <div id="assetModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
     <div class="card" style="width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative;">
         <button onclick="closeModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
@@ -285,64 +252,47 @@ include 'includes/header.php';
         <form action="" method="POST">
             <input type="hidden" name="action" id="modalAction" value="add">
             <input type="hidden" name="id" id="assetId" value="">
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-                <div class="input-group">
-                    <label>Hostname / Server Name</label>
-                    <input type="text" name="hostname" id="f_hostname" class="input-control" placeholder="e.g. Production Web" required>
-                </div>
-                <div class="input-group">
-                    <label>IP Address</label>
-                    <input type="text" name="ip_address" id="f_ip_address" class="input-control" placeholder="192.168.1.10" required>
-                </div>
-                <div class="input-group">
-                    <label>Category (Group)</label>
-                    <input type="text" name="category" id="f_category" class="input-control" list="category_list" placeholder="e.g. Production">
-                    <datalist id="category_list">
-                        <option value="Production">
-                        <option value="Development">
-                        <option value="Staging">
-                        <option value="Database">
-                        <option value="Core Infrastructure">
-                    </datalist>
-                </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="input-group"><label>Hostname</label><input type="text" name="hostname" id="f_hostname" class="input-control" required></div>
+                <div class="input-group"><label>IP Address</label><input type="text" name="ip_address" id="f_ip_address" class="input-control" required></div>
             </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
-                <div class="input-group">
-                    <label>Username</label>
-                    <input type="text" name="username" id="f_username" class="input-control" placeholder="root">
-                </div>
-                <div class="input-group">
-                    <label>Password</label>
-                    <input type="text" name="password" id="f_password" class="input-control" placeholder="••••••••">
-                </div>
-                <div class="input-group">
-                    <label>Port</label>
-                    <input type="number" name="port" id="f_port" class="input-control" value="22">
-                </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="input-group"><label>Category</label><input type="text" name="category" id="f_category" class="input-control" list="cats"></div>
+                <div class="input-group"><label>Username</label><input type="text" name="username" id="f_username" class="input-control"></div>
+                <div class="input-group"><label>Password</label><input type="text" name="password" id="f_password" class="input-control"></div>
             </div>
-
-            <div class="input-group">
-                <label>Installed Applications / Services</label>
-                <textarea name="installed_apps" id="f_installed_apps" class="input-control" style="height: 80px;" placeholder="Apache, PHP 8.2, MySQL..."></textarea>
-            </div>
-
-            <div class="input-group">
-                <label>Missing / Missing Apps (To-Do)</label>
-                <textarea name="missing_apps" id="f_missing_apps" class="input-control" style="height: 80px;" placeholder="Redis, Docker, Fail2Ban..."></textarea>
-            </div>
-
-            <div class="input-group">
-                <label>Other Notes</label>
-                <textarea name="notes" id="f_notes" class="input-control" style="height: 60px;" placeholder="Server location, backup schedule, etc."></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;">
-                <span id="submitBtnText">Add Server Asset</span>
-            </button>
+            <datalist id="cats"><option value="Production"><option value="Staging"><option value="Development"><option value="Infrastructure"></datalist>
+            <div class="input-group"><label>Port</label><input type="number" name="port" id="f_port" class="input-control" value="22"></div>
+            <div class="input-group"><label>Installed Apps</label><textarea name="installed_apps" id="f_installed_apps" class="input-control" style="height: 60px;"></textarea></div>
+            <div class="input-group"><label>Missing Apps</label><textarea name="missing_apps" id="f_missing_apps" class="input-control" style="height: 60px;"></textarea></div>
+            <div class="input-group"><label>Notes</label><textarea name="notes" id="f_notes" class="input-control" style="height: 60px;"></textarea></div>
+            <button type="submit" class="btn btn-primary" id="submitBtnText" style="width: 100%; margin-top: 1rem;">Add Server Asset</button>
         </form>
     </div>
+</div>
+
+<div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="card" style="width: 100%; max-width: 450px; padding: 2rem; position: relative;">
+        <button onclick="document.getElementById('importModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;"><i data-lucide="x"></i></button>
+        <h2 style="margin-bottom: 1.5rem;">Import CSV</h2>
+        <form action="" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="import_csv">
+            <div class="input-group"><label>Select CSV File</label><input type="file" name="csv_file" class="input-control" accept=".csv" required></div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; mt-1rem;">Start Import</button>
+        </form>
+    </div>
+</div>
+
+<!-- Batch Action Bar -->
+<div id="batch-action-bar" style="display: none; position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--primary); border-radius: 50px; padding: 0.75rem 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 3000; align-items: center; gap: 1.5rem; animation: slideUp 0.3s ease-out;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="selected-count" style="background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">0</span>
+        <span style="font-size: 0.9rem; font-weight: 600;">Selected</span>
+    </div>
+    <div style="width: 1px; height: 24px; background: var(--border);"></div>
+    <button class="btn" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); font-size: 0.8rem;" onclick="batchCheckStatus()"><i data-lucide="refresh-cw" style="width: 14px;"></i> Status Check</button>
+    <button class="btn" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border: 1px solid rgba(99,102,241,0.2); font-size: 0.8rem;" onclick="generateAssetsPDF()"><i data-lucide="file-text" style="width: 14px;"></i> Export PDF</button>
+    <button class="btn" style="background: none; border: none; color: var(--text-muted); font-size: 0.8rem;" onclick="clearSelection()">Cancel</button>
 </div>
 
 <script>
@@ -351,18 +301,8 @@ function openAddModal() {
     document.getElementById('modalAction').value = 'add';
     document.getElementById('submitBtnText').innerText = 'Add Server Asset';
     document.getElementById('assetId').value = '';
-    
-    // Clear form
-    document.getElementById('f_hostname').value = '';
-    document.getElementById('f_ip_address').value = '';
-    document.getElementById('f_category').value = '';
-    document.getElementById('f_username').value = '';
-    document.getElementById('f_password').value = '';
+    ['f_hostname','f_ip_address','f_category','f_username','f_password','f_installed_apps','f_missing_apps','f_notes'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f_port').value = '22';
-    document.getElementById('f_installed_apps').value = '';
-    document.getElementById('f_missing_apps').value = '';
-    document.getElementById('f_notes').value = '';
-    
     document.getElementById('assetModal').style.display = 'flex';
 }
 
@@ -371,104 +311,60 @@ function openEditModal(data) {
     document.getElementById('modalAction').value = 'edit';
     document.getElementById('submitBtnText').innerText = 'Update Server Asset';
     document.getElementById('assetId').value = data.id;
-    
     document.getElementById('f_hostname').value = data.hostname;
     document.getElementById('f_ip_address').value = data.ip_address;
     document.getElementById('f_category').value = data.category || '';
-    
-    // Use Decrypted values for form editing
     document.getElementById('f_username').value = data.disp_user || data.username;
-    document.getElementById('f_password').value = data.password_clean || ''; // We would need to set this if we want full editability
+    document.getElementById('f_password').value = ''; // Don't show encrypted pass in input for security
     document.getElementById('f_port').value = data.port;
     document.getElementById('f_installed_apps').value = data.disp_installed || data.installed_apps;
     document.getElementById('f_missing_apps').value = data.disp_missing || data.missing_apps;
     document.getElementById('f_notes').value = data.disp_notes || data.notes;
-    
     document.getElementById('assetModal').style.display = 'flex';
 }
 
-function closeModal() {
-    document.getElementById('assetModal').style.display = 'none';
-}
+function closeModal() { document.getElementById('assetModal').style.display = 'none'; }
 
 async function togglePassword(id) {
-    const hidden = document.getElementById('pw-' + id);
-    const visible = document.getElementById('pw-real-' + id);
-    const icon = document.getElementById('eye-icon-' + id);
-    
+    const hidden = document.getElementById('pw-' + id), visible = document.getElementById('pw-real-' + id), icon = document.getElementById('eye-icon-' + id);
     if (hidden.style.display === 'none') {
-        hidden.style.display = 'inline';
-        visible.style.display = 'none';
-        icon.setAttribute('data-lucide', 'eye');
+        hidden.style.display = 'inline'; visible.style.display = 'none'; icon.setAttribute('data-lucide', 'eye');
     } else {
-        // If password is not loaded yet, fetch it from API
         if (visible.innerText === '') {
             visible.innerText = 'Decrypting...';
             try {
-                const response = await fetch('api/get-asset-password?id=' + id);
-                const data = await response.json();
+                const res = await fetch('api/get-asset-password?id=' + id);
+                const data = await res.json();
                 visible.innerText = data.password || '-';
-            } catch (e) {
-                visible.innerText = 'Error Decrypting';
-            }
+            } catch (e) { visible.innerText = 'Error'; }
         }
-        hidden.style.display = 'none';
-        visible.style.display = 'inline';
-        icon.setAttribute('data-lucide', 'eye-off');
+        hidden.style.display = 'none'; visible.style.display = 'inline'; icon.setAttribute('data-lucide', 'eye-off');
     }
     lucide.createIcons();
 }
 
 async function refreshStatus(id) {
-    const badge = document.getElementById('status-badge-' + id);
-    const btn = document.getElementById('refresh-btn-' + id);
-    
-    badge.innerText = 'Checking...';
-    badge.className = 'badge badge-secondary';
-    btn.classList.add('spin-animation');
-    
+    const badge = document.getElementById('status-badge-' + id), btn = document.getElementById('refresh-btn-' + id);
+    badge.classList.add('loading'); btn.classList.add('spin-animation');
     try {
-        const response = await fetch('api/asset-health?id=' + id);
-        const data = await response.json();
-        
-        badge.innerText = data.status || 'ERROR';
-        badge.className = (data.status === 'ONLINE') ? 'badge badge-success is-online' : 'badge badge-danger';
-        
-        // Update pulse dot
-        const card = document.querySelector(`.asset-card[data-asset-id="${id}"]`);
-        if (card) {
-            if (data.status === 'ONLINE') card.classList.add('is-online');
-            else card.classList.remove('is-online');
-        }
-        
-    } catch (e) {
-        badge.innerText = 'ERROR';
-        badge.className = 'badge badge-danger';
-    } finally {
-        btn.classList.remove('spin-animation');
-        lucide.createIcons();
-    }
-}
-
-// BATCH ACTIONS
-function toggleAllAssets(master) {
-    const checkboxes = document.querySelectorAll('.asset-checkbox');
-    checkboxes.forEach(cb => cb.checked = master.checked);
-    updateBatchBar();
+        const res = await fetch('api/asset-health?id=' + id);
+        const data = await res.json();
+        const indicator = document.getElementById('status-badge-' + id);
+        indicator.className = 'status-indicator ' + (data.status === 'ONLINE' ? 'is-online' : 'is-offline');
+        indicator.querySelector('.status-text').innerText = data.status;
+    } catch (e) { console.error(e); } finally { btn.classList.remove('spin-animation'); lucide.createIcons(); }
 }
 
 function updateBatchBar() {
     const selected = document.querySelectorAll('.asset-checkbox:checked');
     const bar = document.getElementById('batch-action-bar');
-    const count = document.getElementById('selected-count');
-    
-    if (selected.length > 0) {
-        bar.style.display = 'flex';
-        count.innerText = selected.length;
-    } else {
-        bar.style.display = 'none';
-        document.getElementById('select-all-assets').checked = false;
-    }
+    document.getElementById('selected-count').innerText = selected.length;
+    bar.style.display = selected.length > 0 ? 'flex' : 'none';
+}
+
+function toggleAllAssets(master) {
+    document.querySelectorAll('.asset-checkbox').forEach(cb => cb.checked = master.checked);
+    updateBatchBar();
 }
 
 function clearSelection() {
@@ -479,224 +375,43 @@ function clearSelection() {
 
 async function batchCheckStatus() {
     const selected = document.querySelectorAll('.asset-checkbox:checked');
-    const ids = Array.from(selected).map(cb => cb.value);
-    
-    // Disable Batch Bar during operation
-    const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin-animation"><i data-lucide="refresh-cw"></i></span> Running...';
-    lucide.createIcons();
-    
-    for (const id of ids) {
-        await refreshStatus(id);
-    }
-    
-    btn.disabled = false;
-    btn.innerHTML = originalText;
-    lucide.createIcons();
+    for (const cb of selected) { await refreshStatus(cb.value); }
 }
 
 function generateAssetsPDF() {
     const selected = document.querySelectorAll('.asset-checkbox:checked');
     const ids = Array.from(selected).map(cb => cb.value);
-    
-    // Hide all cards that are not selected
-    const allCards = document.querySelectorAll('.asset-card');
-    allCards.forEach(card => {
-        const id = card.getAttribute('data-asset-id');
-        if (!ids.includes(id)) {
-            card.classList.add('no-print');
-        } else {
-            card.classList.remove('no-print');
-        }
+    document.querySelectorAll('.asset-card').forEach(card => {
+        if (!ids.includes(card.getAttribute('data-asset-id'))) card.classList.add('no-print');
     });
-
-    // Special class for print layout
     document.body.classList.add('printing-assets');
-    
     window.print();
-    
-    // Cleanup after print
     setTimeout(() => {
-        allCards.forEach(card => card.classList.remove('no-print'));
+        document.querySelectorAll('.asset-card').forEach(card => card.classList.remove('no-print'));
         document.body.classList.remove('printing-assets');
     }, 1000);
-}
-        const data = await response.json();
-        
-        badge.innerText = data.status;
-        badge.className = 'badge badge-' + (data.status === 'ONLINE' ? 'success' : 'danger');
-        
-        if (data.status === 'ONLINE') {
-            badge.title = 'Latency: ' + data.latency;
-        } else {
-            badge.title = 'Error: ' + data.error;
-        }
-    } catch (e) {
-        badge.innerText = 'ERROR';
-        badge.className = 'badge badge-danger';
-    } finally {
-        btn.classList.remove('spin-animation');
-    }
 }
 </script>
 
 <style>
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-@keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
-}
-
-.spin-animation i {
-    animation: spin 1s linear infinite;
-}
-
-.asset-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
-    border-color: var(--primary) !important;
-}
-
-.btn-icon {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--text-muted);
-    padding: 6px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.btn-icon:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-.btn-icon-danger:hover {
-    background: var(--danger);
-    border-color: var(--danger);
-}
-
-.status-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.05);
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.status-indicator.is-online {
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.1);
-    border-color: rgba(74, 222, 128, 0.2);
-}
-.status-indicator.is-offline {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.1);
-    border-color: rgba(248, 113, 113, 0.2);
-}
-
-.pulse-dot {
-    width: 8px;
-    height: 8px;
-    background: currentColor;
-    border-radius: 50%;
-}
-.is-online .pulse-dot {
-    animation: pulse 2s infinite;
-}
-
-.btn-reveal {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--primary);
-    padding: 4px;
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-.btn-reveal:hover {
-    background: rgba(99,102,241,0.1);
-}
-
-.inventory-box {
-    padding: 1rem;
-    border-radius: 12px;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-.inv-installed { background: rgba(34, 197, 94, 0.03); }
-.inv-pending { background: rgba(245, 158, 11, 0.03); }
-
-.inv-label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.inv-content {
-    font-size: 0.8rem;
-    color: var(--text);
-    white-space: pre-wrap;
-    line-height: 1.4;
-}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
+.spin-animation i { animation: spin 1s linear infinite; }
+.asset-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.2); border-color: var(--primary) !important; }
+.btn-icon { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 6px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.btn-icon:hover { background: var(--primary); color: white; border-color: var(--primary); }
+.status-indicator { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); }
+.status-indicator.is-online { color: #4ade80; background: rgba(74, 222, 128, 0.1); border-color: rgba(74, 222, 128, 0.2); }
+.status-indicator.is-offline { color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.2); }
+.pulse-dot { width: 8px; height: 8px; background: currentColor; border-radius: 50%; }
+.is-online .pulse-dot { animation: pulse 2s infinite; }
+.inventory-box { padding: 1rem; border-radius: 12px; min-height: 80px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.05); }
+.inv-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 6px; }
+.inv-content { font-size: 0.8rem; color: var(--text); white-space: pre-wrap; line-height: 1.4; }
+.btn-reveal { background: none; border: none; cursor: pointer; color: var(--primary); padding: 4px; border-radius: 4px; transition: background 0.2s; }
+.btn-reveal:hover { background: rgba(99,102,241,0.1); }
+@keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+@media print { .no-print { display: none !important; } .printing-assets .main-content { margin-left: 0 !important; } }
 </style>
-
-<!-- Batch Action Bar -->
-<div id="batch-action-bar" style="display: none; position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--primary); border-radius: 50px; padding: 0.75rem 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; align-items: center; gap: 1.5rem; animation: slideUp 0.3s ease-out;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="selected-count" style="background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">0</span>
-        <span style="font-size: 0.9rem; font-weight: 600;">Selected</span>
-    </div>
-    <div style="width: 1px; height: 24px; background: var(--border);"></div>
-    <div style="display: flex; gap: 0.75rem;">
-        <button class="btn" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); font-size: 0.8rem;" onclick="batchCheckStatus()">
-            <i data-lucide="refresh-cw" style="width: 14px;"></i> Bulk Check Status
-        </button>
-        <button class="btn" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border: 1px solid rgba(99,102,241,0.2); font-size: 0.8rem;" onclick="generateAssetsPDF()">
-            <i data-lucide="file-text" style="width: 14px;"></i> Export PDF
-        </button>
-        <button class="btn" style="background: none; border: none; color: var(--text-muted); font-size: 0.8rem;" onclick="clearSelection()">Cancel</button>
-    </div>
-</div>
-
-<!-- Import Modal -->
-<div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
-    <div class="card" style="width: 100%; max-width: 450px; padding: 2rem; position: relative;">
-        <button onclick="document.getElementById('importModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
-            <i data-lucide="x"></i>
-        </button>
-        <h2 style="margin-bottom: 1.5rem;">Import from CSV</h2>
-        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">Upload a CSV file exported from this system to restore or bulk-add server assets.</p>
-        <form action="" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="import_csv">
-            <div class="input-group">
-                <label>Select CSV File</label>
-                <input type="file" name="csv_file" class="input-control" accept=".csv" required>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;">
-                Start Import
-            </button>
-        </form>
-    </div>
-</div>
 
 <?php include 'includes/footer.php'; ?>

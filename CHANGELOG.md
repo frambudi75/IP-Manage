@@ -4,7 +4,14 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
-## [2.14.1] - 2026-04-08
+## [2.14.3] - 2026-04-09
+### Fixed
+- **UI Interaction**: Resolved syntax error in `server-assets.php` that prevented Add and Edit modals from opening.
+- **Redundancy**: Removed duplicate batch action bar elements for cleaner DOM.
+
+---
+
+## [2.14.2] - 2026-04-08
 ### Added
 - **Universal Search (Cmd/Ctrl + K)**: A high-performance spotlight-style search bar accessible from any page.
 - **Batch Asset Operations**: Multi-select checkboxes for server assets with bulk status checking.

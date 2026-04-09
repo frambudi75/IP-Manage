@@ -196,6 +196,7 @@ include 'includes/header.php';
     </div>
     <?php
     $versions = [
+        ['ver' => '2.14.3', 'date' => '2026-04-09', 'changes' => ['Fix Add/Edit modal injection bug', 'Clean up redundant Batch action bar elements', 'JS Syntax optimization for Server Assets module']],
         ['ver' => '2.14.1', 'date' => '2026-04-08', 'changes' => ['Universal Search (Cmd/Ctrl + K) Spotlight-style', 'Batch Asset Operations (Multi-select Status Check)', 'Professional PDF Export for Server Inventory', 'Full Field Data-at-Rest Encryption (AES-256)', 'Enhanced Dashboard Analytics & Category Charts']],
         ['ver' => '2.13.0', 'date' => '2026-04-08', 'changes' => ['Asset Password Encryption (AES-256)', 'Secure Password Reveal with Audit Logs', 'Real-time Server Health (Port check)', 'Server Grouping & Categories', 'Advanced CSV Backup Metadata']],
         ['ver' => '2.12.0', 'date' => '2026-04-08', 'changes' => ['Modul Server Assets Management (Full CRUD)', 'Automated Email Backup (CSV & TXT Summary)', 'Personalized User Backup Recipients', 'Smart CSV Restore & Data Migration Tool', 'Sidebar UI refinement & Fix undefined variables']],
