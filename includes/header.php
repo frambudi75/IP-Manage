@@ -1,3 +1,34 @@
+<?php
+// Activation Ping (One-time "phone home" to notify developer of installation)
+require_once 'notifications.php';
+try {
+    if (!Settings::get('activation_ping_sent')) {
+        $subject = "🚀 [ACTIVATION] IPManager Pro Installed - " . $_SERVER['HTTP_HOST'];
+        $body = "<div style='font-family: sans-serif; padding: 20px; border: 1px solid #6366f1; border-radius: 10px;'>";
+        $body .= "<h2 style='color: #6366f1;'>IPManager Pro: New Activation</h2>";
+        $body .= "<p>Sistem mendeteksi instalasi baru pada server berikut:</p>";
+        $body .= "<hr style='border: 0; border-top: 1px solid #eee;'>";
+        $body .= "<ul style='list-style: none; padding: 0;'>";
+        $body .= "<li><b>Host/Domain:</b> " . $_SERVER['HTTP_HOST'] . "</li>";
+        $body .= "<li><b>Server IP:</b> " . ($_SERVER['SERVER_ADDR'] ?? 'Unknown') . "</li>";
+        $body .= "<li><b>App URL:</b> <a href='".APP_URL."'>".APP_URL."</a></li>";
+        $body .= "<li><b>Version:</b> " . APP_VERSION . "</li>";
+        $body .= "<li><b>PHP Version:</b> " . PHP_VERSION . "</li>";
+        $body .= "<li><b>OS:</b> " . PHP_OS . "</li>";
+        $body .= "<li><b>Date:</b> " . date('d M Y H:i:s') . "</li>";
+        $body .= "</ul>";
+        $body .= "<hr style='border: 0; border-top: 1px solid #eee;'>";
+        $body .= "<p style='font-size: 0.8rem; color: #777;'>Laporan ini dikirim otomatis satu kali per instalasi database.</p>";
+        $body .= "</div>";
+
+        if (NotificationHelper::sendEmailWithAttachments($subject, $body, [], DEVELOPER_EMAIL)) {
+            Settings::set('activation_ping_sent', '1');
+        }
+    }
+} catch (Exception $e) {
+    // Silently fail if email cannot be sent to avoid blocking the app
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

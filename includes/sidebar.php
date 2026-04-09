@@ -78,6 +78,12 @@
                     <?php endif; ?>
                 </a>
             </li>
+            <li>
+                <a href="#" class="btn" onclick="openBugReportModal(event)" style="width: 100%; justify-content: flex-start; color: var(--warning);">
+                    <i data-lucide="bug"></i> 
+                    Report Issue
+                </a>
+            </li>
         <?php endif; ?>
         <ul style="display: flex; flex-direction: column; gap: 0.5rem; <?php echo !is_admin() ? 'margin-top: 2rem;' : ''; ?>">
             <li>

@@ -203,4 +203,15 @@ function run_auto_migrations($db) {
             $db->exec("ALTER TABLE server_assets ADD COLUMN last_check TIMESTAMP NULL DEFAULT NULL AFTER status");
         }
     } catch (Exception $e) {}
+
+    // 14. Bug Reports Table
+    $db->exec("CREATE TABLE IF NOT EXISTS bug_reports (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        system_info TEXT DEFAULT NULL,
+        status ENUM('pending', 'resolved') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 }

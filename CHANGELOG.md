@@ -4,7 +4,15 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
-## [2.14.3] - 2026-04-09
+## [2.15.0] - 2026-04-09
+### Added
+- **Bug Reporting System**: Internal utility for administrators to report issues directly to the developer, including automated system state capture (PHP version, OS, browser info).
+- **Activation Telemetry**: One-time background notification to developer upon new installations to track active deployments.
+- **Database Migrations v2**: Automated table creation for Bug Reports and settings.
+
+### Fixed
+- **Pretty URL Compatibility**: Fixed `.htaccess` redirect bug that caused API calls to fail with absolute file paths.
+- **Header Robustness**: Resolved dependency issues with `NotificationHelper` in global includes.
 ### Fixed
 - **UI Interaction**: Resolved syntax error in `server-assets.php` that prevented Add and Edit modals from opening.
 - **Redundancy**: Removed duplicate batch action bar elements for cleaner DOM.
