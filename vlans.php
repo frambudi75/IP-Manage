@@ -67,9 +67,9 @@ $vlans = $db->query("SELECT * FROM vlans ORDER BY number ASC")->fetchAll();
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="page-header">
     <h1 style="font-size: 1.5rem;">VLAN Management</h1>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         <a href="export?type=vlans" class="btn btn-secondary" style="font-size: 0.875rem;">
             <i data-lucide="download" style="width: 14px;"></i> Export CSV
         </a>
@@ -83,20 +83,20 @@ include 'includes/header.php';
 </div>
 
 <?php if ($message): ?>
-    <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); border-radius: 8px; margin-bottom: 1.5rem;">
+    <div class="card" style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); margin-bottom: 1.5rem;">
         <?php echo $message; ?>
     </div>
 <?php endif; ?>
 
 <div class="card">
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">
                     <th style="padding: 1rem; color: var(--text-muted); width: 100px;">Number</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Name</th>
                     <th style="padding: 1rem; color: var(--text-muted);">Description</th>
-                    <th style="padding: 1rem; color: var(--text-muted); width: 120px;">Action</th>
+                    <th style="padding: 1rem; color: var(--text-muted); width: 120px; text-align: right;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -110,15 +110,17 @@ include 'includes/header.php';
                             <td style="padding: 1rem; font-weight: 600; color: var(--primary);">#<?php echo $v['number']; ?></td>
                             <td style="padding: 1rem; font-weight: 500;"><?php echo $v['name']; ?></td>
                             <td style="padding: 1rem; color: var(--text-muted);"><?php echo $v['description']; ?></td>
-                            <td style="padding: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-                                <?php if (is_admin()): ?>
-                                <button onclick='openVlanEditModal(<?php echo json_encode($v); ?>)' class="btn" style="padding: 6px; background: rgba(16, 185, 129, 0.1); color: var(--success);" title="Edit VLAN">
-                                    <i data-lucide="edit" style="width: 16px;"></i>
-                                </button>
-                                <a href="?delete=<?php echo $v['id']; ?>" class="btn" style="padding: 6px; background: rgba(239, 68, 68, 0.1); color: var(--danger);" onclick="return confirm('Are you sure? This will unassign this VLAN from all associated subnets.')" title="Delete">
-                                    <i data-lucide="trash-2" style="width: 16px;"></i>
-                                </a>
-                                <?php endif; ?>
+                            <td style="padding: 1rem; text-align: right;">
+                                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <?php if (is_admin()): ?>
+                                    <button onclick='openVlanEditModal(<?php echo json_encode($v); ?>)' class="btn" style="padding: 6px; background: rgba(16, 185, 129, 0.1); color: var(--success);" title="Edit VLAN">
+                                        <i data-lucide="edit" style="width: 16px;"></i>
+                                    </button>
+                                    <a href="?delete=<?php echo $v['id']; ?>" class="btn" style="padding: 6px; background: rgba(239, 68, 68, 0.1); color: var(--danger);" onclick="return confirm('Are you sure? This will unassign this VLAN from all associated subnets.')" title="Delete">
+                                        <i data-lucide="trash-2" style="width: 16px;"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -128,8 +130,8 @@ include 'includes/header.php';
     </div>
 </div>
 
-<div id="vlanModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
-    <div class="card" style="width: 100%; max-width: 500px; padding: 2.5rem;">
+<div id="vlanModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 500px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3>Add New VLAN</h3>
             <button onclick="document.getElementById('vlanModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
@@ -155,8 +157,8 @@ include 'includes/header.php';
     </div>
 </div>
 
-<div id="vlanEditModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
-    <div class="card" style="width: 100%; max-width: 500px; padding: 2.5rem;">
+<div id="vlanEditModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 500px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3>Edit VLAN</h3>
             <button onclick="document.getElementById('vlanEditModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">

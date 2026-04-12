@@ -33,195 +33,193 @@ $page_title = 'About';
 include 'includes/header.php';
 ?>
 
+<style>
+    .about-main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .about-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .support-btn-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .changelog-item {
+        display: flex;
+        gap: 1.25rem;
+        padding: 1.25rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    @media (max-width: 900px) {
+        .about-main-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 640px) {
+        .changelog-item {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .changelog-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .changelog-meta span[style*="block"] {
+            display: inline !important;
+            margin-top: 0 !important;
+            margin-left: 10px;
+        }
+    }
+</style>
+
 <!-- Hero Section -->
-<div style="text-align: center; padding: 3rem 1rem 2rem; position: relative; overflow: hidden;">
+<div style="text-align: center; padding: 2rem 1rem 3rem; position: relative; overflow: hidden;">
     <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%); pointer-events: none;"></div>
     
     <?php if (Updater::isUpdateAvailable()): ?>
-    <!-- Update Alert Banner -->
-    <div style="max-width: 600px; margin: 0 auto 2rem; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 1.25rem; display: flex; align-items: center; gap: 1.25rem; text-align: left; animation: slideIn 0.5s ease-out;">
-        <div style="background: var(--primary); color: white; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
-            <i data-lucide="arrow-up-circle"></i>
+    <div style="max-width: 650px; margin: 0 auto 2.5rem; background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; text-align: left; animation: slideIn 0.5s ease-out; flex-wrap: wrap;">
+        <div style="background: var(--primary); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="cloud-download"></i>
         </div>
-        <div style="flex-grow: 1;">
-            <div style="font-weight: 700; color: white; font-size: 1rem;">Update Tersedia: v<?php echo Updater::getLatestVersion(); ?></div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">Versi baru telah dirilis dengan peningkatan fitur dan stabilitas.</div>
+        <div style="flex: 1; min-width: 200px;">
+            <div style="font-weight: 700; color: white;">v<?php echo Updater::getLatestVersion(); ?> Available</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Improved stability and new dashboard widgets are ready.</div>
         </div>
-        <a href="<?php echo Updater::getUpdateUrl(); ?>" target="_blank" class="btn btn-primary" style="font-size: 0.8rem; padding: 8px 16px; border-radius: 8px; white-space: nowrap;">
-            Update Sekarang
+        <a href="<?php echo Updater::getUpdateUrl(); ?>" target="_blank" class="btn btn-primary" style="font-size: 0.75rem; padding: 10px 18px;">
+            Update Now
         </a>
     </div>
-    <style>
-        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    </style>
+    <style>@keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }</style>
     <?php endif; ?>
 
-    <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 20px; margin-bottom: 1.5rem; box-shadow: 0 8px 32px rgba(99,102,241,0.4);">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 24px; margin-bottom: 1.5rem; box-shadow: 0 8px 32px rgba(99,102,241,0.4);">
         <i data-lucide="network" style="width: 40px; height: 40px; color: white;"></i>
     </div>
-    <h1 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 0.5rem; background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">IPManager Pro</h1>
-    <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem;">High-Performance IP Address Management & Network Monitoring</p>
+    <h1 style="font-size: 2.25rem; font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -1px;">IPManager Pro</h1>
+    <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">Premium Enterprise IP Address Management for Modern Networks.</p>
+    
     <div style="display: inline-flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
-        <span style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: var(--primary); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-            v<?php echo APP_VERSION; ?>
-        </span>
-        <span style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: var(--success, #22c55e); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-            Released <?php echo date('d M Y', strtotime(APP_RELEASE_DATE)); ?>
-        </span>
-        <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem;">
-            Open Source · MIT License
-        </span>
+        <span style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">v<?php echo APP_VERSION; ?></span>
+        <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-size: 0.75rem;">MIT License</span>
     </div>
 </div>
 
 <!-- Live Stats -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+<div class="about-stats-grid">
     <?php
     $stats = [
         ['icon' => 'layers',  'value' => $total_subnets,  'label' => 'Subnets',  'color' => 'var(--primary)'],
-        ['icon' => 'monitor', 'value' => $total_devices,  'label' => 'Devices',  'color' => 'var(--success, #22c55e)'],
-        ['icon' => 'server',  'value' => $total_switches, 'label' => 'Switches', 'color' => 'var(--warning, #f59e0b)'],
+        ['icon' => 'monitor', 'value' => $total_devices,  'label' => 'Devices',  'color' => 'var(--success)'],
+        ['icon' => 'server',  'value' => $total_switches, 'label' => 'Switches', 'color' => 'var(--warning)'],
         ['icon' => 'users',   'value' => $total_users,    'label' => 'Users',    'color' => '#8b5cf6'],
     ];
     foreach ($stats as $s): ?>
-    <div class="card" style="text-align: center; padding: 1.5rem 1rem;">
-        <i data-lucide="<?php echo $s['icon']; ?>" style="width: 28px; height: 28px; color: <?php echo $s['color']; ?>; margin-bottom: 0.75rem;"></i>
-        <div style="font-size: 2.25rem; font-weight: 900; color: <?php echo $s['color']; ?>; line-height: 1;"><?php echo number_format((int)$s['value']); ?></div>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;"><?php echo $s['label']; ?> in Database</div>
+    <div class="card" style="text-align: center; padding: 1.5rem;">
+        <i data-lucide="<?php echo $s['icon']; ?>" style="width: 24px; height: 24px; color: <?php echo $s['color']; ?>; margin-bottom: 1rem;"></i>
+        <div style="font-size: 2rem; font-weight: 800; color: white;"><?php echo number_format((int)$s['value']); ?></div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo $s['label']; ?></div>
     </div>
     <?php endforeach; ?>
 </div>
 
 <!-- Main Grid -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+<div class="about-main-grid">
 
     <!-- Developer Card -->
-    <div class="card" style="position: relative; overflow: hidden;">
-        <div style="position: absolute; top: -40px; right: -40px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(99,102,241,0.1), transparent); border-radius: 50%; pointer-events: none;"></div>
-        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="code-2" style="width: 18px; color: var(--primary);"></i> Developer
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <i data-lucide="code-2" style="width: 18px; color: var(--primary);"></i> Credits
         </h3>
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem;">
             <img src="https://github.com/frambudi75.png" 
-                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); flex-shrink: 0;"
+                 style="width: 64px; height: 64px; border-radius: 16px; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0;"
                  alt="Habib Frambudi">
             <div>
-                <div style="font-size: 1.1rem; font-weight: 700;"><?php echo APP_AUTHOR; ?></div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">Network Engineer & Developer</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                <div style="font-size: 1.125rem; font-weight: 700; color: white;"><?php echo APP_AUTHOR; ?></div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Lead Developer & UI Designer</div>
+                <div style="font-size: 0.8rem; margin-top: 4px;">
                     <a href="mailto:<?php echo APP_AUTHOR_EMAIL; ?>" style="color: var(--primary); text-decoration: none;"><?php echo APP_AUTHOR_EMAIL; ?></a>
                 </div>
             </div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.875rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
-            <a href="<?php echo APP_GITHUB; ?>" target="_blank" style="display: flex; align-items: center; gap: 0.75rem; color: var(--text); text-decoration: none; padding: 8px; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='var(--surface-light)'" onmouseout="this.style.background='transparent'">
-                <i data-lucide="github" style="width: 18px; color: var(--text-muted);"></i>
-                <span>GitHub Repository</span>
-                <i data-lucide="external-link" style="width: 14px; color: var(--text-muted); margin-left: auto;"></i>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <a href="<?php echo APP_GITHUB; ?>" target="_blank" class="btn" style="background: var(--surface-light); justify-content: flex-start; border: 1px solid var(--border);">
+                <i data-lucide="github" style="width: 16px;"></i> Repository GitHub
             </a>
         </div>
     </div>
 
     <!-- Tech Stack Card -->
     <div class="card">
-        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="cpu" style="width: 18px; color: var(--primary);"></i> Tech Stack
+        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <i data-lucide="cpu" style="width: 18px; color: var(--primary);"></i> Technology
         </h3>
-        <?php
-        $stack = [
-            ['name' => 'PHP 8.2',         'desc' => 'Backend engine',               'color' => '#7c3aed'],
-            ['name' => 'Apache 2.4',       'desc' => 'Web server',                   'color' => '#dc2626'],
-            ['name' => 'MariaDB 10.11',    'desc' => 'Database',                     'color' => '#0284c7'],
-            ['name' => 'Vanilla CSS',      'desc' => 'Styling & dark-mode design',   'color' => '#0891b2'],
-            ['name' => 'Chart.js 4',       'desc' => 'Performance graphs',           'color' => '#f97316'],
-            ['name' => 'Lucide Icons',     'desc' => 'UI iconography',               'color' => '#10b981'],
-            ['name' => 'SNMP v2c',         'desc' => 'Device health monitoring',     'color' => '#6366f1'],
-            ['name' => 'Server-Sent Events','desc' => 'Realtime data streaming',     'color' => '#f59e0b'],
-            ['name' => 'Docker + Opcache', 'desc' => 'Container performance optimization', 'color' => '#2563eb'],
-            ['name' => 'Redis 7',          'desc' => 'Advanced data caching (NEW)',  'color' => '#dc2626'],
-        ];
-        foreach ($stack as $t): ?>
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); flex-wrap: wrap;">
-            <span style="width: 10px; height: 10px; border-radius: 50%; background: <?php echo $t['color']; ?>; flex-shrink: 0;"></span>
-            <span style="font-weight: 600; font-size: 0.875rem; min-width: 140px; flex: 1;"><?php echo $t['name']; ?></span>
-            <span style="font-size: 0.8rem; color: var(--text-muted); width: 100%; margin-left: 20px;"><?php echo $t['desc']; ?></span>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            <?php
+            $stack = ['PHP 8.2', 'MariaDB 10.11', 'Redis 7', 'Apache 2.4', 'Chart.js 4', 'Mermaid.js', 'Lucide Icons', 'SNMP v2c', 'SSE', 'Docker'];
+            foreach ($stack as $t): ?>
+            <span style="padding: 6px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                <?php echo $t; ?>
+            </span>
+            <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
+        <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;">
+            Built with modern standards, prioritizing performance and security. No heavy dependencies or legacy bloat.
+        </p>
     </div>
 </div>
 
 <!-- Support Section -->
-<div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(99,102,241,0.2);">
-    <div style="text-align: center; max-width: 600px; margin: 0 auto; padding: 1rem 0;">
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">☕</div>
-        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Dukung Pengembangan IPManager Pro</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.75rem; line-height: 1.6;">
-            IPManager Pro dikembangkan dan dikelola secara independen. Jika aplikasi ini membantu pekerjaan Anda, 
-            pertimbangkan untuk mendukung pengembangan fitur-fitur baru.
-        </p>
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <!-- Saweria -->
-            <a href="<?php echo APP_SAWERIA; ?>" target="_blank"
-               style="display: inline-flex; align-items: center; gap: 0.6rem; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: white; box-shadow: 0 4px 15px rgba(255,107,53,0.4);"
-               onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(255,107,53,0.5)'"
-               onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(255,107,53,0.4)'">
-                ☕ Saweria (IDR)
-                <i data-lucide="external-link" style="width: 14px;"></i>
-            </a>
-            <!-- PayPal -->
-            <a href="<?php echo APP_PAYPAL; ?>" target="_blank"
-               style="display: inline-flex; align-items: center; gap: 0.6rem; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; background: linear-gradient(135deg, #003087, #009cde); color: white; box-shadow: 0 4px 15px rgba(0,48,135,0.4);"
-               onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(0,48,135,0.5)'"
-               onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(0,48,135,0.4)'">
-                💳 PayPal (USD)
-                <i data-lucide="external-link" style="width: 14px;"></i>
-            </a>
-            <!-- GitHub -->
-            <a href="<?php echo APP_GITHUB; ?>" target="_blank"
-               style="display: inline-flex; align-items: center; gap: 0.6rem; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white;"
-               onmouseover="this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.12)'"
-               onmouseout="this.style.transform='translateY(0)';this.style.background='rgba(255,255,255,0.08)'">
-                <i data-lucide="github" style="width: 16px;"></i> Star di GitHub
-            </a>
-        </div>
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(99,102,241,0.2); text-align: center; padding: 2.5rem 1.5rem;">
+    <div style="font-size: 2rem; margin-bottom: 1rem;">☕</div>
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Support the Developer</h3>
+    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+        IPManager Pro is open source. If it saves you time, consider buying me a coffee to support future updates.
+    </p>
+    <div class="support-btn-group">
+        <a href="<?php echo APP_SAWERIA; ?>" target="_blank" class="btn btn-primary" style="padding: 12px 24px; font-weight: 700;">☕ Saweria (IDR)</a>
+        <a href="<?php echo APP_PAYPAL; ?>" target="_blank" class="btn btn-secondary" style="padding: 12px 24px; font-weight: 700;">💳 PayPal (USD)</a>
     </div>
 </div>
 
 <!-- Changelog Preview -->
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h3 style="font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="history" style="width: 18px; color: var(--primary);"></i> Recent Changes
-        </h3>
-    </div>
+    <h3 style="font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i data-lucide="history" style="width: 18px; color: var(--primary);"></i> Recent Updates
+    </h3>
+    <div style="border-top: 1px solid var(--border);">
     <?php
     $versions = [
-        ['ver' => '2.15.1', 'date' => '2026-04-09', 'changes' => ['Network Toolbox UI highlighting fix', 'Refined activation telemetry template']],
-        ['ver' => '2.15.0', 'date' => '2026-04-09', 'changes' => ['Internal Bug Reporting System', 'Automated Activation Telemetry', 'Fixed .htaccess API redirect bug', 'Metadata-rich error tracking']],
-        ['ver' => '2.14.3', 'date' => '2026-04-09', 'changes' => ['Fix Add/Edit modal injection bug', 'Clean up redundant Batch action bar elements', 'JS Syntax optimization for Server Assets module']],
-        ['ver' => '2.14.1', 'date' => '2026-04-08', 'changes' => ['Universal Search (Cmd/Ctrl + K) Spotlight-style', 'Batch Asset Operations (Multi-select Status Check)', 'Professional PDF Export for Server Inventory', 'Full Field Data-at-Rest Encryption (AES-256)', 'Enhanced Dashboard Analytics & Category Charts']],
-        ['ver' => '2.13.0', 'date' => '2026-04-08', 'changes' => ['Asset Password Encryption (AES-256)', 'Secure Password Reveal with Audit Logs', 'Real-time Server Health (Port check)', 'Server Grouping & Categories', 'Advanced CSV Backup Metadata']],
-        ['ver' => '2.12.0', 'date' => '2026-04-08', 'changes' => ['Modul Server Assets Management (Full CRUD)', 'Automated Email Backup (CSV & TXT Summary)', 'Personalized User Backup Recipients', 'Smart CSV Restore & Data Migration Tool', 'Sidebar UI refinement & Fix undefined variables']],
-        ['ver' => '2.11.2', 'date' => '2026-04-02', 'changes' => ['Memory Optimization for large subnets (/16)', 'INET_ATON-based IP statistics calculation', 'Improved rendering transitions for Mermaid.js']],
-        ['ver' => '2.11.0', 'date' => '2026-04-02', 'changes' => ['Block-based Subnet Pagination for large networks', 'Global Subnet Utilization stats calculation', 'Smart Chunked Scanning for improved performance']],
-        ['ver' => '2.10.0', 'date' => '2026-04-01', 'changes' => ['Manual Network Topology Manager', 'Mermaid.js Hierarchical Visualization', 'Smart Link Filtering (No Self-Link)', 'CSP Compliance (External JS Assets)']],
-        ['ver' => '2.9.0', 'date' => '2026-03-31', 'changes' => ['Smart Offline Detection (Fail Counter)', 'Intensive Verification Probe (Multi-Signal)', 'Customizable Fail Threshold Settings', 'Fix Subdirectory URL Routing (.htaccess)']],
+        ['ver' => '2.15.5', 'date' => '2026-04-12', 'changes' => ['Global Responsive Refactor (Mobile-First)', 'Standardized CSS utility classes', 'Improved Network Topology for small screens']],
+        ['ver' => '2.15.0', 'date' => '2026-04-09', 'changes' => ['Internal Bug Reporting System', 'Automated Activation Telemetry', 'Fixed .htaccess API routing']],
+        ['ver' => '2.14.1', 'date' => '2026-04-08', 'changes' => ['Universal Spotlight Search (Ctrl+K)', 'Batch Asset Operations', 'Professional PDF Inventory Export']],
     ];
     foreach ($versions as $v): ?>
-    <div style="display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap;">
-        <div style="flex-shrink: 0; text-align: left; min-width: 100px;">
-            <span style="display: inline-block; background: rgba(99,102,241,0.15); color: var(--primary); font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3);">v<?php echo $v['ver']; ?></span>
-            <span style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; white-space: nowrap;"><?php echo date('d M Y', strtotime($v['date'])); ?></span>
+    <div class="changelog-item">
+        <div class="changelog-meta" style="min-width: 120px;">
+            <span style="display: block; background: rgba(99,102,241,0.1); color: var(--primary); font-weight: 800; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; width: fit-content;">v<?php echo $v['ver']; ?></span>
+            <span style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;"><?php echo date('d M Y', strtotime($v['date'])); ?></span>
         </div>
-        <ul style="margin: 0; padding: 0 0 0 1rem; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 250px;">
+        <ul style="margin: 0; padding: 0 0 0 1rem; flex: 1; color: var(--text-muted); font-size: 0.875rem;">
             <?php foreach ($v['changes'] as $c): ?>
-            <li style="font-size: 0.875rem; color: var(--text-muted);"><?php echo htmlspecialchars($c); ?></li>
+            <li style="margin-bottom: 4px;"><?php echo htmlspecialchars($c); ?></li>
             <?php endforeach; ?>
         </ul>
     </div>
     <?php endforeach; ?>
-    <div style="text-align: center; margin-top: 1rem;">
-        <a href="<?php echo APP_GITHUB; ?>/blob/main/CHANGELOG.md" target="_blank" style="font-size: 0.8rem; color: var(--primary); text-decoration: none;">View full changelog on GitHub →</a>
+    </div>
+    <div style="text-align: center; margin-top: 1.5rem;">
+        <a href="<?php echo APP_GITHUB; ?>/blob/main/CHANGELOG.md" target="_blank" style="font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 600;">View full release notes on GitHub →</a>
     </div>
 </div>
 

@@ -4,7 +4,7 @@ require_once 'includes/db.php';
 
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -52,50 +52,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($target)) {
 }
 ?>
 
-<div style="display: flex; gap: 2rem;">
+<div class="grid-side-detail">
     <!-- Tools Sidebar/Selector -->
-    <div style="width: 300px;">
-        <div class="card" style="position: sticky; top: 1.5rem;">
-            <h3 style="font-size: 1rem; margin-bottom: 1.5rem;">Network Tools</h3>
-            <form action="" method="POST">
-                <div class="input-group">
-                    <label>Target Host (IP / MAC / Domain)</label>
-                    <input type="text" name="target" value="<?php echo htmlspecialchars($target); ?>" class="input-control" placeholder="e.g. 192.168.1.1 or 00:11:22..." required>
-                </div>
-                
-                <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem;">
-                    <?php 
-                        $active_action = $_POST['action'] ?? 'ping'; 
-                    ?>
-                    <button type="submit" name="action" value="ping" class="btn <?php echo $active_action === 'ping' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'ping' ? 'background: var(--surface-light);' : ''; ?>">
-                        <i data-lucide="radio" style="width: 16px;"></i> Ping Utility
-                    </button>
-                    <button type="submit" name="action" value="trace" class="btn <?php echo $active_action === 'trace' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'trace' ? 'background: var(--surface-light);' : ''; ?>">
-                        <i data-lucide="git-merge" style="width: 16px;"></i> Traceroute
-                    </button>
-                    <button type="submit" name="action" value="oui" class="btn <?php echo $active_action === 'oui' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'oui' ? 'background: var(--surface-light);' : ''; ?>">
-                        <i data-lucide="search" style="width: 16px;"></i> OUI Lookup (MAC)
-                    </button>
-                </div>
-            </form>
+    <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 8px; border-radius: 50%; color: var(--primary);">
+                <i data-lucide="wrench" style="width: 20px;"></i>
+            </div>
+            <h3 style="font-size: 1.125rem;">Network Tools</h3>
         </div>
+        <form action="" method="POST">
+            <div class="input-group">
+                <label>Target Host (IP / MAC / Domain)</label>
+                <input type="text" name="target" value="<?php echo htmlspecialchars($target); ?>" class="input-control" placeholder="e.g. 192.168.1.1" required>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem;">
+                <?php 
+                    $active_action = $_POST['action'] ?? 'ping'; 
+                ?>
+                <button type="submit" name="action" value="ping" class="btn <?php echo $active_action === 'ping' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'ping' ? 'background: var(--surface-light); color: var(--text-muted);' : ''; ?>">
+                    <i data-lucide="radio" style="width: 16px;"></i> Ping Utility
+                </button>
+                <button type="submit" name="action" value="trace" class="btn <?php echo $active_action === 'trace' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'trace' ? 'background: var(--surface-light); color: var(--text-muted);' : ''; ?>">
+                    <i data-lucide="git-merge" style="width: 16px;"></i> Traceroute
+                </button>
+                <button type="submit" name="action" value="oui" class="btn <?php echo $active_action === 'oui' ? 'btn-primary' : ''; ?>" style="justify-content: flex-start; <?php echo $active_action !== 'oui' ? 'background: var(--surface-light); color: var(--text-muted);' : ''; ?>">
+                    <i data-lucide="search" style="width: 16px;"></i> OUI Lookup (MAC)
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Output Area -->
-    <div style="flex: 1;">
+    <div style="min-width: 0;">
         <?php if (!empty($output)): ?>
-            <div class="card" style="background: #000; border-color: #333; min-height: 400px; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 0.75rem; margin-bottom: 1rem;">
-                    <h3 style="font-size: 0.875rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px;">Terminal Output</h3>
-                    <span style="font-size: 0.75rem; color: #555;"><?php echo date('H:i:s'); ?></span>
+            <div class="card" style="background: rgba(0,0,0,0.4); border-color: var(--border); min-height: 400px; display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(4px);">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <h3 style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="terminal" style="width: 14px;"></i> Terminal Output
+                    </h3>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);"><?php echo date('H:i:s'); ?></span>
                 </div>
-                <pre style="flex: 1; color: #0f0; font-family: 'DM Mono', monospace; font-size: 0.875rem; line-height: 1.6; overflow-x: auto;"><?php echo htmlspecialchars($output); ?></pre>
+                <div class="table-responsive" style="flex: 1;">
+                    <pre style="color: #60a5fa; font-family: monospace; font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap; word-break: break-all;"><?php echo htmlspecialchars($output); ?></pre>
+                </div>
             </div>
         <?php else: ?>
             <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; border-style: dashed; opacity: 0.5;">
-                <i data-lucide="terminal" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--text-muted);">Ready to Execute</h3>
-                <p style="font-size: 0.875rem; color: var(--text-muted);">Select a tool and provide a target host above.</p>
+                <div style="background: var(--surface-light); padding: 1.5rem; border-radius: 50%; margin-bottom: 1.5rem;">
+                    <i data-lucide="terminal" style="width: 48px; height: 48px; color: var(--text-muted);"></i>
+                </div>
+                <h3 style="color: var(--text-muted); font-size: 1.25rem;">Ready to Execute</h3>
+                <p style="font-size: 0.875rem; color: var(--text-muted); max-width: 300px; text-align: center;">Select a tool and provide a target host from the panel to start diagnostics.</p>
             </div>
         <?php endif; ?>
     </div>

@@ -4,7 +4,7 @@ require_once 'includes/config.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -190,25 +190,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include 'includes/header.php';
 ?>
 
-<div style="display: grid; grid-template-columns: 1.1fr 1.9fr; gap: 1.5rem;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
     <div class="card">
-        <h3 style="font-size: 1.125rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="calculator" style="width: 18px;"></i> Input
+        <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="calculator" style="width: 20px;"></i> Advanced Calculator
         </h3>
         <form method="POST">
             <input type="hidden" name="mode" value="calc">
             <div class="input-group">
-                <label>CIDR (opsional)</label>
+                <label>CIDR Input (Quick)</label>
                 <input type="text" class="input-control" name="cidr" placeholder="192.168.1.10/24" value="<?php echo htmlspecialchars($input_cidr); ?>">
             </div>
-            <div style="text-align: center; color: var(--text-muted); margin-bottom: 0.75rem;">atau</div>
+            <div style="text-align: center; color: var(--text-muted); margin: 1rem 0; font-size: 0.8rem; font-weight: 600;">OR MANUAL</div>
             <div class="input-group">
                 <label>IP Address</label>
                 <input type="text" class="input-control" name="ip_addr" placeholder="192.168.1.10" value="<?php echo htmlspecialchars($input_ip); ?>">
             </div>
             <div class="input-group">
-                <label>Prefix</label>
-                <select class="input-control" name="prefix" style="appearance: none;">
+                <label>Prefix / Mask</label>
+                <select class="input-control" name="prefix">
                     <?php for ($p = 0; $p <= 32; $p++): ?>
                         <option value="<?php echo $p; ?>" <?php echo $p === (int)$input_prefix ? 'selected' : ''; ?>>/<?php echo $p; ?></option>
                     <?php endfor; ?>
@@ -216,134 +216,137 @@ include 'includes/header.php';
             </div>
 
             <?php if ($error !== ''): ?>
-                <div style="padding: 0.8rem 1rem; border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); border-radius: 8px; color: #fecaca; margin-bottom: 1rem;">
+                <div style="padding: 1rem; border: 1px solid var(--danger); background: rgba(239, 68, 68, 0.1); border-radius: 8px; color: var(--danger); margin-bottom: 1.5rem; font-size: 0.875rem;">
                     <?php echo htmlspecialchars($error); ?>
                 </div>
             <?php endif; ?>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                <i data-lucide="play"></i> Calculate
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                <i data-lucide="play"></i> Compute Network
             </button>
         </form>
     </div>
 
     <div class="card">
-        <h3 style="font-size: 1.125rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="network" style="width: 18px;"></i> Result
+        <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="network" style="width: 20px;"></i> Computed Parameters
         </h3>
 
         <?php if (!$result): ?>
-            <div style="padding: 1.25rem; border: 1px dashed var(--border); border-radius: 10px; color: var(--text-muted);">
-                Masukkan CIDR atau IP + prefix untuk menghitung detail subnet.
+            <div style="padding: 2.5rem; border: 1px dashed var(--border); border-radius: 12px; color: var(--text-muted); text-align: center;">
+                <i data-lucide="info" style="width: 32px; height: 32px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>Enter network parameters to see detailed computations.</p>
             </div>
         <?php else: ?>
-            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem;">
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">CIDR</div>
-                    <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['input_ip']); ?>/<?php echo (int)$result['prefix']; ?></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">CIDR Notation</div>
+                    <div style="font-family: monospace; font-weight: 700; font-size: 0.9375rem;"><?php echo htmlspecialchars($result['input_ip']); ?>/<?php echo (int)$result['prefix']; ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Netmask</div>
-                    <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['netmask']); ?></div>
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Netmask</div>
+                    <div style="font-family: monospace; font-weight: 700; font-size: 0.9375rem;"><?php echo htmlspecialchars($result['netmask']); ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Wildcard</div>
-                    <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['wildcard']); ?></div>
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Wildcard</div>
+                    <div style="font-family: monospace; font-weight: 700; font-size: 0.9375rem;"><?php echo htmlspecialchars($result['wildcard']); ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Total Hosts</div>
-                    <div style="font-weight: 700;"><?php echo number_format((int)$result['total_hosts']); ?></div>
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Total Hosts</div>
+                    <div style="font-weight: 800; font-size: 1.125rem;"><?php echo number_format((int)$result['total_hosts']); ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Usable Hosts</div>
-                    <div style="font-weight: 700; color: var(--success);"><?php echo number_format((int)$result['usable_hosts']); ?></div>
+                <div style="padding: 1rem; background: rgba(16, 185, 129, 0.05); border-radius: 10px; border: 1px solid var(--success);">
+                    <div style="font-size: 0.7rem; color: var(--success); text-transform: uppercase; font-weight: 600;">Usable Hosts</div>
+                    <div style="font-weight: 800; font-size: 1.125rem; color: var(--success);"><?php echo number_format((int)$result['usable_hosts']); ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Network Address</div>
-                    <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['network']); ?></div>
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Network</div>
+                    <div style="font-family: monospace; font-weight: 700; color: var(--primary);"><?php echo htmlspecialchars($result['network']); ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">First Usable</div>
-                    <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['first_usable']); ?></div>
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">First IP</div>
+                    <div style="font-family: monospace; font-weight: 700;"><?php echo htmlspecialchars($result['first_usable']); ?></div>
                 </div>
-                <div style="padding: 0.8rem; background: var(--surface-light); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Last Usable</div>
-                    <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['last_usable']); ?></div>
+                <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Last IP</div>
+                    <div style="font-family: monospace; font-weight: 700;"><?php echo htmlspecialchars($result['last_usable']); ?></div>
                 </div>
             </div>
 
-            <div style="padding: 0.8rem; background: rgba(59,130,246,0.08); border: 1px dashed rgba(59,130,246,0.4); border-radius: 8px; margin-top: 0.9rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Broadcast Address</div>
-                <div style="font-family: monospace; font-weight: 600;"><?php echo htmlspecialchars($result['broadcast']); ?></div>
+            <div style="padding: 1.25rem; background: rgba(239, 68, 68, 0.05); border: 1px solid var(--danger); border-radius: 10px; margin-top: 1rem; text-align: center;">
+                <div style="font-size: 0.7rem; color: var(--danger); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Broadcast Address</div>
+                <div style="font-family: monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);"><?php echo htmlspecialchars($result['broadcast']); ?></div>
             </div>
         <?php endif; ?>
     </div>
 </div>
 
-<div class="card" style="margin-top: 1.5rem;">
-    <h3 style="font-size: 1.125rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="split" style="width: 18px;"></i> Subnet Splitter (VLSM Ringan)
-    </h3>
-    <form method="POST" style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.75rem; align-items: end; margin-bottom: 1rem;">
-        <input type="hidden" name="mode" value="split">
-        <div class="input-group" style="margin-bottom: 0;">
-            <label>Network Induk (CIDR)</label>
-            <input type="text" class="input-control" name="split_cidr" placeholder="10.10.0.0/24" value="<?php echo htmlspecialchars($split_input_cidr); ?>">
+<div class="card" style="margin-top: 2rem;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
+        <div style="background: rgba(59, 130, 246, 0.1); padding: 8px; border-radius: 50%; color: var(--primary);">
+            <i data-lucide="split" style="width: 20px;"></i>
         </div>
-        <div class="input-group" style="margin-bottom: 0;">
-            <label>Target Prefix</label>
-            <select class="input-control" name="split_target_prefix" style="appearance: none;">
+        <h3 style="font-size: 1.125rem;">Subnet Splitter (VLSM)</h3>
+    </div>
+
+    <form method="POST" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 2rem;">
+        <input type="hidden" name="mode" value="split">
+        <div class="input-group" style="margin: 0; flex: 2; min-width: 250px;">
+            <label>Parent Network (CIDR)</label>
+            <input type="text" class="input-control" name="split_cidr" placeholder="10.10.0.0/24" value="<?php echo htmlspecialchars($split_input_cidr); ?>" required>
+        </div>
+        <div class="input-group" style="margin: 0; flex: 1; min-width: 150px;">
+            <label>Split into Prefix</label>
+            <select class="input-control" name="split_target_prefix">
                 <?php for ($p = 0; $p <= 32; $p++): ?>
                     <option value="<?php echo $p; ?>" <?php echo $p === (int)$split_target_prefix ? 'selected' : ''; ?>>/<?php echo $p; ?></option>
                 <?php endfor; ?>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="height: 44px;">
-            <i data-lucide="wand-sparkles"></i> Split
+        <button type="submit" class="btn btn-primary" style="height: 48px; padding: 0 2.5rem; min-width: 120px;">
+            <i data-lucide="wand-sparkles"></i> Generate
         </button>
     </form>
 
     <?php if ($split_error !== ''): ?>
-        <div style="padding: 0.8rem 1rem; border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); border-radius: 8px; color: #fecaca;">
+        <div style="padding: 1rem; border: 1px solid var(--danger); background: rgba(239, 68, 68, 0.1); border-radius: 10px; color: var(--danger);">
             <?php echo htmlspecialchars($split_error); ?>
         </div>
     <?php elseif ($split_result): ?>
-        <div style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
-            <?php echo htmlspecialchars($split_result['base']['network']); ?>/<?php echo (int)$split_result['base']['prefix']; ?>
-            dipecah menjadi
-            <strong><?php echo count($split_result['subnets']); ?></strong>
-            subnet dengan prefix
-            <strong>/<?php echo (int)$split_result['target_prefix']; ?></strong>.
+        <div style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9375rem; background: var(--surface-light); padding: 1rem; border-radius: 10px;">
+            Parent network <span style="font-family: monospace; font-weight: 600; color: var(--primary);"><?php echo htmlspecialchars($split_result['base']['network']); ?>/<?php echo (int)$split_result['base']['prefix']; ?></span>
+            was split into <strong><?php echo count($split_result['subnets']); ?></strong> subnets of <strong>/<?php echo (int)$split_result['target_prefix']; ?></strong>.
         </div>
-        <div style="overflow-x: auto;">
+        <div class="table-responsive">
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr style="border-bottom: 1px solid var(--border);">
-                        <th style="padding: 0.7rem; text-align: left; color: var(--text-muted);">Subnet</th>
-                        <th style="padding: 0.7rem; text-align: left; color: var(--text-muted);">Network</th>
-                        <th style="padding: 0.7rem; text-align: left; color: var(--text-muted);">First</th>
-                        <th style="padding: 0.7rem; text-align: left; color: var(--text-muted);">Last</th>
-                        <th style="padding: 0.7rem; text-align: left; color: var(--text-muted);">Broadcast</th>
-                        <th style="padding: 0.7rem; text-align: right; color: var(--text-muted);">Usable</th>
+                    <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Segment</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Network</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Range (First - Last)</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Broadcast</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-align: right;">Usable</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($split_result['subnets'] as $idx => $sub): ?>
                         <tr style="border-bottom: 1px solid var(--border);">
-                            <td style="padding: 0.7rem; font-family: monospace;">#<?php echo $idx + 1; ?> /<?php echo (int)$sub['prefix']; ?></td>
-                            <td style="padding: 0.7rem; font-family: monospace;"><?php echo htmlspecialchars($sub['network']); ?></td>
-                            <td style="padding: 0.7rem; font-family: monospace;"><?php echo htmlspecialchars($sub['first_usable']); ?></td>
-                            <td style="padding: 0.7rem; font-family: monospace;"><?php echo htmlspecialchars($sub['last_usable']); ?></td>
-                            <td style="padding: 0.7rem; font-family: monospace;"><?php echo htmlspecialchars($sub['broadcast']); ?></td>
-                            <td style="padding: 0.7rem; text-align: right;"><?php echo number_format((int)$sub['usable_hosts']); ?></td>
+                            <td style="padding: 1rem; font-weight: 600; color: var(--text-muted); font-size: 0.8rem;">#<?php echo $idx + 1; ?></td>
+                            <td style="padding: 1rem; font-family: monospace; font-weight: 600; color: var(--primary);"><?php echo htmlspecialchars($sub['network']); ?>/<?php echo (int)$sub['prefix']; ?></td>
+                            <td style="padding: 1rem; font-family: monospace; font-size: 0.875rem;">
+                                <?php echo htmlspecialchars($sub['first_usable']); ?> - <?php echo htmlspecialchars($sub['last_usable']); ?>
+                            </td>
+                            <td style="padding: 1rem; font-family: monospace; font-size: 0.875rem; color: var(--danger);"><?php echo htmlspecialchars($sub['broadcast']); ?></td>
+                            <td style="padding: 1rem; text-align: right; font-weight: 700; color: var(--success);"><?php echo number_format((int)$sub['usable_hosts']); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
     <?php else: ?>
-        <div style="padding: 0.9rem; border: 1px dashed var(--border); border-radius: 8px; color: var(--text-muted);">
-            Contoh: pecah `10.10.0.0/24` ke target `/26` untuk mendapatkan 4 subnet.
+        <div style="padding: 2.5rem; border: 1px dashed var(--border); border-radius: 12px; color: var(--text-muted); text-align: center;">
+            <i data-lucide="info" style="width: 32px; height: 32px; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <p>Example: Divide <code>10.0.0.0/24</code> into <code>/26</code> to get 4 equal segments.</p>
         </div>
     <?php endif; ?>
 </div>

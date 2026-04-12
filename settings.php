@@ -23,7 +23,6 @@ if (isset($_POST['check_update'])) {
 
 // Handle save settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
-// ... (rest of the post handling remains same)
     $to_save = [
         'telegram_enabled' => isset($_POST['telegram_enabled']) ? '1' : '0',
         'telegram_bot_token' => $_POST['telegram_bot_token'] ?? '',
@@ -86,12 +85,18 @@ include 'includes/header.php';
 <style>
     .settings-tabs {
         display: flex;
-        gap: 10px;
+        gap: 5px;
         margin-bottom: 2rem;
         background: var(--surface);
         padding: 5px;
         border-radius: 12px;
         display: inline-flex;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .settings-tabs::-webkit-scrollbar {
+        height: 0;
     }
     .tab-btn {
         padding: 10px 20px;
@@ -105,6 +110,7 @@ include 'includes/header.php';
         text-transform: uppercase;
         color: var(--text-muted);
         transition: all 0.2s;
+        white-space: nowrap;
     }
     .tab-btn.active {
         background: var(--primary);
@@ -123,9 +129,21 @@ include 'includes/header.php';
         padding: 1.5rem;
         margin-bottom: 2rem;
     }
+    
+    @media (max-width: 640px) {
+        .settings-footer {
+            flex-direction: column;
+        }
+        .settings-footer .btn {
+            width: 100%;
+        }
+        .grid-settings {
+            grid-template-columns: 1fr !important;
+        }
+    }
 </style>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+<div class="page-header">
     <h1 style="font-size: 1.5rem;">System Configuration</h1>
 </div>
 
@@ -136,33 +154,33 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <div class="settings-tabs">
-    <div class="tab-btn active" onclick="showTab('tab-umum')"><i data-lucide="layout"></i> UMUM</div>
-    <div class="tab-btn" onclick="showTab('tab-notif')"><i data-lucide="send"></i> NOTIFIKASI</div>
-    <div class="tab-btn" onclick="showTab('tab-email')"><i data-lucide="mail"></i> EMAIL</div>
-    <div class="tab-btn" onclick="showTab('tab-system')"><i data-lucide="settings"></i> SISTEM</div>
+    <div class="tab-btn active" onclick="showTab(event, 'tab-umum')"><i data-lucide="layout"></i> UMUM</div>
+    <div class="tab-btn" onclick="showTab(event, 'tab-notif')"><i data-lucide="send"></i> NOTIFIKASI</div>
+    <div class="tab-btn" onclick="showTab(event, 'tab-email')"><i data-lucide="mail"></i> EMAIL</div>
+    <div class="tab-btn" onclick="showTab(event, 'tab-system')"><i data-lucide="settings"></i> SISTEM</div>
 </div>
 
 <form method="POST">
     <!-- UMUM TAB -->
     <div id="tab-umum" class="tab-content active">
-        <div class="card" style="max-width: 600px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+        <div class="card" style="max-width: 800px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
                 <div style="background: rgba(59, 130, 246, 0.1); padding: 8px; border-radius: 50%; color: var(--primary);">
-                    <i data-lucide="search"></i>
+                    <i data-lucide="search" style="width: 20px;"></i>
                 </div>
                 <h3>Discovery Settings</h3>
             </div>
             <div class="input-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text);">
                     <input type="checkbox" name="nmap_enabled" value="1" <?php echo ($settings['nmap_enabled'] ?? '0') == '1' ? 'checked' : ''; ?>> Enable Nmap OS Detection
                 </label>
             </div>
             <div class="input-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text);">
                     <input type="checkbox" name="discovery_aggressive" value="1" <?php echo ($settings['discovery_aggressive'] ?? '1') == '1' ? 'checked' : ''; ?>> Aggressive Mode (More Ports)
                 </label>
             </div>
-            <div class="input-group" style="margin-top: 1.5rem;">
+            <div class="input-group" style="margin-top: 2rem;">
                 <label>Offline Fail Threshold</label>
                 <input type="number" name="offline_fail_threshold" class="input-control" value="<?php echo htmlspecialchars($settings['offline_fail_threshold'] ?? '3'); ?>" min="1" max="10">
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Jumlah kegagalan scan berturut-turut sebelum IP ditandai sebagai OFFLINE.</p>
@@ -172,27 +190,27 @@ include 'includes/header.php';
 
     <!-- NOTIFIKASI TAB -->
     <div id="tab-notif" class="tab-content">
-        <div class="card" style="max-width: 600px; border-top: 4px solid #0088cc;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+        <div class="card" style="max-width: 800px; border-top: 4px solid #0088cc;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
                 <div style="background: rgba(0, 136, 204, 0.1); padding: 8px; border-radius: 50%; color: #0088cc;">
-                    <i data-lucide="send"></i>
+                    <i data-lucide="send" style="width: 20px;"></i>
                 </div>
                 <h3>Telegram Bot</h3>
             </div>
             <div class="input-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text);">
                     <input type="checkbox" name="telegram_enabled" value="1" <?php echo ($settings['telegram_enabled'] ?? '0') == '1' ? 'checked' : ''; ?>> Activate Telegram Alerts
                 </label>
             </div>
             <div class="input-group">
                 <label>Bot Token</label>
-                <input type="text" name="telegram_bot_token" class="input-control" value="<?php echo htmlspecialchars($settings['telegram_bot_token'] ?? ''); ?>">
+                <input type="text" name="telegram_bot_token" class="input-control" value="<?php echo htmlspecialchars($settings['telegram_bot_token'] ?? ''); ?>" placeholder="123456:ABC-DEF...">
             </div>
             <div class="input-group">
                 <label>Chat ID</label>
-                <input type="text" name="telegram_chat_id" class="input-control" value="<?php echo htmlspecialchars($settings['telegram_chat_id'] ?? ''); ?>">
+                <input type="text" name="telegram_chat_id" class="input-control" value="<?php echo htmlspecialchars($settings['telegram_chat_id'] ?? ''); ?>" placeholder="-100123456789">
             </div>
-            <button type="submit" name="test_telegram" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;">
+            <button type="submit" name="test_telegram" class="btn btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;">
                 <i data-lucide="zap"></i> Test Telegram Connection
             </button>
         </div>
@@ -200,16 +218,16 @@ include 'includes/header.php';
 
     <!-- EMAIL TAB -->
     <div id="tab-email" class="tab-content">
-        <div class="card" style="max-width: 600px; border-top: 4px solid var(--success);">
+        <div class="card" style="max-width: 800px; border-top: 4px solid var(--success);">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
                 <div style="background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 50%; color: var(--success);">
-                    <i data-lucide="mail"></i>
+                    <i data-lucide="mail" style="width: 20px;"></i>
                 </div>
                 <h3>SMTP Email Configuration</h3>
             </div>
             
             <div class="input-group" style="margin-bottom: 2rem;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text);">
                     <input type="checkbox" name="email_enabled" value="1" <?php echo ($settings['email_enabled'] ?? '0') == '1' ? 'checked' : ''; ?>> Activate Email Alerts
                 </label>
             </div>
@@ -219,7 +237,7 @@ include 'includes/header.php';
                 <input type="text" name="mail_from" class="input-control" value="<?php echo htmlspecialchars($settings['mail_from'] ?? ''); ?>" placeholder="sender@yourdomain.com">
             </div>
 
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+            <div class="grid-settings" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
                 <div class="input-group">
                     <label>SMTP HOST</label>
                     <input type="text" name="smtp_host" class="input-control" value="<?php echo htmlspecialchars($settings['smtp_host'] ?? ''); ?>" placeholder="mail.yourdomain.com">
@@ -230,7 +248,7 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="grid-settings" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="input-group">
                     <label>SMTP USER (EMAIL)</label>
                     <input type="text" name="smtp_user" class="input-control" value="<?php echo htmlspecialchars($settings['smtp_user'] ?? ''); ?>">
@@ -246,23 +264,23 @@ include 'includes/header.php';
                 <input type="email" name="admin_email" class="input-control" value="<?php echo htmlspecialchars($settings['admin_email'] ?? 'admin@example.com'); ?>">
             </div>
 
-            <button type="submit" name="test_email" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;">
+            <button type="submit" name="test_email" class="btn btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;">
                 <i data-lucide="mail-check"></i> Test Email Discovery
             </button>
         </div>
     </div>
 
-    <!-- SISTEM TAB (NEW) -->
+    <!-- SISTEM TAB -->
     <div id="tab-system" class="tab-content">
-        <div class="card" style="max-width: 600px; border-top: 4px solid var(--primary);">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+        <div class="card" style="max-width: 800px; border-top: 4px solid var(--primary);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
                 <div style="background: rgba(99, 102, 241, 0.1); padding: 8px; border-radius: 50%; color: var(--primary);">
-                    <i data-lucide="info"></i>
+                    <i data-lucide="info" style="width: 20px;"></i>
                 </div>
                 <h3>System Information</h3>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="grid-settings" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                 <div class="update-card" style="text-align: center; margin-bottom: 0;">
                     <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Versi Sekarang</div>
                     <div style="font-size: 2rem; font-weight: 800; color: white;">v<?php echo APP_VERSION; ?></div>
@@ -273,8 +291,8 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <div style="padding: 1.25rem; background: rgba(255,255,255,0.02); border-radius: 12px; margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 0.75rem;">
+            <div style="padding: 1.25rem; background: rgba(255,255,255,0.02); border-radius: 12px; margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; margin-bottom: 1rem;">
                     <span style="color: var(--text-muted);">Status Update:</span>
                     <?php if (Updater::isUpdateAvailable()): ?>
                         <span style="color: var(--warning); font-weight: 700; display: flex; align-items: center; gap: 5px;">
@@ -286,7 +304,7 @@ include 'includes/header.php';
                         </span>
                     <?php endif; ?>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
                     <span style="color: var(--text-muted);">Terakhir Dicek:</span>
                     <span style="color: white; font-weight: 600;">
                         <?php 
@@ -297,42 +315,35 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <?php if (Updater::isUpdateAvailable()): ?>
-                <div style="margin-bottom: 1.5rem;">
-                    <a href="<?php echo Updater::getUpdateUrl(); ?>" target="_blank" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
-                        <i data-lucide="download"></i> Download v<?php echo Updater::getLatestVersion(); ?> dari GitHub
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <?php if (Updater::isUpdateAvailable()): ?>
+                    <a href="<?php echo Updater::getUpdateUrl(); ?>" target="_blank" class="btn btn-primary" style="justify-content: center; padding: 1rem;">
+                        <i data-lucide="download"></i> Download v<?php echo Updater::getLatestVersion(); ?>
                     </a>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <button type="submit" name="check_update" class="btn btn-secondary" style="width: 100%;">
-                <i data-lucide="refresh-cw"></i> Cek Update Sekarang
-            </button>
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; text-align: center;">Update dicek secara otomatis setiap 24 jam via GitHub API.</p>
+                <button type="submit" name="check_update" class="btn btn-secondary" style="justify-content: center;">
+                    <i data-lucide="refresh-cw"></i> Cek Update Sekarang
+                </button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">Update dicek secara otomatis setiap 24 jam.</p>
         </div>
     </div>
 
-    <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
-        <button type="submit" name="save_settings" class="btn btn-primary" style="padding: 1rem 3rem;">
+    <div class="settings-footer" style="margin-top: 3rem; display: flex; justify-content: flex-end; gap: 1rem;">
+        <button type="submit" name="save_settings" class="btn btn-primary" style="padding: 1rem 3rem; justify-content: center;">
             <i data-lucide="check-circle-2"></i> Simpan Semua Pengaturan
         </button>
     </div>
 </form>
 
 <script>
-    function showTab(tabId) {
+    function showTab(event, tabId) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         
         document.getElementById(tabId).classList.add('active');
-        // event.currentTarget is more robust but may fail if called directly
-        if(window.event) window.event.currentTarget.classList.add('active');
-    }
-
-    // Persist tab on refresh if possible
-    const lastTab = localStorage.getItem('active_settings_tab');
-    if (lastTab) {
-        // showTab(lastTab); // Enable this if you want persistence
+        if(event) event.currentTarget.classList.add('active');
     }
 </script>
 

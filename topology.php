@@ -111,25 +111,28 @@ $mermaid_logic .= "    classDef subnet fill:#f59e0b,stroke:#d97706,stroke-width:
         <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Network Topology Map</h1>
         <p class="text-muted">Interactive view showing manually defined connections from the Link Manager.</p>
     </div>
+    <a href="topology-manager" class="btn btn-secondary">
+        <i data-lucide="settings"></i> Link Manager
+    </a>
 </div>
 
-<div class="card" style="min-height: 600px; background: var(--surface); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div class="card" style="min-height: 600px; background: var(--surface); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 0;">
     
     <!-- Legend -->
-    <div style="position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 1.5rem; font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border);">
-        <div style="display: flex; align-items: center; gap: 8px;"><div style="width:12px; height:12px; background:#3b82f6; border-radius:3px;"></div> Switch (L2/L3)</div>
-        <div style="display: flex; align-items: center; gap: 8px;"><div style="width:12px; height:12px; background:#10b981; border-radius:3px;"></div> VLAN Group</div>
-        <div style="display: flex; align-items: center; gap: 8px;"><div style="width:12px; height:12px; background:#f59e0b; border-radius:3px;"></div> Subnet / IP Block</div>
+    <div class="legend-container" style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 1rem; font-size: 0.7rem; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); z-index: 10; flex-wrap: wrap; justify-content: center;">
+        <div style="display: flex; align-items: center; gap: 6px;"><div style="width:10px; height:10px; background:#3b82f6; border-radius:2px;"></div> Switch</div>
+        <div style="display: flex; align-items: center; gap: 6px;"><div style="width:10px; height:10px; background:#10b981; border-radius:2px;"></div> VLAN</div>
+        <div style="display: flex; align-items: center; gap: 6px;"><div style="width:10px; height:10px; background:#f59e0b; border-radius:2px;"></div> Subnet</div>
     </div>
 
     <!-- Loading State -->
     <div id="topo-loader" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
         <div class="spinner-blue" style="width: 48px; height: 48px; border: 4px solid rgba(59, 130, 246, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-        <span class="text-muted" style="letter-spacing: 1px; font-size: 0.9rem;">RENDERING TOPOLOGY...</span>
+        <span class="text-muted" style="letter-spacing: 1px; font-size: 0.8rem; font-weight: 600;">GENERATING MAP...</span>
     </div>
 
     <!-- The Diagram -->
-    <div id="topo-container" style="width: 100%; height: 100%; visibility: hidden; opacity: 0; transition: opacity 0.5s ease; padding: 2rem;">
+    <div id="topo-container" class="table-responsive" style="width: 100%; height: 100%; visibility: hidden; opacity: 0; transition: opacity 0.5s ease; padding: 3rem 1rem 1rem 1rem; cursor: grab;">
         <div class="mermaid" style="text-align: center;">
             <?php echo $mermaid_logic; ?>
         </div>
@@ -139,7 +142,22 @@ $mermaid_logic .= "    classDef subnet fill:#f59e0b,stroke:#d97706,stroke-width:
 <style>
     @keyframes spin { to { transform: rotate(360deg); } }
     .mermaid { background: transparent !important; }
-    .mermaid svg { max-width: 100%; height: auto; }
+    .mermaid svg { 
+        max-width: 100% !important; 
+        height: auto !important; 
+    }
+    @media (max-width: 640px) {
+        .legend-container {
+            position: relative !important;
+            top: 0 !important;
+            right: 0 !important;
+            margin: 1rem;
+            border-radius: 8px !important;
+        }
+        #topo-container {
+            padding-top: 1rem !important;
+        }
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
@@ -152,7 +170,6 @@ $mermaid_logic .= "    classDef subnet fill:#f59e0b,stroke:#d97706,stroke-width:
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Wait for rendering to complete
         setTimeout(() => {
             document.getElementById('topo-loader').style.display = 'none';
             const container = document.getElementById('topo-container');

@@ -13,7 +13,7 @@ $db = get_db_connection();
 $page_title = 'User Management';
 
 // Handle user addition
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
     $username = $_POST['username'];
     $email = $_POST['email'];
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
@@ -58,15 +58,27 @@ $users = $db->query("SELECT id, username, email, role, created_at FROM users ORD
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="page-header">
     <h1 style="font-size: 1.5rem;">User Management</h1>
     <button class="btn btn-primary" onclick="document.getElementById('addUserModal').style.display='flex'">
         <i data-lucide="user-plus"></i> Add User
     </button>
 </div>
 
+<?php if (isset($message)): ?>
+    <div class="card" style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); margin-bottom: 1.5rem;">
+        <?php echo $message; ?>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($error)): ?>
+    <div class="card" style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); margin-bottom: 1.5rem;">
+        <?php echo $error; ?>
+    </div>
+<?php endif; ?>
+
 <div class="card">
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">
@@ -84,28 +96,30 @@ include 'includes/header.php';
                                 <div style="background: var(--surface-light); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--primary);">
                                     <?php echo strtoupper($u['username'][0]); ?>
                                 </div>
-                                <?php echo $u['username']; ?>
+                                <?php echo htmlspecialchars($u['username']); ?>
                             </div>
                         </td>
                         <td style="padding: 1rem;">
                             <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.1); color: var(--primary); text-transform: uppercase; font-weight: 600;">
-                                <?php echo $u['role']; ?>
+                                <?php echo htmlspecialchars($u['role']); ?>
                             </span>
                         </td>
                         <td style="padding: 1rem; font-size: 0.875rem; color: var(--text-muted);">
                             <?php echo $u['created_at']; ?>
                         </td>
                         <td style="padding: 1rem; text-align: right;">
-                            <?php if ($u['id'] != $_SESSION['user_id']): ?>
-                                <button class="btn" style="padding: 4px 8px; background: rgba(59, 130, 246, 0.1); color: var(--primary);" onclick="openResetModal(<?php echo $u['id']; ?>, '<?php echo $u['username']; ?>')">
-                                    <i data-lucide="key" style="width: 14px;"></i>
-                                </button>
-                                <a href="?delete_id=<?php echo $u['id']; ?>" class="btn" style="padding: 4px 8px; background: rgba(239, 68, 68, 0.1); color: var(--danger);" onclick="return confirm('Are you sure?')">
-                                    <i data-lucide="trash-2" style="width: 14px;"></i>
-                                </a>
-                            <?php else: ?>
-                                <span style="font-size: 0.75rem; color: var(--text-muted);">Current User</span>
-                            <?php endif; ?>
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <?php if ($u['id'] != $_SESSION['user_id']): ?>
+                                    <button class="btn" style="padding: 6px; background: rgba(59, 130, 246, 0.1); color: var(--primary);" onclick="openResetModal(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['username']); ?>')" title="Reset Password">
+                                        <i data-lucide="key" style="width: 16px;"></i>
+                                    </button>
+                                    <a href="?delete_id=<?php echo $u['id']; ?>" class="btn" style="padding: 6px; background: rgba(239, 68, 68, 0.1); color: var(--danger);" onclick="return confirm('Are you sure?')" title="Delete User">
+                                        <i data-lucide="trash-2" style="width: 16px;"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Current User</span>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -115,9 +129,14 @@ include 'includes/header.php';
 </div>
 
 <!-- Add User Modal -->
-<div id="addUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
-    <div class="card" style="width: 100%; max-width: 400px; padding: 2rem;">
-        <h3 style="margin-bottom: 1.5rem;">Add New User</h3>
+<div id="addUserModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 400px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Add New User</h3>
+            <button onclick="document.getElementById('addUserModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
         <form method="POST">
             <input type="hidden" name="add_user" value="1">
             <div class="input-group">
@@ -134,18 +153,43 @@ include 'includes/header.php';
             </div>
             <div class="input-group">
                 <label>Role</label>
-                <select name="role" class="input-control" style="appearance: none;">
+                <select name="role" class="input-control">
                     <option value="admin">Administrator (Full Access)</option>
                     <option value="viewer">Viewer (Read-only)</option>
                 </select>
             </div>
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                <button type="button" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);" onclick="document.getElementById('addUserModal').style.display='none'">Cancel</button>
-                <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Create User</button>
-            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">Create User</button>
         </form>
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?>
+<!-- Reset Password Modal (added for functionality) -->
+<div id="resetModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 400px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Reset Password: <span id="reset_username"></span></h3>
+            <button onclick="document.getElementById('resetModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="reset_password" value="1">
+            <input type="hidden" name="user_id" id="reset_user_id">
+            <div class="input-group">
+                <label>New Password</label>
+                <input type="password" name="new_password" class="input-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">Reset Password</button>
+        </form>
+    </div>
+</div>
 
+<script>
+function openResetModal(id, username) {
+    document.getElementById('reset_user_id').value = id;
+    document.getElementById('reset_username').innerText = username;
+    document.getElementById('resetModal').style.display = 'flex';
+}
+</script>
+
+<?php include 'includes/footer.php'; ?>

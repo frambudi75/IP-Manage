@@ -49,21 +49,23 @@ $page_title = "Switch: " . $switch['name'];
 include 'includes/header.php';
 ?>
 
-<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
-    <div>
-        <nav style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-            <a href="switches" style="color: var(--primary); text-decoration: none;">Switches</a> / <?php echo htmlspecialchars($switch['name']); ?>
-        </nav>
-        <h1 style="font-size: 1.75rem;"><?php echo htmlspecialchars($switch['name']); ?></h1>
-        <p style="color: var(--text-muted); font-family: monospace;"><?php echo htmlspecialchars($switch['ip_addr']); ?></p>
-    </div>
-    <div class="header-actions" style="display: flex; gap: 0.75rem;">
-        <button class="btn" onclick="location.href='cron_switch_poll?id=<?php echo $id; ?>'" style="background: var(--surface-light);">
-            <i data-lucide="refresh-cw" style="width: 16px;"></i> Force Poll
-        </button>
-        <button class="btn btn-primary" onclick="window.print()">
-            <i data-lucide="printer" style="width: 16px;"></i> Export Report
-        </button>
+<div style="margin-bottom: 2rem;">
+    <nav style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+        <a href="switches" style="color: var(--primary); text-decoration: none;">Switches</a> / <?php echo htmlspecialchars($switch['name']); ?>
+    </nav>
+    <div class="page-header">
+        <div>
+            <h1 style="font-size: 1.75rem; margin: 0;"><?php echo htmlspecialchars($switch['name']); ?></h1>
+            <p style="color: var(--text-muted); font-family: monospace; font-size: 1.125rem; margin-top: 0.25rem;"><?php echo htmlspecialchars($switch['ip_addr']); ?></p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="location.href='cron_switch_poll?id=<?php echo $id; ?>'">
+                <i data-lucide="refresh-cw" style="width: 16px;"></i> Force Poll
+            </button>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i data-lucide="printer" style="width: 16px;"></i> Export Report
+            </button>
+        </div>
     </div>
 </div>
 
@@ -81,7 +83,7 @@ include 'includes/header.php';
                 <span id="cpu-val" style="font-weight: 700;"><?php echo (int)($switch['cpu_usage'] ?? 0); ?>%</span>
             </div>
             <div style="height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
-                <div id="cpu-bar" style="width: <?php echo (int)($switch['cpu_usage'] ?? 0); ?>%; height: 100%; background: var(--primary); transition: width 0.8s ease, background 0.5s ease;"></div>
+                <div id="cpu-bar" style="width: <?php echo (int)($switch['cpu_usage'] ?? 0); ?>%; height: 100%; background: var(--primary); transition: width 0.8s ease;"></div>
             </div>
         </div>
 
@@ -91,29 +93,29 @@ include 'includes/header.php';
                 <span id="mem-val" style="font-weight: 700;"><?php echo (int)($switch['memory_usage'] ?? 0); ?>%</span>
             </div>
             <div style="height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
-                <div id="mem-bar" style="width: <?php echo (int)($switch['memory_usage'] ?? 0); ?>%; height: 100%; background: var(--success); transition: width 0.8s ease, background 0.5s ease;"></div>
+                <div id="mem-bar" style="width: <?php echo (int)($switch['memory_usage'] ?? 0); ?>%; height: 100%; background: var(--success); transition: width 0.8s ease;"></div>
             </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.875rem;">
             <div style="display: flex; justify-content: space-between;">
                 <span style="color:var(--text-muted)">Model:</span>
-                <span style="font-weight: 600;"><?php echo htmlspecialchars($switch['model'] ?? 'Unknown'); ?></span>
+                <span style="font-weight: 600; text-align: right;"><?php echo htmlspecialchars($switch['model'] ?? 'Unknown'); ?></span>
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span style="color:var(--text-muted)">Uptime:</span>
-                <span style="font-weight: 600;"><?php echo htmlspecialchars($switch['uptime'] ?? '-'); ?></span>
+                <span style="font-weight: 600; text-align: right;"><?php echo htmlspecialchars($switch['uptime'] ?? '-'); ?></span>
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span style="color:var(--text-muted)">Last Updated:</span>
-                <span id="last-poll-val" style="font-weight: 600;"><?php echo $switch['last_poll'] ? date('H:i:s, d M', strtotime($switch['last_poll'])) : 'Never'; ?></span>
+                <span id="last-poll-val" style="font-weight: 600; text-align: right;"><?php echo $switch['last_poll'] ? date('H:i:s, d M', strtotime($switch['last_poll'])) : 'Never'; ?></span>
             </div>
         </div>
 
         <?php if (!empty($switch['system_info'])): ?>
             <div style="margin-top: 2rem;">
                 <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 0.5rem;">System Information</h4>
-                <div style="font-size: 0.75rem; color: var(--text-muted); background: var(--surface-light); padding: 1rem; border-radius: 8px; line-height: 1.5; white-space: pre-wrap;"><?php echo htmlspecialchars($switch['system_info']); ?></div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); background: var(--surface-light); padding: 1rem; border-radius: 8px; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"><?php echo htmlspecialchars($switch['system_info']); ?></div>
             </div>
         <?php endif; ?>
     </div>
@@ -121,7 +123,7 @@ include 'includes/header.php';
     <!-- Port Mapping Table -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Device Port Mapping</h3>
-        <div style="overflow-x: auto;">
+        <div class="table-responsive">
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border); text-align: left;">
@@ -136,12 +138,12 @@ include 'includes/header.php';
                 <tbody>
                     <?php if (empty($ports)): ?>
                         <tr>
-                            <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-muted);">No devices discovered on this switch yet. Run a poll to start.</td>
+                            <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No devices discovered on this switch yet. Run a poll to start.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($ports as $port): ?>
                             <tr style="border-bottom: 1px solid var(--border);">
-                                <td style="padding: 1rem; font-weight: 700; color: var(--primary);">
+                                <td style="padding: 1rem; font-weight: 700; color: var(--primary); white-space: nowrap;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <i data-lucide="zap" style="width: 14px;"></i>
                                         <?php echo htmlspecialchars($port['port_name']); ?>
@@ -156,10 +158,10 @@ include 'includes/header.php';
                                         <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td style="padding: 1rem; font-family: monospace; font-size: 0.85rem;">
+                                <td style="padding: 1rem; font-family: monospace; font-size: 0.85rem; white-space: nowrap;">
                                     <?php echo $port['mac_addr']; ?>
                                 </td>
-                                <td style="padding: 1rem;">
+                                <td style="padding: 1rem; white-space: nowrap;">
                                     <?php if ($port['ip_addr']): ?>
                                         <a href="devices?search=<?php echo urlencode($port['ip_addr']); ?>" style="color: var(--text); text-decoration: none; font-weight: 600; border-bottom: 1px dashed var(--primary);">
                                             <?php echo $port['ip_addr']; ?>
@@ -172,8 +174,8 @@ include 'includes/header.php';
                                     <div style="font-size: 0.875rem; font-weight: 600;"><?php echo htmlspecialchars($port['hostname'] ?: '-'); ?></div>
                                     <div style="font-size: 0.75rem; color: var(--text-muted);"><?php echo htmlspecialchars($port['vendor'] ?: ''); ?></div>
                                 </td>
-                                <td style="padding: 1rem; text-align: right; font-size: 0.75rem; color: var(--text-muted);">
-                                    <?php echo date('H:i', strtotime($port['last_seen_on_port'])); ?>
+                                <td style="padding: 1rem; text-align: right; font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">
+                                    <?php echo date('H:i, d M', strtotime($port['last_seen_on_port'])); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -185,37 +187,37 @@ include 'includes/header.php';
 </div>
 
 <!-- History Charts Section -->
-<div style="margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 style="font-size: 1.25rem;">📈 Performance History</h2>
+<div style="margin-top: 3rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="font-size: 1.25rem; margin: 0;">📈 Performance History</h2>
         <div style="display: flex; gap: 0.5rem;" id="history-btns">
             <?php foreach ([1, 6, 24, 48] as $h): ?>
             <button onclick="loadHistory(<?php echo $h; ?>)"
                     id="btn-h<?php echo $h; ?>"
-                    style="padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+                    class="btn btn-secondary"
+                    style="padding: 4px 12px; font-size: 0.8rem; min-width: 60px; justify-content: center;
                            background: <?php echo $h == 6 ? 'var(--primary)' : 'var(--surface-light)'; ?>;
-                           color: <?php echo $h == 6 ? '#fff' : 'var(--text-muted)'; ?>;
-                           border: 1px solid var(--border);">
+                           color: <?php echo $h == 6 ? '#fff' : 'var(--text-muted)'; ?>;">
                 <?php echo $h; ?>h
             </button>
             <?php endforeach; ?>
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
         <div class="card">
             <h3 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">CPU Load History</h3>
-            <div style="position: relative; height: 200px;"><canvas id="cpuChart"></canvas></div>
+            <div class="chart-container" style="height: 250px;"><canvas id="cpuChart"></canvas></div>
         </div>
         <div class="card">
             <h3 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">Memory Usage History</h3>
-            <div style="position: relative; height: 200px;"><canvas id="memChart"></canvas></div>
+            <div class="chart-container" style="height: 250px;"><canvas id="memChart"></canvas></div>
         </div>
     </div>
 
     <div class="card">
         <h3 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Period Summary</h3>
-        <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 3rem; flex-wrap: wrap; justify-content: start;">
             <div><div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="stat-ports">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Active Interfaces</div></div>
             <div><div style="font-size: 2rem; font-weight: 800; color: var(--success);" id="stat-devices">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Mapped Devices</div></div>
             <div><div style="font-size: 2rem; font-weight: 800; color: var(--warning);" id="stat-avg-cpu">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Avg CPU</div></div>
@@ -244,49 +246,34 @@ include 'includes/header.php';
         return;
     }
 
-    // Open SSE connection to our stream endpoint
     const es = new EventSource('api/switch-health-stream?id=' + switchId);
 
     es.onopen = function() {
         badge.textContent = 'LIVE';
         badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = 'var(--success, #22c55e)';
+        badge.style.color = '#22c55e';
     };
 
     es.onmessage = function(e) {
         try {
             const d = JSON.parse(e.data);
-
-            // Update CPU
             cpuVal.textContent = d.cpu + '%';
-            setBar(cpuBar, d.cpu, 80, 'var(--danger, #ef4444)', 'var(--primary, #6366f1)');
-
-            // Update Memory
+            setBar(cpuBar, d.cpu, 80, 'var(--danger)', 'var(--primary)');
             memVal.textContent = d.mem + '%';
-            setBar(memBar, d.mem, 90, 'var(--danger, #ef4444)', 'var(--success, #22c55e)');
-
-            // Update last poll time
+            setBar(memBar, d.mem, 90, 'var(--danger)', 'var(--success)');
             lastPoll.textContent = d.last_poll;
-
-            // Pulse animation on update
-            [cpuVal, memVal].forEach(el => {
-                el.style.opacity = '0.4';
-                setTimeout(() => el.style.opacity = '1', 200);
-            });
         } catch(err) { console.warn('SSE parse error', err); }
     };
 
     es.onerror = function() {
         badge.textContent = 'OFFLINE';
         badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color = 'var(--danger, #ef4444)';
+        badge.style.color = 'var(--danger)';
     };
 
-    // Close SSE when user leaves the page
     window.addEventListener('beforeunload', () => es.close());
 })();
 
-// ── History Charts ──────────────────────────────────────────────────────────
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -308,6 +295,7 @@ include 'includes/header.php';
     };
 
     function makeGradient(ctx, r, g, b) {
+        if (!ctx.chart.ctx) return `rgba(${r},${g},${b},0.4)`;
         const grad = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
         grad.addColorStop(0,   `rgba(${r},${g},${b},0.4)`);
         grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
@@ -329,11 +317,7 @@ include 'includes/header.php';
         options: JSON.parse(JSON.stringify(chartDefaults))
     });
 
-    let activeHours = 6;
-
     window.loadHistory = function(hours) {
-        activeHours = hours;
-        // Update button styles
         [1,6,24,48].forEach(h => {
             const btn = document.getElementById('btn-h' + h);
             if (!btn) return;
@@ -344,7 +328,6 @@ include 'includes/header.php';
         fetch(`api/switch-history?id=${SWITCH_ID}&hours=${hours}`)
             .then(r => r.json())
             .then(d => {
-                // Update charts
                 cpuChart.data.labels   = d.labels;
                 cpuChart.data.datasets[0].data = d.cpu;
                 cpuChart.update('active');
@@ -353,7 +336,6 @@ include 'includes/header.php';
                 memChart.data.datasets[0].data = d.mem;
                 memChart.update('active');
 
-                // Update summary stats
                 document.getElementById('stat-ports').textContent   = d.port_count   || '0';
                 document.getElementById('stat-devices').textContent = d.device_count || '0';
 
@@ -366,13 +348,9 @@ include 'includes/header.php';
                     document.getElementById('stat-avg-cpu').textContent  = 'N/A';
                     document.getElementById('stat-peak-cpu').textContent = 'N/A';
                 }
-            })
-            .catch(() => {
-                document.getElementById('stat-avg-cpu').textContent = 'Error';
             });
     };
 
-    // Initial load
     loadHistory(6);
 })();
 </script>

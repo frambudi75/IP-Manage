@@ -69,35 +69,40 @@ $page_title = "Topology Link Manager";
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="page-header">
     <div>
-        <h1 style="font-size: 1.5rem;">Manual Topology Link Manager</h1>
-        <p style="color: var(--text-muted); font-size: 0.875rem;">Globally define connections between your network hardware and subnets.</p>
+        <h1 style="font-size: 1.5rem;">Topology Link Manager</h1>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Define physical or logic connections between infrastructure components.</p>
     </div>
+    <a href="topology" class="btn btn-secondary">
+        <i data-lucide="map" style="width: 16px;"></i> View Map
+    </a>
 </div>
 
 <?php if ($message): ?>
-    <div class="card" style="background: rgba(16, 185, 129, 0.1); color: var(--success); margin-bottom: 1.5rem; padding: 1rem;">
-        <i data-lucide="check-circle" style="width: 16px; vertical-align: middle;"></i> <?php echo $message; ?>
+    <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); border-radius: 8px; margin-bottom: 1.5rem;">
+        <?php echo $message; ?>
     </div>
 <?php endif; ?>
 
 <?php if ($error): ?>
-    <div class="card" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); margin-bottom: 1.5rem; padding: 1rem;">
-        <i data-lucide="alert-circle" style="width: 16px; vertical-align: middle;"></i> <?php echo $error; ?>
+    <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); border-radius: 8px; margin-bottom: 1.5rem;">
+        <?php echo $error; ?>
     </div>
 <?php endif; ?>
 
-<div class="grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+<div class="grid-side-detail" style="grid-template-columns: 400px 1fr;">
     
     <!-- Add Link Form -->
-    <div class="card" style="padding: 2rem;">
-        <h2 style="font-size: 1.125rem; margin-bottom: 1.5rem;">Add New Connection</h2>
+    <div class="card">
+        <h2 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="plus-circle" style="width: 20px;"></i> Add New Link
+        </h2>
         <form action="" method="POST" id="linkForm">
             <div class="input-group">
-                <label>Source Device (Switch)</label>
+                <label>Source Switch</label>
                 <select name="parent_switch_id" class="input-control" onchange="toggleTargets()" required>
-                    <option value="">-- Select Switch --</option>
+                    <option value="">-- Choose Source --</option>
                     <?php foreach ($switches as $sw): ?>
                         <option value="<?php echo $sw['id']; ?>"><?php echo htmlspecialchars($sw['name']); ?> (<?php echo $sw['ip_addr']; ?>)</option>
                     <?php endforeach; ?>
@@ -105,10 +110,10 @@ include 'includes/header.php';
             </div>
 
             <div class="input-group">
-                <label>Connection Target Type</label>
+                <label>Target Type</label>
                 <select name="target_type" id="targetType" class="input-control" onchange="toggleTargets()" required>
-                    <option value="subnet">Subnet (Logical Network)</option>
-                    <option value="switch">Switch (Cascading / Bridge)</option>
+                    <option value="subnet">Subnet (VLAN Group)</option>
+                    <option value="switch">Switch (Stack/Bridge)</option>
                 </select>
             </div>
 
@@ -116,7 +121,7 @@ include 'includes/header.php';
                 <label>Target Subnet</label>
                 <select name="target_id_subnet" class="input-control">
                     <?php foreach ($subnets as $sub): ?>
-                        <option value="<?php echo $sub['id']; ?>"><?php echo $sub['subnet']; ?>/<?php echo $sub['mask']; ?> - <?php echo htmlspecialchars($sub['description'] ?? ''); ?></option>
+                        <option value="<?php echo $sub['id']; ?>"><?php echo $sub['subnet']; ?>/<?php echo $sub['mask']; ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -125,38 +130,37 @@ include 'includes/header.php';
                 <label>Target Switch</label>
                 <select name="target_id_switch" class="input-control">
                     <?php foreach ($switches as $sw): ?>
-                        <option value="<?php echo $sw['id']; ?>"><?php echo htmlspecialchars($sw['name']); ?> (<?php echo $sw['ip_addr']; ?>)</option>
+                        <option value="<?php echo $sw['id']; ?>"><?php echo htmlspecialchars($sw['name']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <input type="hidden" name="target_id" id="finalTargetId">
 
-            <button type="submit" name="add_link" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;" onclick="prepareSubmit()">
-                Add Manual Connection
+            <button type="submit" name="add_link" class="btn btn-primary" style="width: 100%; margin-top: 1rem; justify-content: center; padding: 1rem;" onclick="prepareSubmit()">
+                Save Link
             </button>
         </form>
     </div>
 
     <!-- Links List -->
-    <div class="card">
-        <h2 style="font-size: 1.125rem; margin-bottom: 1.5rem; padding: 1.5rem 1.5rem 0 1.5rem;">Active Topology Links</h2>
-        <div style="overflow-x: auto;">
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <h2 style="font-size: 1.125rem; padding: 1.5rem; border-bottom: 1px solid var(--border);">Active Connections</h2>
+        <div class="table-responsive">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                    <tr style="border-bottom: 1px solid var(--border);">
-                        <th style="padding: 1rem; color: var(--text-muted);">Source</th>
-                        <th style="padding: 1rem; color: var(--text-muted); text-align: center;">Interface</th>
-                        <th style="padding: 1rem; color: var(--text-muted);">Destination</th>
-                        <th style="padding: 1rem; color: var(--text-muted); text-align: right;">Action</th>
+                    <tr style="border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Source</th>
+                        <th style="padding: 1rem; color: var(--text-muted); text-align: center; font-size: 0.8rem; width: 60px;">Link</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Destination</th>
+                        <th style="padding: 1rem; color: var(--text-muted); text-align: right; font-size: 0.8rem;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($links)): ?>
                         <tr>
-                            <td colspan="4" style="padding: 3rem; text-align: center; color: var(--text-muted); opacity: 0.5;">
-                                <i data-lucide="link-2-off" style="width: 32px; height: 32px; margin-bottom: 1rem;"></i>
-                                <p>No manual links defined yet.</p>
+                            <td colspan="4" style="padding: 4rem; text-align: center; color: var(--text-muted);">
+                                No links defined. Start by adding one from the left panel.
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -164,28 +168,28 @@ include 'includes/header.php';
                     <?php foreach ($links as $link): ?>
                         <tr style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 1rem;">
-                                <div style="font-weight: 600;"><?php echo htmlspecialchars($link['parent_name']); ?></div>
-                                <code style="font-size: 0.75rem; opacity: 0.6;"><?php echo $link['parent_ip']; ?></code>
+                                <div style="font-weight: 700; color: var(--primary);"><?php echo htmlspecialchars($link['parent_name']); ?></div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;"><?php echo $link['parent_ip']; ?></div>
                             </td>
                             <td style="padding: 1rem; text-align: center;">
-                                <div style="color: var(--primary);"><i data-lucide="arrow-right"></i></div>
+                                <i data-lucide="arrow-right-circle" style="width: 18px; color: var(--text-muted); opacity: 0.4;"></i>
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <?php if ($link['target_type'] == 'switch'): ?>
-                                        <span style="background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700;">SW</span>
+                                        <span style="background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 800;">SW</span>
                                     <?php else: ?>
-                                        <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700;">NET</span>
+                                        <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 800;">NET</span>
                                     <?php endif; ?>
-                                    <div style="font-weight: 600;"><?php echo htmlspecialchars($link['target_name']); ?></div>
+                                    <div style="font-weight: 700;"><?php echo htmlspecialchars($link['target_name']); ?></div>
                                 </div>
                                 <div style="font-size: 0.75rem; color: var(--text-muted);"><?php echo htmlspecialchars($link['target_info']); ?></div>
                             </td>
                             <td style="padding: 1rem; text-align: right;">
-                                <form action="" method="POST" onsubmit="return confirm('Remove this topology link?');" style="display: inline;">
+                                <form action="" method="POST" onsubmit="return confirm('Remove this link?');">
                                     <input type="hidden" name="id" value="<?php echo $link['id']; ?>">
-                                    <button type="submit" name="delete_link" class="btn btn-secondary" style="padding: 6px; color: var(--danger); border: none;">
-                                        <i data-lucide="trash-2" style="width: 16px;"></i>
+                                    <button type="submit" name="delete_link" class="btn" style="padding: 6px; color: var(--danger); background: rgba(239,68,68,0.1);">
+                                        <i data-lucide="trash-2" style="width: 14px;"></i>
                                     </button>
                                 </form>
                             </td>
@@ -197,7 +201,20 @@ include 'includes/header.php';
     </div>
 </div>
 
-<!-- External Helper Script (Complies with CSP) -->
-<script src="assets/js/topo-manager.js"></script>
+<script>
+    function toggleTargets() {
+        const type = document.getElementById('targetType').value;
+        document.getElementById('subnetList').style.display = (type === 'subnet' ? 'block' : 'none');
+        document.getElementById('switchList').style.display = (type === 'switch' ? 'block' : 'none');
+    }
+    
+    function prepareSubmit() {
+        const type = document.getElementById('targetType').value;
+        const val = type === 'subnet' 
+            ? document.getElementsByName('target_id_subnet')[0].value 
+            : document.getElementsByName('target_id_switch')[0].value;
+        document.getElementById('finalTargetId').value = val;
+    }
+</script>
 
 <?php include 'includes/footer.php'; ?>

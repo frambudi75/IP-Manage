@@ -108,14 +108,14 @@ $page_title = "Server Assets Management";
 include 'includes/header.php';
 ?>
 
-<div class="header-actions" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+<div class="page-header">
     <div>
         <div class="breadcrumb">
             <span class="text-muted">Assets</span> / <span>Server Inventory</span>
         </div>
         <h1 style="font-size: 1.5rem; margin-top: 0.5rem;">Server Assets & Access</h1>
     </div>
-    <div style="display: flex; gap: 0.75rem; align-items: center;">
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
         <label class="btn" style="background: var(--surface-light); cursor: pointer; padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="select-all-assets" onchange="toggleAllAssets(this)" style="width: 14px; height: 14px;">
             <span>Select All</span>
@@ -143,7 +143,7 @@ include 'includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+<div class="grid-cards">
     <?php if (empty($assets)): ?>
         <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4rem; opacity: 0.5;">
             <i data-lucide="database" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -244,7 +244,7 @@ include 'includes/header.php';
 
 <!-- Modals -->
 <div id="assetModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
-    <div class="card" style="width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative;">
+    <div class="card" style="width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
         <button onclick="closeModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
             <i data-lucide="x"></i>
         </button>
@@ -272,7 +272,7 @@ include 'includes/header.php';
 </div>
 
 <div id="importModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
-    <div class="card" style="width: 100%; max-width: 450px; padding: 2rem; position: relative;">
+    <div class="card" style="width: 100%; max-width: 450px;">
         <button onclick="document.getElementById('importModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;"><i data-lucide="x"></i></button>
         <h2 style="margin-bottom: 1.5rem;">Import CSV</h2>
         <form action="" method="POST" enctype="multipart/form-data">

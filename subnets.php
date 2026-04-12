@@ -93,9 +93,9 @@ $subnets = $db->query("
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="page-header">
     <h1 style="font-size: 1.5rem;">Subnet Management</h1>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         <a href="export?type=subnets" class="btn btn-secondary" style="font-size: 0.875rem;">
             <i data-lucide="download" style="width: 14px;"></i> Export CSV
         </a>
@@ -115,7 +115,7 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <div class="card">
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">
@@ -178,8 +178,8 @@ include 'includes/header.php';
 </div>
 
 <!-- Simple Add Modal (Hidden by default) -->
-<div id="addModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
-    <div class="card" style="width: 100%; max-width: 500px; padding: 2.5rem;">
+<div id="addModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 500px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3>Add New Subnet</h3>
             <button onclick="document.getElementById('addModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
@@ -227,8 +227,8 @@ include 'includes/header.php';
 </div>
 
 <!-- Simple Edit Modal (Hidden by default) -->
-<div id="editModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
-    <div class="card" style="width: 100%; max-width: 500px; padding: 2.5rem;">
+<div id="editModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 500px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3>Edit Subnet</h3>
             <button onclick="document.getElementById('editModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">

@@ -45,61 +45,67 @@ include 'includes/header.php';
 
 <div style="max-width: 600px; margin: 0 auto;">
     <div style="margin-bottom: 2rem;">
-        <a href="index" class="text-muted" style="font-size: 0.875rem; display: flex; align-items: center; gap: 5px; margin-bottom: 1rem;">
-            <i data-lucide="arrow-left" style="width: 14px;"></i> Back to Dashboard
-        </a>
-        <h1 style="font-size: 1.75rem;">Add New Subnet</h1>
-        <p style="color: var(--text-muted);">Create a new network prefix to manage.</p>
+        <nav style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+            <a href="subnets" style="color: var(--primary); text-decoration: none;">Subnets</a> / Add New
+        </nav>
+        <h1 style="font-size: 1.75rem; margin: 0;">Add New Subnet</h1>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;">Define a new network prefix to be managed by IPManager Pro.</p>
     </div>
 
     <?php if ($error): ?>
         <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); border-radius: 8px; margin-bottom: 1.5rem;">
+            <i data-lucide="alert-circle" style="width: 16px; vertical-align: middle; margin-right: 8px;"></i>
             <?php echo $error; ?>
         </div>
     <?php endif; ?>
 
-    <div class="card" style="padding: 2.5rem;">
+    <div class="card" style="padding: 2rem;">
         <form method="POST">
             <div class="input-group">
-                <label>Subnet Address (e.g., 192.168.1.0)</label>
-                <input type="text" name="subnet" class="input-control" placeholder="10.0.0.0" required>
+                <label>Subnet Address</label>
+                <input type="text" name="subnet" class="input-control" placeholder="e.g. 192.168.1.0" required autofocus>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">The network base address.</small>
             </div>
             
             <div class="input-group">
-                <label>Subnet Mask (CIDR, e.g., 24)</label>
+                <label>Subnet Mask (CIDR)</label>
                 <input type="number" name="mask" class="input-control" min="0" max="32" placeholder="24" required>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">The network prefix length (0-32).</small>
             </div>
 
             <div class="input-group">
-                <label>VLAN (Optional)</label>
-                <select name="vlan_id" class="input-control" style="appearance: none;">
-                    <option value="">No VLAN</option>
+                <label>Assigned VLAN (Optional)</label>
+                <select name="vlan_id" class="input-control">
+                    <option value="">No VLAN Assignment</option>
                     <?php foreach ($vlans as $v): ?>
-                        <option value="<?php echo $v['id']; ?>">VLAN <?php echo $v['number']; ?> - <?php echo $v['name']; ?></option>
+                        <option value="<?php echo $v['id']; ?>">VLAN <?php echo $v['number']; ?> - <?php echo htmlspecialchars($v['name']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div class="input-group">
-                <label>Description</label>
-                <input type="text" name="description" class="input-control" placeholder="Corporate LAN">
+                <label>Description / Name</label>
+                <input type="text" name="description" class="input-control" placeholder="e.g. Managed Office Switch">
             </div>
 
             <div class="input-group">
-                <label>Auto-Scan Interval</label>
-                <select name="scan_interval" class="input-control" style="appearance: none;">
-                    <option value="0">Manual Only</option>
+                <label>Auto-Scan Frequency</label>
+                <select name="scan_interval" class="input-control">
+                    <option value="0">Manual Polling Only</option>
                     <option value="30">Every 30 Minutes</option>
-                    <option value="60">Every 1 Hour</option>
+                    <option value="60" selected>Every 1 Hour (Standard)</option>
                     <option value="360">Every 6 Hours</option>
                     <option value="720">Every 12 Hours</option>
                     <option value="1440">Every 24 Hours</option>
                 </select>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">How often the background worker should probe this network.</small>
             </div>
 
-            <div style="margin-top: 2.5rem; display: flex; gap: 1rem;">
-                <a href="subnets" class="btn" style="flex: 1; justify-content: center; background: var(--surface-light);">Cancel</a>
-                <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Create Subnet</button>
+            <div style="margin-top: 3rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="subnets" class="btn" style="flex: 1; min-width: 120px; justify-content: center; background: var(--surface-light); border: 1px solid var(--border);">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="flex: 1; min-width: 180px; justify-content: center;">
+                    <i data-lucide="plus" style="width: 18px;"></i> Create Subnet
+                </button>
             </div>
         </form>
     </div>

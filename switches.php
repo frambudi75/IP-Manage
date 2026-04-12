@@ -41,7 +41,7 @@ $page_title = "Switch Management";
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="page-header">
     <div>
         <h1 style="font-size: 1.5rem;">Managed Switches</h1>
         <p style="color: var(--text-muted); font-size: 0.875rem;">Manage devices for L2 port mapping discovery</p>
@@ -57,7 +57,7 @@ include 'includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+<div class="grid-cards">
     <?php if (empty($switches)): ?>
         <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4rem; opacity: 0.5;">
             <i data-lucide="server" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -129,7 +129,7 @@ include 'includes/header.php';
 
 <!-- Add Switch Modal -->
 <div id="addSwitchModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-    <div class="card" style="width: 450px; padding: 2.5rem; position: relative;">
+    <div class="card" style="width: 450px;">
         <button onclick="document.getElementById('addSwitchModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;">
             <i data-lucide="x"></i>
         </button>

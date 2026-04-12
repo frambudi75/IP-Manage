@@ -25,9 +25,9 @@ $devices = $db->query($query)->fetchAll();
 include 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="page-header">
     <h1 style="font-size: 1.5rem;">Network Devices</h1>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         <a href="export?type=devices" class="btn btn-secondary" style="font-size: 0.875rem;">
             <i data-lucide="download" style="width: 14px;"></i> Export CSV
         </a>
@@ -41,7 +41,7 @@ include 'includes/header.php';
 </div>
 
 <div class="card">
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">

@@ -4,6 +4,33 @@ All major functional changes, enhancements, and critical fixes are documented he
 
 ---
 
+## [2.17.0] - 2026-04-12
+### Added
+- **Premium Visualization Overhaul**: Redeployed all dashboard and report charts using high-fidelity styling (linear area gradients, gridless axes, and premium tooltips) inspired by Material Tailwind.
+- **Network Reports Page**: Implementation of a professional `reports.php` module for deep-dive analytics, historical growth tracking, and subnet density metrics.
+- **Interactive Progress Tracking**: Added a semi-circle radial progress visualization for global IP allocation tracking.
+- **Responsive Charts**: Optimized all Chart.js instances to adapt legend visibility and sizing for mobile viewports.
+
+### Fixed
+- **Navigation**: Resolved a 404 error on dashboard links to regional progress reports.
+- **Topology Map Sizing**: Fixed an issue where Mermaid.js diagrams could overflow their parent container on high-zoom displays.
+- **UX Polish**: Cleaned up visual inconsistencies (unwanted background grid lines) in doughnut and radial charts.
+
+
+## [2.16.0] - 2026-04-12
+### Added
+- **Global Responsive Refactor**: Complete overhaul of the IPManager Pro interface to be fully mobile-first and responsive using modern CSS Grid and Flexbox.
+- **Responsive Utilities**: Implementation of `.page-header`, `.table-responsive`, and `.grid-side-detail` CSS utility classes for consistent mobile-stacking behavior.
+- **Mobile-Friendly Modules**: Optimized dashboard, listing pages (Subnets, Devices, Switches, Assets), and all management forms for small viewports.
+- **Responsive Visualization**: Re-engineered the Network Topology Map with scroll-aware containers, adaptive legends, and improved loading states.
+- **Tool Modernization**: Refactored the IP Calculator and Network Toolbox terminal output to prevent layout breaking on mobile devices.
+
+### Fixed
+- **UI Bug**: Resolved a critical syntax error in `topology-manager.php` that prevented the Link Manager from loading.
+- **UX Polish**: Improved button visibility and form alignment across all secondary pages (About, Change Password, Add Subnet).
+
+---
+
 ## [2.15.1] - 2026-04-09
 ### Fixed
 - **UI/UX**: Resolved an issue in the Network Toolbox where the active tool highlighting (blue box) did not update upon switching tools.

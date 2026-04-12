@@ -34,10 +34,17 @@ try {
     ")->fetchAll(PDO::FETCH_KEY_PAIR);
 
     $active_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'active'")->fetchColumn() ?: 0;
+    $reserved_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'reserved'")->fetchColumn() ?: 0;
     $offline_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'offline'")->fetchColumn() ?: 0;
     $avg_confidence = $db->query("SELECT ROUND(AVG(confidence_score), 1) FROM ip_addresses WHERE state IN ('active', 'reserved', 'dhcp')")->fetchColumn();
     $avg_confidence = $avg_confidence !== null ? $avg_confidence : 0;
-    $low_confidence_count = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE confidence_score < 60 AND state IN ('active', 'reserved', 'dhcp')")->fetchColumn() ?: 0;
+    
+    // Needs Attention count (IPs with low confidence or missing data)
+    $attention_count = $db->query("
+        SELECT COUNT(*) FROM ip_addresses 
+        WHERE state IN ('active', 'reserved', 'dhcp')
+          AND (confidence_score < 60 OR COALESCE(hostname, '') = '' OR COALESCE(mac_addr, '') = '')
+    ")->fetchColumn() ?: 0;
 
     // Vendor Distribution Data
     $vendor_data = $db->query("
@@ -121,7 +128,7 @@ try {
     <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
         <i data-lucide="server" style="color: var(--primary);"></i> Server Asset Health
     </h2>
-    <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+    <div class="grid-stats">
         <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary); background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);">
             <div style="background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
                 <i data-lucide="database" style="width: 32px; height: 32px;"></i>
@@ -160,7 +167,7 @@ try {
     <i data-lucide="network" style="color: var(--success);"></i> Network & IPAM Overview
 </h2>
 
-<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="grid-stats" style="margin-bottom: 2rem;">
     <!-- Stat Cards -->
     <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary);">
         <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
@@ -195,26 +202,90 @@ try {
 
 <div class="grid-2-1" style="margin-bottom: 2rem;">
     <!-- Usage Trend Chart (Wider) -->
-    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+    <div class="card chart-container">
         <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">7-Day Usage Trend</h3>
         <div style="flex-grow: 1; position: relative;"><canvas id="trendChart"></canvas></div>
     </div>
     
     <!-- Network Health (Smaller) -->
-    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+    <div class="card chart-container">
         <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Network Health</h3>
         <div style="flex-grow: 1; position: relative;"><canvas id="healthChart"></canvas></div>
     </div>
 </div>
 
 <div class="grid-2-1" style="margin-bottom: 2rem;">
-    <!-- Asset Category Distribution (New) -->
-    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
-        <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Asset Category Distribution</h3>
-        <div style="flex-grow: 1; position: relative;"><canvas id="assetCategoryChart"></canvas></div>
+    <!-- Modern Progress Widget -->
+    <div class="card" style="display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+            <div>
+                <h5 style="font-size: 1.125rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
+                    Network Status Progress
+                    <i data-lucide="help-circle" style="width: 14px; color: var(--text-muted); cursor: help;"></i>
+                </h5>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Real-time allocation & health growth tracking.</p>
+            </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.1); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+                <dl class="progress-stat-card bg-brand-soft">
+                    <dt class="stat-circle-brand"><?php echo $attention_count; ?></dt>
+                    <dd style="color: var(--primary);">Needs Info</dd>
+                </dl>
+                <dl class="progress-stat-card bg-warning-soft">
+                    <dt class="stat-circle-warning"><?php echo $reserved_count; ?></dt>
+                    <dd style="color: var(--warning);">Reserved</dd>
+                </dl>
+                <dl class="progress-stat-card bg-success-soft">
+                    <dt class="stat-circle-success"><?php echo $active_count; ?></dt>
+                    <dd style="color: var(--success);">Active</dd>
+                </dl>
+            </div>
+            
+            <button id="toggle-details" style="background: transparent; border: none; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                Show more details <i data-lucide="chevron-down" style="width: 14px;"></i>
+            </button>
+            
+            <div id="extra-details" style="display: none; border-top: 1px solid var(--border); margin-top: 1rem; pt: 1rem; padding-top: 1rem; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Avg Confidence Rate:</span>
+                    <span class="badge-pill" style="color: var(--success);"><?php echo $avg_confidence; ?>%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Offline Hosts:</span>
+                    <span class="badge-pill" style="color: var(--text);"><?php echo $offline_count; ?></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radial Chart Section -->
+        <div style="flex-grow: 1; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative;">
+            <canvas id="radialChart"></canvas>
+            <div style="position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                <?php 
+                    $total_allocated = $active_count + $reserved_count;
+                    $total_all = max(1, $subnet_count * 254); // Rough estimate for %
+                    $progress_pct = round(($total_allocated / $total_all) * 100, 1);
+                ?>
+                <span style="display: block; font-size: 1.5rem; font-weight: 700;"><?php echo $progress_pct; ?>%</span>
+                <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Allocated</span>
+            </div>
+        </div>
+
+        <div style="margin-top: auto; border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div class="dropdown">
+                <button class="btn btn-secondary" style="font-size: 0.75rem; background: var(--surface-light);">
+                    Last 7 days <i data-lucide="chevron-down" style="width: 12px;"></i>
+                </button>
+            </div>
+            <a href="reports" class="text-primary" style="font-size: 0.8rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                Full Progress Report <i data-lucide="arrow-right" style="width: 14px;"></i>
+            </a>
+        </div>
     </div>
 
-    <div class="card" style="height: 350px; display: flex; flex-direction: column;">
+    <div class="card chart-container">
         <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Densest Subnets (%)</h3>
         <div style="flex-grow: 1; position: relative;"><canvas id="densityChart"></canvas></div>
     </div>
@@ -222,20 +293,50 @@ try {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const chartDefaults = {
+    const premiumOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { 
-            legend: { labels: { color: '#94a3b8', font: { size: 10 } } } 
+        plugins: {
+            legend: {
+                display: false,
+                labels: { color: '#94a3b8', font: { size: 12, family: 'Outfit', weight: '500' }, usePointStyle: true, padding: 15 }
+            },
+            tooltip: {
+                backgroundColor: '#1e293b',
+                titleColor: '#fff',
+                bodyColor: '#94a3b8',
+                borderColor: '#334155',
+                borderWidth: 1,
+                padding: 12,
+                boxPadding: 6,
+                usePointStyle: true,
+                cornerRadius: 8,
+                titleFont: { size: 13, weight: '700' },
+                bodyFont: { size: 12 }
+            }
         },
         scales: {
-            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+            x: { 
+                grid: { display: false }, 
+                ticks: { color: '#64748b', font: { size: 10, weight: '600' }, padding: 10 } 
+            },
+            y: { 
+                grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
+                ticks: { color: '#64748b', font: { size: 10 }, padding: 10, beginAtZero: true } 
+            }
         }
     };
 
+    const getGradient = (ctx, color) => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        return gradient;
+    };
+
     // Trend Chart
-    new Chart(document.getElementById('trendChart'), {
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    new Chart(trendCtx, {
         type: 'line',
         data: {
             labels: [<?php echo implode(',', array_map(function($t) { return "'".date('d M', strtotime($t['snapshot_date']))."'"; }, $usage_trends)); ?>],
@@ -243,16 +344,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: 'Active Hosts',
                 data: [<?php echo implode(',', array_map(function($t) { return $t['total_active']; }, $usage_trends)); ?>],
                 borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: 'rgba(255,255,255,0.1)',
+                pointHoverRadius: 6,
+                pointRadius: 0,
+                backgroundColor: getGradient(trendCtx, 'rgba(59, 130, 246, 0.2)'),
                 fill: true,
                 tension: 0.4
             }]
         },
         options: {
-            ...chartDefaults,
+            ...premiumOptions,
+            plugins: { ...premiumOptions.plugins, legend: { display: false } },
             scales: {
-                ...chartDefaults.scales,
-                y: { ...chartDefaults.scales.y, beginAtZero: true }
+                x: { display: true, grid: { display: false }, ticks: { color: '#64748b' }, border: { display: false } },
+                y: { display: true, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, border: { display: false }, ticks: { color: '#64748b' } }
             }
         }
     });
@@ -264,16 +371,16 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Active', 'Offline', 'Reserved', 'DHCP'],
             datasets: [{
                 data: [<?php echo $health_stats['active']??0;?>, <?php echo $health_stats['offline']??0;?>, <?php echo $health_stats['reserved']??0;?>, <?php echo $health_stats['dhcp']??0;?>],
-                backgroundColor: ['#10b981', '#94a3b8', '#f59e0b', '#3b82f6'],
-                borderRadius: 4
+                backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'],
+                borderRadius: 6,
+                barThickness: 20
             }]
         },
         options: { 
-            ...chartDefaults, 
-            plugins: { ...chartDefaults.plugins, legend: { display: false } },
+            ...premiumOptions,
             scales: {
-                ...chartDefaults.scales,
-                y: { ...chartDefaults.scales.y, beginAtZero: true }
+                ...premiumOptions.scales,
+                x: { ...premiumOptions.scales.x, grid: { display: false } }
             }
         }
     });
@@ -287,51 +394,75 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: 'Usage %',
                 data: [<?php echo implode(',', array_map(function($s) { return round($s['usage_percent'], 1); }, $dense_subnets)); ?>],
                 backgroundColor: '#f59e0b',
-                borderRadius: 4
+                borderRadius: 4,
+                barThickness: 12
             }]
         },
         options: { 
-            ...chartDefaults, 
-            indexAxis: 'y', 
-            plugins: { ...chartDefaults.plugins, legend: { display: false } },
+            ...premiumOptions, 
+            indexAxis: 'y',
             scales: {
                 x: { 
-                    grid: { color: 'rgba(255,255,255,0.05)' }, 
-                    ticks: { color: '#94a3b8' }, 
+                    grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
+                    ticks: { color: '#64748b' }, 
+                    border: { display: false },
                     beginAtZero: true,
                     max: 100
                 },
                 y: { 
                     grid: { display: false }, 
-                    ticks: { color: '#94a3b8' }
+                    border: { display: false },
+                    ticks: { color: '#64748b', font: { weight: '600' } }
                 }
             }
         }
     });
-    // Asset Category Chart
-    new Chart(document.getElementById('assetCategoryChart'), {
+
+    // Radial Chart (Progress)
+    const radialCtx = document.getElementById('radialChart').getContext('2d');
+    new Chart(radialCtx, {
         type: 'doughnut',
         data: {
-            labels: [<?php echo implode(',', array_map(function($c) { return "'".$c."'"; }, array_keys($asset_categories))); ?>],
+            labels: ['Allocated', 'Free'],
             datasets: [{
-                data: [<?php echo implode(',', array_values($asset_categories)); ?>],
-                backgroundColor: ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'],
-                borderColor: 'rgba(30, 41, 59, 0.5)',
-                borderWidth: 2
+                data: [<?php echo $total_allocated; ?>, <?php echo $total_all - $total_allocated; ?>],
+                backgroundColor: ['#3b82f6', 'rgba(59, 130, 246, 0.05)'],
+                borderWidth: 0,
+                circumference: 180,
+                rotation: 270,
+                borderRadius: 10
             }]
         },
         options: {
-            ...chartDefaults,
-            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '85%',
+            events: [], // Disable hover events for simple progress
             plugins: {
-                ...chartDefaults.plugins,
-                legend: {
-                    ...chartDefaults.plugins.legend,
-                    position: 'bottom'
-                }
+                legend: { display: false },
+                tooltip: { enabled: false }
             }
         }
     });
+
+    // Asset Category (Center Progress style)
+    // No changes needed if already removed or replaced, but just in case:
+    // This script block should only handle charts actually present in the DOM.
+    // Toggle logic for details
+
+    // Toggle logic for details
+    const toggleBtn = document.getElementById('toggle-details');
+    const extraDetails = document.getElementById('extra-details');
+    if (toggleBtn && extraDetails) {
+        toggleBtn.addEventListener('click', () => {
+            const isHidden = extraDetails.style.display === 'none';
+            extraDetails.style.display = isHidden ? 'flex' : 'none';
+            toggleBtn.innerHTML = isHidden ? 
+                'Show less details <i data-lucide="chevron-up" style="width: 14px;"></i>' : 
+                'Show more details <i data-lucide="chevron-down" style="width: 14px;"></i>';
+            lucide.createIcons();
+        });
+    }
 });
 </script>
 
@@ -341,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <h3 style="font-size: 1.125rem;">Recent Subnets</h3>
             <a href="subnets" class="text-primary" style="font-size: 0.875rem;">View All</a>
         </div>
-        <div style="overflow-x: auto;">
+        <div class="table-responsive">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border);">
@@ -416,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+<div class="grid-quick" style="margin-top: 1.5rem;">
     <div class="card">
         <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem;">System Quick Links</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 0.8rem;">
@@ -437,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <h3 style="font-size: 1.125rem;">Needs Attention</h3>
         <a href="devices" class="text-primary" style="font-size: 0.875rem;">Open Devices</a>
     </div>
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">
