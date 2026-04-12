@@ -124,13 +124,13 @@ try {
 ?>
 
 <!-- Asset Monitoring Overview -->
-<div style="margin-bottom: 2rem;">
-    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+<div class="section-container" style="margin-bottom: 2rem;">
+    <h2 class="page-header-small" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
         <i data-lucide="server" style="color: var(--primary);"></i> Server Asset Health
     </h2>
     <div class="grid-stats">
-        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary); background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);">
-            <div style="background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
+        <div class="card stat-card-flex" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary); background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);">
+            <div class="stat-icon-wrapper" style="background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
                 <i data-lucide="database" style="width: 32px; height: 32px;"></i>
             </div>
             <div>
@@ -139,8 +139,8 @@ try {
             </div>
         </div>
 
-        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #10b981;">
-            <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 12px; color: #10b981;">
+        <div class="card stat-card-flex" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #10b981;">
+            <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 12px; color: #10b981;">
                 <i data-lucide="check-circle" style="width: 32px; height: 32px;"></i>
             </div>
             <div>
@@ -149,8 +149,8 @@ try {
             </div>
         </div>
 
-        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #f87171;">
-            <div style="background: rgba(248, 113, 113, 0.1); padding: 1rem; border-radius: 12px; color: #f87171;">
+        <div class="card stat-card-flex" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #f87171;">
+            <div class="stat-icon-wrapper" style="background: rgba(248, 113, 113, 0.1); padding: 1rem; border-radius: 12px; color: #f87171;">
                 <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
             </div>
             <div>
