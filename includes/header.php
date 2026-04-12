@@ -51,8 +51,18 @@ try {
                     <button id="menu-toggle" class="btn" style="padding: 6px; display: none; background: rgba(59, 130, 246, 0.1); color: var(--primary);">
                         <i data-lucide="menu"></i>
                     </button>
-                    <div class="breadcrumb">
-                        <span class="text-muted">Pages</span> / <span><?php echo isset($page_title) ? $page_title : 'Dashboard'; ?></span>
+                    <div class="breadcrumb" style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="layers-2" style="width: 14px; color: var(--text-muted); opacity: 0.7;"></i>
+                        <span class="text-muted">Pages</span> 
+                        <span style="opacity: 0.3; font-size: 0.8rem;">/</span> 
+                        <span style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                            <?php 
+                            $icon_map = ['Dashboard' => 'layout-dashboard', 'Reports' => 'bar-chart-3', 'Subnets' => 'layers', 'Devices' => 'monitor', 'Managed Switches' => 'server', 'Topology' => 'map'];
+                            $current_icon = $icon_map[$page_title] ?? 'hash';
+                            ?>
+                            <i data-lucide="<?php echo $current_icon; ?>" style="width: 14px; color: var(--primary);"></i>
+                            <?php echo isset($page_title) ? $page_title : 'Dashboard'; ?>
+                        </span>
                     </div>
                     <div class="search-trigger" onclick="openSearch()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;">
                         <i data-lucide="search" style="width: 14px; color: var(--text-muted);"></i>

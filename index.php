@@ -124,7 +124,7 @@ try {
 ?>
 
 <!-- Asset Monitoring Overview -->
-<div class="section-container" style="margin-bottom: 2rem;">
+<div class="section-container animate-up" style="margin-bottom: 2rem;">
     <h2 class="page-header-small" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
         <i data-lucide="server" style="color: var(--primary);"></i> Server Asset Health
     </h2>
@@ -163,13 +163,13 @@ try {
 
 <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 2rem; opacity: 0.5;">
 
-<h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+<h2 class="animate-up" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; animation-delay: 0.1s;">
     <i data-lucide="network" style="color: var(--success);"></i> Network & IPAM Overview
 </h2>
 
-<div class="grid-stats" style="margin-bottom: 2rem;">
+<div class="grid-stats animate-up" style="margin-bottom: 2rem; animation-delay: 0.15s;">
     <!-- Stat Cards -->
-    <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary);">
+    <div class="card badge-glow-primary" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary);">
         <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
             <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
         </div>
@@ -179,7 +179,7 @@ try {
         </div>
     </div>
 
-    <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--success);">
+    <div class="card badge-glow-success" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--success);">
         <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 12px; color: var(--success);">
             <i data-lucide="network" style="width: 32px; height: 32px;"></i>
         </div>
@@ -200,7 +200,7 @@ try {
     </div>
 </div>
 
-<div class="grid-2-1" style="margin-bottom: 2rem;">
+<div class="grid-2-1 animate-up" style="margin-bottom: 2rem; animation-delay: 0.2s;">
     <!-- Usage Trend Chart (Wider) -->
     <div class="card chart-container">
         <h3 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">7-Day Usage Trend</h3>
@@ -214,7 +214,7 @@ try {
     </div>
 </div>
 
-<div class="grid-2-1" style="margin-bottom: 2rem;">
+<div class="grid-2-1 animate-up" style="margin-bottom: 2rem; animation-delay: 0.25s;">
     <!-- Modern Progress Widget -->
     <div class="card" style="display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 
-<div class="card" style="margin-top: 1.5rem;">
+<div class="card animate-up" style="margin-top: 1.5rem; animation-delay: 0.3s;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="font-size: 1.125rem;">Needs Attention</h3>
         <a href="devices" class="text-primary" style="font-size: 0.875rem;">Open Devices</a>

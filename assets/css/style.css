@@ -84,6 +84,21 @@ ul {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeSlideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-up {
+    animation: fadeSlideUp 0.5s ease-out forwards;
 }
 
 .content-wrapper {
@@ -469,8 +484,8 @@ ul {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(16px) saturate(180%);
     z-index: 2000;
     display: flex;
     justify-content: center;
@@ -659,6 +674,19 @@ ul {
 .stat-circle-brand { background: var(--primary); color: white; }
 .stat-circle-warning { background: var(--warning); color: white; }
 .stat-circle-success { background: var(--success); color: white; }
+
+/* Status Glow Effects */
+.badge-glow-success { box-shadow: 0 0 12px rgba(16, 185, 129, 0.25); }
+.badge-glow-warning { box-shadow: 0 0 12px rgba(245, 158, 11, 0.25); }
+.badge-glow-danger { box-shadow: 0 0 12px rgba(239, 68, 68, 0.25); }
+.badge-glow-primary { box-shadow: 0 0 12px rgba(59, 130, 246, 0.25); }
+
+/* Glass Premium */
+.glass-premium {
+    background: rgba(30, 41, 59, 0.7) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
 
 .badge-pill {
     padding: 2px 8px;
