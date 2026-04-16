@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Run database auto-upgrade/migration
+php /var/www/html/includes/db_upgrade.php
+
 # Start a background loop for automated tasks
 (
   while true; do
