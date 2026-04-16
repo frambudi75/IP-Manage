@@ -1,7 +1,7 @@
 # 🚀 IPManager Pro: Enterprise IPAM & Active Network Monitoring
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/frambudi75/IP-Manage/main/screenshots/dashboard_mockup.png" alt="IPManager Pro Dashboard" width="800">
+  <img src="https://raw.githubusercontent.com/frambudi75/IP-Manage/main/screenshots/dashboard.png" alt="IPManager Pro Dashboard" width="800">
   <p><i>Premium Enterprise IP Address Management & Active NMS for Modern Networks.</i></p>
 </div>
 
