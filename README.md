@@ -60,10 +60,6 @@ graph TD
       <td width="50%"><img src="screenshots/dashboard.png" alt="Main Dashboard"/></td>
       <td width="50%"><img src="screenshots/netwatch.png" alt="Netwatch Module"/></td>
     </tr>
-    <tr>
-      <td width="50%"><img src="screenshots/switch_health.png" alt="Device Health"/></td>
-      <td width="50%"><img src="screenshots/topology.png" alt="Network Topology"/></td>
-    </tr>
   </table>
 </div>
 
