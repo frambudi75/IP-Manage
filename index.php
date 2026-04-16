@@ -25,6 +25,15 @@ try {
     $asset_online = $db->query("SELECT COUNT(*) FROM server_assets WHERE status = 'ONLINE'")->fetchColumn() ?: 0;
     $asset_offline = $db->query("SELECT COUNT(*) FROM server_assets WHERE status = 'OFFLINE'")->fetchColumn() ?: 0;
     
+    // Netwatch Stats
+    try {
+        $netwatch_count = $db->query("SELECT COUNT(*) FROM netwatch")->fetchColumn() ?: 0;
+        $netwatch_up = $db->query("SELECT COUNT(*) FROM netwatch WHERE status = 'up'")->fetchColumn() ?: 0;
+        $netwatch_down = $db->query("SELECT COUNT(*) FROM netwatch WHERE status = 'down'")->fetchColumn() ?: 0;
+    } catch (Exception $e) {
+        $netwatch_count = $netwatch_up = $netwatch_down = 0;
+    }
+    
     // Asset Category distribution
     $asset_categories = $db->query("
         SELECT COALESCE(category, 'General') as cat, COUNT(*) as count 
@@ -156,6 +165,44 @@ try {
             <div>
                 <p style="color: var(--text-muted); font-size: 0.875rem;">Servers Offline</p>
                 <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $asset_offline; ?></h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Netwatch Monitoring Overview -->
+<div class="section-container animate-up" style="margin-bottom: 2rem; animation-delay: 0.05s;">
+    <h2 class="page-header-small" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+        <i data-lucide="eye" style="color: #f59e0b;"></i> Netwatch Status
+    </h2>
+    <div class="grid-stats">
+        <div class="card stat-card-flex" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary);">
+            <div class="stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 12px; color: var(--primary);">
+                <i data-lucide="activity" style="width: 32px; height: 32px;"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Total Monitored</p>
+                <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $netwatch_count; ?></h3>
+            </div>
+        </div>
+
+        <div class="card stat-card-flex" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #10b981;">
+            <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 12px; color: #10b981;">
+                <i data-lucide="check-circle" style="width: 32px; height: 32px;"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Hosts UP</p>
+                <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $netwatch_up; ?></h3>
+            </div>
+        </div>
+
+        <div class="card stat-card-flex" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid #ef4444;">
+            <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 12px; color: #ef4444;">
+                <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Hosts DOWN</p>
+                <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $netwatch_down; ?></h3>
             </div>
         </div>
     </div>

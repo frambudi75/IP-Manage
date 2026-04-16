@@ -73,14 +73,14 @@ try {
                 <div class="user-menu">
                     <span class="btn btn-secondary" style="font-size: 0.8rem; gap: 8px;">
                         <i data-lucide="user" style="width: 14px;"></i> 
-                        <?php echo $_SESSION['username']; ?> 
-                        <span style="opacity: 0.5; font-size: 0.7rem;">(<?php echo strtoupper($_SESSION['role']); ?>)</span>
+                        <?php echo $_SESSION['username'] ?? 'User'; ?> 
+                        <span style="opacity: 0.5; font-size: 0.7rem;">(<?php echo strtoupper($_SESSION['role'] ?? 'viewer'); ?>)</span>
                     </span>
                 </div>
             </header>
             <div class="print-only-header">
                 <h1><?php echo APP_NAME; ?> - Network Report</h1>
-                <p>Generated on: <?php echo date('d M Y H:i:s'); ?> | User: <?php echo $_SESSION['username']; ?></p>
+                <p>Generated on: <?php echo date('d M Y H:i:s'); ?> | User: <?php echo $_SESSION['username'] ?? 'User'; ?></p>
             </div>
             <div class="content-wrapper mt-4">
 

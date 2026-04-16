@@ -102,6 +102,36 @@ class NotificationHelper {
         }
     }
 
+    /**
+     * Notify when a Netwatch target changes status.
+     */
+    public static function notifyNetwatch($name, $host, $status) {
+        $telegram_enabled = Settings::enabled('telegram_enabled');
+        $email_enabled = Settings::enabled('email_enabled');
+
+        if (!$telegram_enabled && !$email_enabled) return;
+
+        $icon = ($status === 'up') ? "✅" : "🚨";
+        $state_text = strtoupper($status);
+
+        if ($telegram_enabled) {
+            $message = "{$icon} *Netwatch Alert: {$state_text}*\n\n";
+            $message .= "🖥 *Device:* {$name}\n";
+            $message .= "🌐 *Host:* `{$host}`\n";
+            $message .= "📊 *Status:* **{$state_text}**\n";
+            $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
+            self::sendTelegram($message);
+        }
+
+        if ($email_enabled) {
+            $subject = "{$icon} Netwatch: {$name} is {$state_text}";
+            $body = "<h2>Netwatch Status Change</h2>";
+            $body .= "<p>The status of monitored host <b>{$name}</b> ({$host}) has changed to <b>{$state_text}</b>.</p>";
+            $body .= "<p>🕒 Time: " . date('Y-m-d H:i:s') . "</p>";
+            self::sendEmail($subject, $body);
+        }
+    }
+
     public static function testTelegram() {
         $message = "🔹 *Test Notification* 🔹\n\n✅ Your Telegram Bot integration for **" . APP_NAME . "** is working correctly!\n\n🕒 *Sent at:* " . date('Y-m-d H:i:s');
         return self::sendTelegram($message);

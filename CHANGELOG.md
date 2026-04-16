@@ -2,6 +2,17 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.18.0] - 2026-04-16
+### Added
+- **Netwatch Monitoring Module**: Implementation of a proactive host availability tracking system inspired by MikroTik.
+- **Dashboard Status Widgets**: Added a dedicated Netwatch Status section on the main dashboard for real-time UP/DOWN visibility.
+- **Background Scan Engine**: New `cron_netwatch.php` utility with intelligent fail-thresholds and audit logging.
+- **AJAX Trigger**: Integrated "Scan All Now" functionality into the UI for instant manual monitoring refreshes.
+
+### Fixed
+- **UI/UX Headers**: Resolved PHP warnings for undefined session keys (username/role) on guest or freshly initialized sessions. 
+- **Consistency**: Refined the sidebar layout to ensure all modules are accessible across the core dashboard.
+
 ---
 
 ## [2.17.0] - 2026-04-12

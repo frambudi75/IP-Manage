@@ -20,6 +20,11 @@
                 </a>
             </li>
             <li>
+                <a href="netwatch" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'netwatch.php' ? 'var(--surface-light)' : 'transparent'; ?>">
+                    <i data-lucide="eye"></i> Netwatch
+                </a>
+            </li>
+            <li>
                 <a href="switches" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'switches.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="server"></i> Managed Switches
                 </a>

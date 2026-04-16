@@ -23,6 +23,13 @@ $total_devices  = $db->query("SELECT COUNT(*) FROM ip_addresses")->fetchColumn()
 $total_switches = $db->query("SELECT COUNT(*) FROM switches")->fetchColumn();
 $total_users    = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
+// Netwatch Stats
+try {
+    $total_netwatch = $db->query("SELECT COUNT(*) FROM netwatch")->fetchColumn() ?: 0;
+} catch (Exception $e) {
+    $total_netwatch = 0;
+}
+
 define('APP_AUTHOR', 'Habib Frambudi');
 define('APP_AUTHOR_EMAIL', 'habibframbudi@gmail.com');
 define('APP_GITHUB', GITHUB_URL);
@@ -121,6 +128,7 @@ include 'includes/header.php';
         ['icon' => 'layers',  'value' => $total_subnets,  'label' => 'Subnets',  'color' => 'var(--primary)'],
         ['icon' => 'monitor', 'value' => $total_devices,  'label' => 'Devices',  'color' => 'var(--success)'],
         ['icon' => 'server',  'value' => $total_switches, 'label' => 'Switches', 'color' => 'var(--warning)'],
+        ['icon' => 'eye',     'value' => $total_netwatch, 'label' => 'Netwatch', 'color' => '#f59e0b'],
         ['icon' => 'users',   'value' => $total_users,    'label' => 'Users',    'color' => '#8b5cf6'],
     ];
     foreach ($stats as $s): ?>
@@ -166,7 +174,7 @@ include 'includes/header.php';
         </h3>
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
             <?php
-            $stack = ['PHP 8.2', 'MariaDB 10.11', 'Redis 7', 'Apache 2.4', 'Chart.js 4', 'Mermaid.js', 'Lucide Icons', 'SNMP v2c', 'SSE', 'Docker'];
+            $stack = ['PHP 8.2', 'MariaDB 10.11', 'Redis 7', 'Apache 2.4', 'Chart.js 4', 'Mermaid.js', 'Lucide Icons', 'SNMP v2c', 'ICMP Ping', 'SSE', 'Docker'];
             foreach ($stack as $t): ?>
             <span style="padding: 6px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
                 <?php echo $t; ?>
@@ -199,12 +207,8 @@ include 'includes/header.php';
     </h3>
     <div style="border-top: 1px solid var(--border);">
     <?php
-    $versions = [
-        ['ver' => '2.15.5', 'date' => '2026-04-12', 'changes' => ['Global Responsive Refactor (Mobile-First)', 'Standardized CSS utility classes', 'Improved Network Topology for small screens']],
-        ['ver' => '2.15.0', 'date' => '2026-04-09', 'changes' => ['Internal Bug Reporting System', 'Automated Activation Telemetry', 'Fixed .htaccess API routing']],
-        ['ver' => '2.14.1', 'date' => '2026-04-08', 'changes' => ['Universal Spotlight Search (Ctrl+K)', 'Batch Asset Operations', 'Professional PDF Inventory Export']],
-    ];
-    foreach ($versions as $v): ?>
+    require_once 'includes/version.php';
+    foreach (array_slice($versions, 0, 3) as $v): ?>
     <div class="changelog-item">
         <div class="changelog-meta" style="min-width: 120px;">
             <span style="display: block; background: rgba(99,102,241,0.1); color: var(--primary); font-weight: 800; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; width: fit-content;">v<?php echo $v['ver']; ?></span>
