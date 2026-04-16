@@ -1,6 +1,13 @@
-# 🚀 IPManager Pro: High-Performance IPAM & Network Monitoring
+# 🚀 IPManager Pro: Enterprise IPAM & Active Network Monitoring
 
-IPManager Pro is a modern, high-speed **IP Address Management (IPAM)** and **Infrastructure Monitoring** platform. It provides real-time visibility into your network subnets, device health, and physical connectivity.
+<div align="center">
+  <img src="https://raw.githubusercontent.com/frambudi75/IP-Manage/main/screenshots/dashboard_mockup.png" alt="IPManager Pro Dashboard" width="800">
+  <p><i>Premium Enterprise IP Address Management & Active NMS for Modern Networks.</i></p>
+</div>
+
+---
+
+IPManager Pro is a modern, high-speed **IP Address Management (IPAM)** and **Infrastructure Monitoring** platform. It provides real-time visibility into your network subnets, device health, and physical connectivity with a stunning dark-mode interface.
 
 ---
 
@@ -12,11 +19,13 @@ graph TD
     A[Scanner Engine] -->|Parallel Workers| B(Ping / Nmap / ARP / Port Probe)
     C[Health Poller] -->|SNMP| D(CPU / RAM / Uptime)
     E[Switch Poller] -->|L3 ARP Cache| F(MAC-Port-IP Mapping)
+    NW[Netwatch Engine] -->|ICMP| NW_ALERT(Telegram / Email)
     G[(Central Intelligence DB)]
     R[(Redis Caching)]
     B -->|Found Hosts| G
     D -->|Health Stats| G
     F -->|Port Locations| G
+    NW -->|Down Events| G
     G <--> R
     R --> H[Premium Dashboard]
 ```
@@ -25,108 +34,80 @@ graph TD
 
 ## ✨ Key Features
 
-### 📡 Real-time Monitoring & Health
-*   **Live SNMP Tracking**: Streaming data CPU, Memory, & Uptime secara realtime via *Server-Sent Events (SSE)*.
-*   **Performance History**: Grafik Chart.js interaktif (1h ke 48h) untuk memantau beban perangkat secara historis.
-*   **Device Health Badges**: Indikator status `LIVE` / `OFFLINE` otomatis pada dashboard.
-*   **Detailed SysInfo**: Penarikan deskripsi sistem hardware secara mendalam langsung dari vendor (MikroTik, Cisco, Generic).
+### 📡 Active Netwatch Monitoring (New in v2.18.0)
+*   **Proactive Uptime Tracking**: Inspired by MikroTik Netwatch, monitor any host availability via highly configurable ICMP pings.
+*   **Multi-Channel Alerts**: Instant notifications via **Telegram Bot** and **Email** when a host goes DOWN or comes back UP.
+*   **Smart Thresholds**: Set failure counts before triggering an alert to avoid false positives on unstable links.
+*   **State-Change Logging**: Automated audit trail for every status change, integrated with the central logging system.
 
 ### 🔍 Advanced Discovery & IPAM
-*   **Parallel Subnet Scanning**: Kecepatan tinggi dengan multiple background workers (`scanner_worker.php`).
-*   **Stealth Discovery (Multi-signal)**: Deteksi akurat via kombinasi Ping, Nmap, ARP, dan **TCP Port Probing** (tetap terdeteksi meski ICMP/ping ditutup).
-*   **L3 ARP Logic**: Discovery otomatis host melalui tabel ARP cache pada managed switch/router.
-*   **Physical Port Mapping**: Melacak MAC Address hingga ke nomor port fisik switch secara akurat.
-*   **VLAN Awareness**: Deteksi otomatis ID VLAN untuk setiap perangkat yang terhubung (Dot1q protocol).
-*   **Anti-Ghost IP**: Mekanisme cerdas untuk membedakan host yang benar-benar offline dengan gangguan sementara (Auto-Cleanup).
+*   **Parallel Subnet Scanning**: High-speed discovery with multiple background workers for large-scale networks.
+*   **Stealth Discovery (Multi-signal)**: Accurate detection via Ping, Nmap, ARP, and **TCP Port Probing**.
+*   **L3 ARP Logic**: Automatically discover hosts through ARP cache tables on managed switches/routers.
+*   **Physical Port Mapping**: Trace MAC addresses directly to physical switch ports and VLANs.
 
-### ⚡ Architecture & Performance
-*   **Docker Optimized**: Setup satu baris dengan `docker-compose` yang sudah teruji untuk produksi.
-*   **PHP Opcache**: Konfigurasi khusus untuk menghilangkan lag eksekusi PHP (2-3x lebih responsif).
-*   **Redis Caching**: Penyimpanan session dan cache SNMP result di RAM untuk performa ultra-tinggi.
-*   **Responsive UI**: Antarmuka modern (Dark Mode) yang ringan dan kompatibel dengan mobile browser.
-*   **Dual-Config Mode**: Deteksi otomatis lingkungan kerja (Docker vs XAMPP) tanpa ubah kode.
-
-### 🔐 Security & Audit
-*   **Sanitized Schema**: Penggunaan database yang bersih dari data sensitif (tokens/passwords) untuk keamanan repo publik.
-*   **Comprehensive Audit Logs**: Pencatatan setiap aksi user (Add, Edit, Delete, Poll) untuk akuntabilitas.
-*   **RBAC Ready**: Dukungan dasar untuk role Admin dan Viewer.
+### 📊 Real-time Visualization
+*   **Live SNMP Tracking**: Streaming CPU, Memory, & Uptime data via *Server-Sent Events (SSE)*.
+*   **Interactive Analytics**: Chart.js integration for historical performance trends (1h to 48h).
+*   **Premium UI**: Sleek dark-mode interface with glassmorphism effects, powered by Lucide Icons.
 
 ---
 
-## 📂 Core Modules
-| Module | Description |
-| :--- | :--- |
-| **📊 Dashboard** | Visual analytics, subnet density, and live usage trends. |
-| **🌐 Switches** | Hardware monitoring (CPU/RAM), physical port mapping, & VLAN detection. |
-| **🗺️ IPAM** | Subnet organization, VLAN tracking, and IP allocation. |
-| **🧰 Toolbox** | Professional diagnostics (Ping, Traceroute, MAC OUI Lookup). |
-| **📜 Audit Logs** | Comprehensive history of all system and user changes. |
+## 📸 Screenshots
+<div align="center">
+  <table style="width:100%">
+    <tr>
+      <td width="50%"><img src="screenshots/dashboard.png" alt="Main Dashboard"/></td>
+      <td width="50%"><img src="screenshots/netwatch.png" alt="Netwatch Module"/></td>
+    </tr>
+    <tr>
+      <td width="50%"><img src="screenshots/switch_health.png" alt="Device Health"/></td>
+      <td width="50%"><img src="screenshots/topology.png" alt="Network Topology"/></td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## ⚙️ Minimum Requirements
+For smooth real-time monitoring and high-speed parallel scanning:
+
+### Hardware
+*   **CPU**: 1 vCPU (2.0GHz) Minimum | 2 vCPU+ Recommended.
+*   **RAM**: 1 GB Free RAM | 2 GB+ Recommended.
+*   **Network**: 100 Mbps | 1 Gbps (Low latency SNMP).
+
+### Software (detailed in requirements.txt)
+*   **PHP**: 8.1 or 8.2+
+*   **Database**: MariaDB 10.6+ / MySQL 8.0+
+*   **Tools**: `nmap`, `traceroute`, `iputils-ping`
+
+---
+
+## ⚡ Installation
+
+### Option 1: Docker (Recommended)
+1. Refer to [Docker Install Guide](DOCKER_INSTALL.md).
+2. Run: `docker-compose up -d`
+3. Access: `http://localhost:2025`
+
+### Option 2: XAMPP / Linux (Manual)
+1. Refer to [Standalone Install Guide](STANDALONE_INSTALL.md).
+2. Import `sql/database.sql` to your database.
+3. Access: `http://localhost/ipmanage`
 
 ---
 
 ## 🔐 Default Credentials
-Logout/Login at the initial screen using:
-- **Username**: `admin`
-- **Password**: `admin123`
-*(Please change your password immediately after the first login)*
+*   **Username**: `admin`
+*   **Password**: `admin123`
+*(Please change your password immediately after first login)*
 
 ---
 
-## ⚠️ Minimum Requirements (Recommended for No-Lag)
-To ensure smooth realtime monitoring and high-speed parallel scanning, we recommend the following server specifications:
-
-### Hardware
-| Component | Minimum | Recommended |
-| :--- | :--- | :--- |
-| **CPU** | 1 vCPU (2.0GHz) | 2 vCPU+ (For parallel scan) |
-| **RAM** | 1 GB Free RAM | 2 GB+ RAM |
-| **Disk** | 5 GB SSD | 10 GB+ SSD |
-| **Network** | 100 Mbps | 1 Gbps (Low latency SNMP) |
-
-### Software
-- **PHP**: 8.1 or 8.2 (with `php-snmp`, `php-curl`, `php-pdo_mysql`, **`php-redis`**)
-- **Database**: MariaDB 10.6+ or MySQL 8.0+
-- **Caching**: **Redis 7.0+** (Highly Recommended for No-Lag SSE)
-- **Tools**: `nmap`, `traceroute`, `snmp` (net-snmp)
-- **Browser**: Modern Chrome / Edge / Firefox (For SSE & Chart.js)
-
----
-
-## ⚡ Installation Guide
-
-### Option 1: Docker (Recommended)
-1. Lihat [Panduan Instalasi Docker](DOCKER_INSTALL.md) untuk instruksi mendalam.
-2. Jalankan perintah cepat: `docker-compose up -d`
-3. Akses: `http://localhost:2025`
-
-### Option 2: XAMPP (Windows) & Linux (Apache/NGINX)
-1. Lihat [Panduan Instalasi Standalone](STANDALONE_INSTALL.md) untuk instruksi mendalam bagi instalasi tanpa Docker.
-2. Pastikan file `.htaccess` diizinkan lewat pengaturan `AllowOverride All`.
-3. Akses: `http://localhost/ipmanage`
-
----
-
-## 🤖 Automation (Background Tasks)
-| Platform | Requirement |
-| :--- | :--- |
-| **Docker** | Handled automatically. |
-| **Linux** | `*/15 * * * * php /var/www/html/ipmanage/cron_scanner.php` (Crontab) |
-| **Windows** | Set Task Scheduler to run `php.exe cron_scanner.php` every 30 mins. |
-
----
-
-## 🛠️ Configuration
-Custom settings (Database host, App URL, specific SNMP communities) can be modified in:
-`includes/config.php`
-
----
-
-## 👨‍💻 Author
-**Habib Frambudi**
-
-## ☕ Support the Project
-If IPManager Pro has helped you optimize your network, consider buying me a coffee! Your support helps me maintain and add new features.
-
+## 👨‍💻 Author & Support
+**Habib Frambudi**  
+If this project saves you time, consider supporting the developer:
 -   **Saweria (IDR)**: [saweria.co/Habibframbudi](https://saweria.co/Habibframbudi)
 -   **PayPal (USD)**: `habibframbudi@gmail.com`
 
