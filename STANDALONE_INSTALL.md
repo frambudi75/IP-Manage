@@ -103,6 +103,9 @@ Jalankan `crontab -e` dan tambahkan baris berikut:
 
 # Jalankan poller switch setiap 5 menit
 */5 * * * * php /var/www/html/ipmanage/cron_switch_poll.php > /dev/null 2>&1
+
+# Jalankan Netwatch monitor setiap 1 menit (Rekomendasi)
+* * * * * php /var/www/html/ipmanage/cron_netwatch.php > /dev/null 2>&1
 ```
 
 ### Windows (Task Scheduler)
@@ -112,6 +115,8 @@ Jalankan `crontab -e` dan tambahkan baris berikut:
 4.  Action: **Start a Program**.
 5.  Program/script: `C:\xampp\php\php.exe`.
 6.  Add arguments: `C:\xampp\htdocs\ipmanage\cron_scanner.php`.
+
+**Penting:** Lakukan hal yang sama untuk `cron_netwatch.php` dengan interval setiap **1 menit** agar monitoring host berjalan real-time.
 
 ---
 

@@ -9,7 +9,7 @@ Pastikan Anda sudah menginstal perangkat lunak berikut:
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
 
 Proyek ini menggunakan tiga kontainer utama:
-1. **app**: Apache + PHP 8.2 (dengan `php-redis` & `opcache`). Menjalankan scanner otomatis di background via `entrypoint.sh`.
+1. **app**: Apache + PHP 8.2 (dengan `php-redis` & `opcache`). Menjalankan scanner otomatis dan **Netwatch Monitor** di background via `entrypoint.sh`.
 2. **db**: MariaDB 10.11 untuk penyimpanan data persisten (diikat ke volume `db_data`).
 3. **redis**: Redis 7.0 sebagai *high-performance caching layer* untuk session dan hasil polling SNMP.
 
