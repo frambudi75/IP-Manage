@@ -9,6 +9,9 @@ set -e
     
     echo "[$(date)] Polling Manageable Switches..."
     php /var/www/html/cron_switch_poll.php
+
+    echo "[$(date)] Running Netwatch Monitor..."
+    php /var/www/html/cron_netwatch.php
     
     sleep 300
   done

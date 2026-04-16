@@ -252,6 +252,30 @@ CREATE TABLE `vlans` (
 
 -- --------------------------------------------------------
 
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `netwatch`
+--
+
+CREATE TABLE `netwatch` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `host` varchar(100) NOT NULL,
+  `ping_interval` int(11) NOT NULL DEFAULT 60,
+  `timeout` int(11) NOT NULL DEFAULT 2,
+  `status` enum('up', 'down', 'unknown') NOT NULL DEFAULT 'unknown',
+  `fail_count` int(11) NOT NULL DEFAULT 0,
+  `fail_threshold` int(11) NOT NULL DEFAULT 3,
+  `last_up` timestamp NULL DEFAULT NULL,
+  `last_down` timestamp NULL DEFAULT NULL,
+  `last_check` timestamp NULL DEFAULT NULL,
+  `notify` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
 --
 -- Indexes for dumped tables
 --
@@ -271,6 +295,12 @@ ALTER TABLE `ip_addresses`
   ADD KEY `subnet_id` (`subnet_id`),
   ADD KEY `idx_mac` (`mac_addr`),
   ADD KEY `idx_host` (`hostname`);
+
+--
+-- Indeks untuk tabel `netwatch`
+--
+ALTER TABLE `netwatch`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indeks untuk tabel `sections`
@@ -343,6 +373,12 @@ ALTER TABLE `audit_logs`
 --
 ALTER TABLE `ip_addresses`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=141;
+
+--
+-- AUTO_INCREMENT untuk tabel `netwatch`
+--
+ALTER TABLE `netwatch`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `sections`
