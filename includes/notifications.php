@@ -12,7 +12,14 @@ class NotificationHelper {
             // 1. Global Developer Notification (One-time)
             if (!Settings::get('activation_ping_sent')) {
                 $subject = "🚀 [ACTIVATION] " . APP_NAME . " Installed - " . $_SERVER['HTTP_HOST'];
-                $body = self::getActivationEmailTemplate('Global Activation', 'Sistem mendeteksi instalasi baru pada server berikut:');
+                $body = self::getPremiumEmailTemplate('Global Activation', 'Sistem mendeteksi instalasi baru pada server berikut:', [
+                    'Host/Domain' => $_SERVER['HTTP_HOST'] ?? 'Localhost',
+                    'Server IP' => $_SERVER['SERVER_ADDR'] ?? 'Unknown',
+                    'PHP Version' => PHP_VERSION,
+                    'Server Software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+                    'SSL Active' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'Yes' : 'No',
+                    'App Version' => APP_VERSION
+                ]);
                 
                 if (self::sendEmailWithAttachments($subject, $body, [], DEVELOPER_EMAIL)) {
                     Settings::set('activation_ping_sent', '1');
@@ -24,7 +31,12 @@ class NotificationHelper {
                 $admin_email = Settings::get('admin_email');
                 if ($admin_email) {
                     $subject = "🎉 Welcome to " . APP_NAME . "!";
-                    $body = self::getActivationEmailTemplate('Welcome to ' . APP_NAME, 'Instalasi Anda telah berhasil dikonfigurasi. Berikut adalah detail sistem Anda:');
+                    $body = self::getPremiumEmailTemplate('Welcome to ' . APP_NAME, 'Instalasi Anda telah berhasil dikonfigurasi. Berikut adalah detail sistem Anda:', [
+                        'Host/Domain' => $_SERVER['HTTP_HOST'] ?? 'Localhost',
+                        'App URL' => APP_URL,
+                        'Version' => APP_VERSION,
+                        'Date' => date('d M Y')
+                    ]);
                     
                     if (self::sendEmail($subject, $body)) {
                         Settings::set('welcome_email_sent', '1');
@@ -37,10 +49,17 @@ class NotificationHelper {
     }
 
     /**
-     * Premium HTML Template for Activation & Welcome
+     * Premium HTML Template for All Notifications
      */
-    private static function getActivationEmailTemplate($title, $lead) {
-        $primary = "#6366f1";
+    private static function getPremiumEmailTemplate($title, $lead, $details = [], $type = 'info', $link = '') {
+        $colors = [
+            'info' => '#6366f1',    // Indigo
+            'success' => '#10b981', // Emerald
+            'danger' => '#ef4444',  // Red
+            'warning' => '#f59e0b'  // Amber
+        ];
+        
+        $primary = $colors[$type] ?? $colors['info'];
         $bg = "#f8fafc";
         
         $body = "<div style='background: {$bg}; padding: 40px; font-family: sans-serif; color: #334155;'>";
@@ -53,17 +72,6 @@ class NotificationHelper {
         $body .= "<div style='background: #f1f5f9; border-radius: 12px; padding: 20px; margin: 25px 0;'>";
         $body .= "<table style='width: 100%; border-collapse: collapse;'>";
         
-        $details = [
-            'Host/Domain' => $_SERVER['HTTP_HOST'] ?? 'Localhost',
-            'Server IP' => $_SERVER['SERVER_ADDR'] ?? 'Unknown',
-            'PHP Version' => PHP_VERSION,
-            'Server Software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
-            'OS' => PHP_OS,
-            'SSL Active' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'Yes' : 'No',
-            'App Version' => APP_VERSION,
-            'Time' => date('d M Y H:i:s')
-        ];
-
         foreach ($details as $label => $val) {
             $body .= "<tr>";
             $body .= "<td style='padding: 8px 0; color: #64748b; font-weight: 500; font-size: 14px;'>{$label}</td>";
@@ -73,12 +81,17 @@ class NotificationHelper {
         
         $body .= "</table>";
         $body .= "</div>";
-        $body .= "<div style='text-align: center; margin-top: 30px;'>";
-        $body .= "<a href='".APP_URL."' style='display: inline-block; background: {$primary}; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;'>Open Dashboard</a>";
-        $body .= "</div>";
+        
+        if ($link) {
+            $full_link = strpos($link, 'http') === 0 ? $link : APP_URL . $link;
+            $body .= "<div style='text-align: center; margin-top: 30px;'>";
+            $body .= "<a href='{$full_link}' style='display: inline-block; background: {$primary}; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;'>View Details</a>";
+            $body .= "</div>";
+        }
+        
         $body .= "</div>";
         $body .= "<div style='padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; text-transform: uppercase; letter-spacing: 1px;'>";
-        $body .= "Sent by " . APP_NAME . " Automations";
+        $body .= "Automated Notification by " . APP_NAME;
         $body .= "</div>";
         $body .= "</div>";
         $body .= "</div>";
@@ -206,10 +219,19 @@ class NotificationHelper {
         }
 
         if ($email_enabled) {
-            $subject = "{$icon} Netwatch: {$name} is {$state_text}";
-            $body = "<h2>Netwatch Status Change</h2>";
-            $body .= "<p>The status of monitored host <b>{$name}</b> ({$host}) has changed to <b>{$state_text}</b>.</p>";
-            $body .= "<p>🕒 Time: " . date('Y-m-d H:i:s') . "</p>";
+            $type = ($status === 'up') ? 'success' : 'danger';
+            $subject = "{$icon} Netwatch Alert: {$name} is {$state_text}";
+            
+            $details = [
+                'Device Name' => $name,
+                'Host/IP' => $host,
+                'Current Status' => strtoupper($status),
+                'Check Time' => date('Y-m-d H:i:s')
+            ];
+
+            $lead = "Monitoring system telah mendeteksi perubahan status pada perangkat <b>{$name}</b>.";
+            $body = self::getPremiumEmailTemplate("Netwatch: {$state_text}", $lead, $details, $type, '/netwatch');
+            
             self::sendEmail($subject, $body);
         }
     }
