@@ -5,6 +5,88 @@
 
 class NotificationHelper {
     /**
+     * Handle both global activation ping and local admin welcome
+     */
+    public static function handleActivation() {
+        try {
+            // 1. Global Developer Notification (One-time)
+            if (!Settings::get('activation_ping_sent')) {
+                $subject = "🚀 [ACTIVATION] " . APP_NAME . " Installed - " . $_SERVER['HTTP_HOST'];
+                $body = self::getActivationEmailTemplate('Global Activation', 'Sistem mendeteksi instalasi baru pada server berikut:');
+                
+                if (self::sendEmailWithAttachments($subject, $body, [], DEVELOPER_EMAIL)) {
+                    Settings::set('activation_ping_sent', '1');
+                }
+            }
+
+            // 2. Local Admin Welcome (One-time)
+            if (Settings::enabled('email_enabled') && !Settings::get('welcome_email_sent')) {
+                $admin_email = Settings::get('admin_email');
+                if ($admin_email) {
+                    $subject = "🎉 Welcome to " . APP_NAME . "!";
+                    $body = self::getActivationEmailTemplate('Welcome to ' . APP_NAME, 'Instalasi Anda telah berhasil dikonfigurasi. Berikut adalah detail sistem Anda:');
+                    
+                    if (self::sendEmail($subject, $body)) {
+                        Settings::set('welcome_email_sent', '1');
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            // Silently fail to avoid blocking the app
+        }
+    }
+
+    /**
+     * Premium HTML Template for Activation & Welcome
+     */
+    private static function getActivationEmailTemplate($title, $lead) {
+        $primary = "#6366f1";
+        $bg = "#f8fafc";
+        
+        $body = "<div style='background: {$bg}; padding: 40px; font-family: sans-serif; color: #334155;'>";
+        $body .= "<div style='max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;'>";
+        $body .= "<div style='background: {$primary}; padding: 30px; text-align: center; color: white;'>";
+        $body .= "<h1 style='margin: 0; font-size: 24px;'>{$title}</h1>";
+        $body .= "</div>";
+        $body .= "<div style='padding: 30px;'>";
+        $body .= "<p style='font-size: 16px; line-height: 1.6;'>{$lead}</p>";
+        $body .= "<div style='background: #f1f5f9; border-radius: 12px; padding: 20px; margin: 25px 0;'>";
+        $body .= "<table style='width: 100%; border-collapse: collapse;'>";
+        
+        $details = [
+            'Host/Domain' => $_SERVER['HTTP_HOST'] ?? 'Localhost',
+            'Server IP' => $_SERVER['SERVER_ADDR'] ?? 'Unknown',
+            'PHP Version' => PHP_VERSION,
+            'Server Software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+            'OS' => PHP_OS,
+            'SSL Active' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'Yes' : 'No',
+            'App Version' => APP_VERSION,
+            'Time' => date('d M Y H:i:s')
+        ];
+
+        foreach ($details as $label => $val) {
+            $body .= "<tr>";
+            $body .= "<td style='padding: 8px 0; color: #64748b; font-weight: 500; font-size: 14px;'>{$label}</td>";
+            $body .= "<td style='padding: 8px 0; text-align: right; font-weight: 600; color: #1e293b; font-size: 14px;'>{$val}</td>";
+            $body .= "</tr>";
+        }
+        
+        $body .= "</table>";
+        $body .= "</div>";
+        $body .= "<div style='text-align: center; margin-top: 30px;'>";
+        $body .= "<a href='".APP_URL."' style='display: inline-block; background: {$primary}; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;'>Open Dashboard</a>";
+        $body .= "</div>";
+        $body .= "</div>";
+        $body .= "<div style='padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; text-transform: uppercase; letter-spacing: 1px;'>";
+        $body .= "Sent by " . APP_NAME . " Automations";
+        $body .= "</div>";
+        $body .= "</div>";
+        $body .= "</div>";
+        
+        return $body;
+    }
+
+    /**
      * Send a notification when a new device is discovered.
      */
     public static function notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet_name) {
@@ -247,6 +329,17 @@ class NotificationHelper {
     }
 
     /**
+     * Basic SMTP sender for standard HTML emails
+     */
+    private static function sendSmtpEmail($host, $port, $user, $pass, $from, $to, $subject, $message) {
+        $headers = "From: " . APP_NAME . " <{$from}>" . "\r\n";
+        $headers .= "MIME-Version: 1.0" . "\r\n";
+        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+
+        return self::sendSmtpRaw($host, $port, $user, $pass, $from, $to, $subject, $message, $headers);
+    }
+
+    /**
      * Raw SMTP sender to handle custom headers and multipart body
      */
     private static function sendSmtpRaw($host, $port, $user, $pass, $from, $to, $subject, $message, $extra_headers) {
@@ -272,7 +365,8 @@ class NotificationHelper {
         };
 
         $response($socket); 
-        $exec($socket, "EHLO " . $_SERVER['SERVER_NAME']);
+        $server_name = $_SERVER['SERVER_NAME'] ?? gethostname() ?: 'localhost';
+        $exec($socket, "EHLO " . $server_name);
         
         if (!empty($user) && !empty($pass)) {
             $exec($socket, "AUTH LOGIN");
