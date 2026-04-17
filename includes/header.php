@@ -1,3 +1,4 @@
+<?php
 // Activation Alert & Local Admin Welcome
 require_once 'notifications.php';
 NotificationHelper::handleActivation();
