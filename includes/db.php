@@ -231,4 +231,11 @@ function run_auto_migrations($db) {
     try {
         $db->exec("ALTER TABLE netwatch ADD COLUMN maintenance_until DATETIME DEFAULT NULL");
     } catch (Exception $e) { /* ignore if already exists */ }
+
+    // 17. Convert tables to utf8mb4 for emoji support
+    try {
+        $db->exec("ALTER TABLE settings CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $db->exec("ALTER TABLE netwatch CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $db->exec("ALTER TABLE netwatch_history CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    } catch (Exception $e) { /* ignore on failure */ }
 }
