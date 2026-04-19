@@ -118,7 +118,10 @@ INSERT INTO `settings` (`id`, `key`, `value`, `updated_at`) VALUES
 (6, 'nmap_enabled', '0', '2026-03-29 06:00:00'),
 (7, 'discovery_aggressive', '1', '2026-03-31 07:30:00'),
 (41, 'subnet_limit_threshold', '80', '2026-03-31 07:30:00'),
-(42, 'offline_fail_threshold', '3', '2026-03-31 07:30:00');
+(42, 'offline_fail_threshold', '3', '2026-03-31 07:30:00'),
+(43, 'discord_enabled', '0', NOW()),
+(44, 'slack_enabled', '0', NOW()),
+(45, 'custom_netwatch_template', '', NOW());
 
 -- --------------------------------------------------------
 
@@ -263,15 +266,29 @@ CREATE TABLE `netwatch` (
   `name` varchar(100) NOT NULL,
   `host` varchar(100) NOT NULL,
   `ping_interval` int(11) NOT NULL DEFAULT 60,
-  `timeout` int(11) NOT NULL DEFAULT 2,
   `status` enum('up', 'down', 'unknown') NOT NULL DEFAULT 'unknown',
   `fail_count` int(11) NOT NULL DEFAULT 0,
   `fail_threshold` int(11) NOT NULL DEFAULT 3,
   `last_up` timestamp NULL DEFAULT NULL,
   `last_down` timestamp NULL DEFAULT NULL,
   `last_check` timestamp NULL DEFAULT NULL,
+  `maintenance_until` datetime DEFAULT NULL,
   `notify` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `netwatch_history`
+--
+
+CREATE TABLE `netwatch_history` (
+  `id` int(11) NOT NULL,
+  `netwatch_id` int(11) NOT NULL,
+  `latency` float DEFAULT 0,
+  `status` enum('up', 'down', 'unknown') DEFAULT 'unknown',
+  `recorded_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -301,6 +318,13 @@ ALTER TABLE `ip_addresses`
 --
 ALTER TABLE `netwatch`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `netwatch_history`
+--
+ALTER TABLE `netwatch_history`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_netwatch_time` (`netwatch_id`,`recorded_at`);
 
 --
 -- Indeks untuk tabel `sections`
@@ -381,6 +405,12 @@ ALTER TABLE `netwatch`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT untuk tabel `netwatch_history`
+--
+ALTER TABLE `netwatch_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT untuk tabel `sections`
 --
 ALTER TABLE `sections`
@@ -450,6 +480,12 @@ ALTER TABLE `subnets`
 --
 ALTER TABLE `switch_port_map`
   ADD CONSTRAINT `switch_port_map_ibfk_1` FOREIGN KEY (`switch_id`) REFERENCES `switches` (`id`) ON DELETE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `netwatch_history`
+--
+ALTER TABLE `netwatch_history`
+  ADD CONSTRAINT `netwatch_history_ibfk_1` FOREIGN KEY (`netwatch_id`) REFERENCES `netwatch` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

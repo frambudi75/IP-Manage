@@ -215,4 +215,20 @@ function run_auto_migrations($db) {
         status ENUM('pending', 'resolved') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+    // 15. Netwatch History Table (Latency Tracking)
+    $db->exec("CREATE TABLE IF NOT EXISTS netwatch_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        netwatch_id INT NOT NULL,
+        latency FLOAT DEFAULT 0,
+        status ENUM('up', 'down', 'unknown') DEFAULT 'unknown',
+        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_netwatch_time (netwatch_id, recorded_at),
+        FOREIGN KEY (netwatch_id) REFERENCES netwatch(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+    // 16. Add maintenance column if not exists
+    try {
+        $db->exec("ALTER TABLE netwatch ADD COLUMN maintenance_until DATETIME DEFAULT NULL");
+    } catch (Exception $e) { /* ignore if already exists */ }
 }

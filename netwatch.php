@@ -70,6 +70,15 @@ if (isset($_GET['delete']) && is_admin()) {
     exit;
 }
 
+if (isset($_GET['snooze']) && isset($_GET['hours'])) {
+    $id = (int)$_GET['snooze'];
+    $hours = (int)$_GET['hours'];
+    $until = ($hours == 0) ? null : date('Y-m-d H:i:s', strtotime("+$hours hour"));
+    $db->prepare("UPDATE netwatch SET maintenance_until = ? WHERE id = ?")->execute([$until, $id]);
+    header('Location: netwatch?msg=updated');
+    exit;
+}
+
 // Fetch Netwatch Targets
 $targets = $db->query("SELECT * FROM netwatch ORDER BY id DESC")->fetchAll();
 
@@ -116,13 +125,22 @@ include 'includes/header.php';
     }
 </style>
 
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
     <div>
         <h1 style="font-size: 1.5rem; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="eye" class="text-primary"></i> 
             Netwatch Monitoring
         </h1>
         <p style="color: var(--text-muted); font-size: 0.875rem;">Real-time host availability tracking and status history.</p>
+        <?php
+        $last_scan = $db->query("SELECT MAX(last_check) FROM netwatch")->fetchColumn();
+        if ($last_scan):
+        ?>
+        <div style="margin-top: 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
+            <span class="pulse" style="width: 6px; height: 6px; background: #10b981;"></span>
+            Scanner Active: Last global check at <span style="color: white; font-weight: 600;"><?php echo date('H:i:s', strtotime($last_scan)); ?></span>
+        </div>
+        <?php endif; ?>
     </div>
     <div style="display: flex; gap: 0.5rem;">
         <button id="scanBtn" class="btn btn-warning" onclick="runScanner()" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">
@@ -242,6 +260,11 @@ function runScanner() {
                                 <span class="status-badge status-<?php echo $t['status']; ?>">
                                     <span class="pulse"></span> <?php echo $t['status']; ?>
                                 </span>
+                                <?php if (!empty($t['maintenance_until']) && strtotime($t['maintenance_until']) > time()): ?>
+                                    <div style="margin-top: 6px; font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i data-lucide="bell-off" style="width: 10px;"></i> SNOOZED
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="font-size: 0.875rem;">Every <?php echo $t['ping_interval']; ?>s</div>
@@ -254,14 +277,33 @@ function runScanner() {
                                 <?php echo $t['last_down'] ? date('d M, H:i:s', strtotime($t['last_down'])) : '-'; ?>
                             </td>
                             <td style="padding: 1rem;">
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-sm" style="background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 5px;" onclick='openEditModal(<?php echo json_encode($t); ?>)'>
-                                        <i data-lucide="edit-3" style="width: 14px;"></i>
-                                    </button>
-                                    <a href="?delete=<?php echo $t['id']; ?>" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 5px;" onclick="return confirm('Delete this target?')">
-                                        <i data-lucide="trash-2" style="width: 14px;"></i>
-                                    </a>
-                                </div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button class="btn btn-sm" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; padding: 5px;" onclick='openHistoryModal(<?php echo $t['id']; ?>, "<?php echo addslashes($t['name']); ?>")' title="View Latency History">
+                                            <i data-lucide="line-chart" style="width: 14px;"></i>
+                                        </button>
+                                        
+                                        <!-- Snooze Dropdown -->
+                                        <div style="position: relative;">
+                                            <button class="btn btn-sm" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px;" onclick="toggleSnoozeMenu(<?php echo $t['id']; ?>)" title="Snooze Notifications">
+                                                <i data-lucide="bell-off" style="width: 14px;"></i>
+                                            </button>
+                                            <div id="snooze-menu-<?php echo $t['id']; ?>" style="display: none; position: absolute; right: 0; top: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100; min-width: 120px; overflow: hidden; margin-top: 5px;">
+                                                <a href="?snooze=<?php echo $t['id']; ?>&hours=1" style="display: block; padding: 8px 12px; font-size: 0.75rem; text-decoration: none; color: white;">Snooze 1h</a>
+                                                <a href="?snooze=<?php echo $t['id']; ?>&hours=6" style="display: block; padding: 8px 12px; font-size: 0.75rem; text-decoration: none; color: white; border-top: 1px solid var(--border);">Snooze 6h</a>
+                                                <a href="?snooze=<?php echo $t['id']; ?>&hours=24" style="display: block; padding: 8px 12px; font-size: 0.75rem; text-decoration: none; color: white; border-top: 1px solid var(--border);">Snooze 24h</a>
+                                                <?php if (!empty($t['maintenance_until'])): ?>
+                                                    <a href="?snooze=<?php echo $t['id']; ?>&hours=0" style="display: block; padding: 8px 12px; font-size: 0.75rem; text-decoration: none; color: var(--danger); border-top: 1px solid var(--border);">Wake Now</a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+
+                                        <button class="btn btn-sm" style="background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 5px;" onclick='openEditModal(<?php echo json_encode($t); ?>)'>
+                                            <i data-lucide="edit-3" style="width: 14px;"></i>
+                                        </button>
+                                        <a href="?delete=<?php echo $t['id']; ?>" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 5px;" onclick="return confirm('Delete this target?')">
+                                            <i data-lucide="trash-2" style="width: 14px;"></i>
+                                        </a>
+                                    </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -348,7 +390,110 @@ function runScanner() {
     </div>
 </div>
 
+<!-- History Modal -->
+<div id="historyModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="card" style="width: 100%; max-width: 800px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+                <h3 id="historyTitle">Latency History</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Historical response time (ms) for this target.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <select id="periodSelect" class="input-control" style="padding: 4px 8px; font-size: 0.75rem; width: auto;" onchange="refreshHistory()">
+                    <option value="1h">Last 1 Hour</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="24h">Last 24 Hours</option>
+                </select>
+                <button onclick="document.getElementById('historyModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+        </div>
+        <div style="height: 350px;">
+            <canvas id="latencyChart"></canvas>
+        </div>
+    </div>
+</div>
+
 <script>
+let historyChart = null;
+let currentHistoryId = null;
+
+function openHistoryModal(id, name) {
+    currentHistoryId = id;
+    document.getElementById('historyTitle').innerText = 'Latency: ' + name;
+    document.getElementById('historyModal').style.display = 'flex';
+    refreshHistory();
+}
+
+function refreshHistory() {
+    const period = document.getElementById('periodSelect').value;
+    fetch(`api/netwatch-history.php?id=${currentHistoryId}&period=${period}`)
+        .then(res => res.json())
+        .then(data => {
+            const ctx = document.getElementById('latencyChart').getContext('2d');
+            
+            if (historyChart) historyChart.destroy();
+            
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Latency (ms)',
+                        data: data.data,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: data.data.length > 50 ? 0 : 3,
+                        pointBackgroundColor: data.status.map(s => s === 'down' ? '#ef4444' : '#6366f1')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: 'rgba(255,255,255,0.5)', callback: v => v + 'ms' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                color: 'rgba(255,255,255,0.5)',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            }
+                        }
+                    }
+                }
+            });
+            lucide.createIcons();
+        });
+}
+
+function toggleSnoozeMenu(id) {
+    const menus = document.querySelectorAll('[id^="snooze-menu-"]');
+    menus.forEach(m => { if(m.id !== 'snooze-menu-'+id) m.style.display = 'none'; });
+    
+    const menu = document.getElementById('snooze-menu-' + id);
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close menus on click outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="snooze-menu-"]') && !e.target.closest('button[onclick^="toggleSnoozeMenu"]')) {
+        document.querySelectorAll('[id^="snooze-menu-"]').forEach(m => m.style.display = 'none');
+    }
+});
+
 function openEditModal(target) {
     document.getElementById('edit_id').value = target.id;
     document.getElementById('edit_name').value = target.name;

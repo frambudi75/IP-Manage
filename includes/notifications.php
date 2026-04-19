@@ -200,26 +200,57 @@ class NotificationHelper {
     /**
      * Notify when a Netwatch target changes status.
      */
-    public static function notifyNetwatch($name, $host, $status, $duration = null) {
+    public static function notifyNetwatch($name, $host, $status, $duration = null, $latency = null) {
         $telegram_enabled = Settings::enabled('telegram_enabled');
         $email_enabled = Settings::enabled('email_enabled');
+        $discord_enabled = Settings::enabled('discord_enabled');
+        $slack_enabled = Settings::enabled('slack_enabled');
 
-        if (!$telegram_enabled && !$email_enabled) return;
+        if (!$telegram_enabled && !$email_enabled && !$discord_enabled && !$slack_enabled) return;
 
         $icon = ($status === 'up') ? "✅" : "🚨";
         $state_text = strtoupper($status);
+        $time = date('Y-m-d H:i:s');
+
+        // Custom Template logic
+        $template = Settings::get('custom_netwatch_template');
+        if (!empty($template)) {
+            $placeholders = [
+                '{name}' => $name,
+                '{host}' => $host,
+                '{status}' => $state_text,
+                '{time}' => $time,
+                '{duration}' => $duration ? $duration : '-',
+                '{latency}' => $latency ? $latency . 'ms' : '-'
+            ];
+            $t_message = str_replace(array_keys($placeholders), array_values($placeholders), $template);
+        } else {
+            // Default Enterprise Text
+            $t_message = "{$icon} <b>Netwatch Alert: {$state_text}</b>\n\n";
+            $t_message .= "🖥 <b>Device:</b> {$name}\n";
+            $t_message .= "🌐 <b>Host:</b> <code>{$host}</code>\n";
+            $t_message .= "📊 <b>Status:</b> <b>{$state_text}</b>\n";
+            if ($latency) $t_message .= "⚡ <b>Latency:</b> <code>{$latency}ms</code>\n";
+            if ($status === 'up' && !empty($duration)) {
+                $t_message .= "⏱ <b>Downtime:</b> <code>{$duration}</code>\n";
+            }
+            $t_message .= "\n🕒 <b>Time:</b> " . $time;
+        }
 
         $success = false;
         if ($telegram_enabled) {
-            $message = "{$icon} <b>Netwatch Alert: {$state_text}</b>\n\n";
-            $message .= "🖥 <b>Device:</b> {$name}\n";
-            $message .= "🌐 <b>Host:</b> <code>{$host}</code>\n";
-            $message .= "📊 <b>Status:</b> <b>{$state_text}</b>\n";
-            if ($status === 'up' && !empty($duration)) {
-                $message .= "⏱ <b>Downtime:</b> <code>{$duration}</code>\n";
-            }
-            $message .= "\n🕒 <b>Time:</b> " . date('Y-m-d H:i:s');
-            if (self::sendTelegram($message)) $success = true;
+            if (self::sendTelegram($t_message)) $success = true;
+        }
+
+        if ($discord_enabled) {
+            // Discord doesn't support <b>, convert or use plain (Discord uses Markdown)
+            $discord_msg = str_replace(['<b>', '</b>', '<code>', '</code>'], ['**', '**', '`', '`'], $t_message);
+            if (self::sendDiscord($discord_msg)) $success = true;
+        }
+
+        if ($slack_enabled) {
+            $slack_msg = str_replace(['<b>', '</b>', '<code>', '</code>'], ['*', '*', '`', '`'], $t_message);
+            if (self::sendSlack($slack_msg)) $success = true;
         }
 
         if ($email_enabled) {
@@ -229,10 +260,11 @@ class NotificationHelper {
             $details = [
                 'Device Name' => $name,
                 'Host/IP' => $host,
-                'Current Status' => strtoupper($status),
-                'Check Time' => date('Y-m-d H:i:s')
+                'Current Status' => $state_text,
+                'Check Time' => $time
             ];
 
+            if ($latency) $details['Latency'] = $latency . 'ms';
             if ($status === 'up' && !empty($duration)) {
                 $details['Downtime Duration'] = $duration;
             }
@@ -243,7 +275,7 @@ class NotificationHelper {
             if (self::sendEmail($subject, $body)) $success = true;
         }
         
-        return $success || (!$telegram_enabled && !$email_enabled);
+        return $success || (!$telegram_enabled && !$email_enabled && !$discord_enabled && !$slack_enabled);
     }
 
     public static function testTelegram() {
@@ -425,5 +457,42 @@ class NotificationHelper {
         $exec($socket, "QUIT");
         fclose($socket);
         return true;
+    }
+    /**
+     * Send message to Discord Webhook
+     */
+    private static function sendDiscord($text) {
+        $url = Settings::get('discord_webhook_url');
+        if (empty($url)) return false;
+
+        $data = ['content' => $text];
+        $options = [
+            'http' => [
+                'method' => 'POST',
+                'header' => 'Content-Type: application/json',
+                'content' => json_encode($data),
+                'timeout' => 5
+            ]
+        ];
+        return @file_get_contents($url, false, stream_context_create($options)) !== false;
+    }
+
+    /**
+     * Send message to Slack Webhook
+     */
+    private static function sendSlack($text) {
+        $url = Settings::get('slack_webhook_url');
+        if (empty($url)) return false;
+
+        $data = ['text' => $text];
+        $options = [
+            'http' => [
+                'method' => 'POST',
+                'header' => 'Content-Type: application/json',
+                'content' => json_encode($data),
+                'timeout' => 5
+            ]
+        ];
+        return @file_get_contents($url, false, stream_context_create($options)) !== false;
     }
 }

@@ -2,6 +2,15 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.19.0] - 2026-04-19
+### Added
+- **Netwatch Latency History**: Visual graphing of host response time (ms) over the last 24 hours using Chart.js.
+- **Multi-Channel Webhooks**: Native support for Discord and Slack notifications with easy webhook integration.
+- **Customizable Alerts**: Fully modifiable notification templates with dynamic placeholders ({name}, {host}, {latency}, etc.).
+- **Maintenance Mode (Snooze)**: Ability to silence notifications for specific targets (1h, 6h, 24h) during planned maintenance.
+- **Scanner Health Monitor**: New UI indicator showing real-time background scanner activity and last global check-in time.
+
+
 ## [2.18.1] - 2026-04-19
 ### Added
 - **Downtime Duration Tracking**: Alerts now automatically calculate and display how long a host was offline once it recovers.

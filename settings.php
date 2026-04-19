@@ -34,9 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
         'smtp_user' => $_POST['smtp_user'] ?? '',
         'smtp_pass' => $_POST['smtp_pass'] ?? '',
         'mail_from' => $_POST['mail_from'] ?? '',
-        'nmap_enabled' => isset($_POST['nmap_enabled']) ? '1' : '0',
-        'discovery_aggressive' => isset($_POST['discovery_aggressive']) ? '1' : '0',
-        'offline_fail_threshold' => $_POST['offline_fail_threshold'] ?? '3'
+        'offline_fail_threshold' => $_POST['offline_fail_threshold'] ?? '3',
+        'discord_enabled' => isset($_POST['discord_enabled']) ? '1' : '0',
+        'discord_webhook_url' => $_POST['discord_webhook_url'] ?? '',
+        'slack_enabled' => isset($_POST['slack_enabled']) ? '1' : '0',
+        'slack_webhook_url' => $_POST['slack_webhook_url'] ?? '',
+        'custom_netwatch_template' => $_POST['custom_netwatch_template'] ?? ''
     ];
 
     try {
@@ -213,6 +216,45 @@ include 'includes/header.php';
             <button type="submit" name="test_telegram" class="btn btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;">
                 <i data-lucide="zap"></i> Test Telegram Connection
             </button>
+        </div>
+
+        <!-- Webhooks Section -->
+        <div class="card" style="max-width: 800px; border-top: 4px solid #5865F2; margin-top: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
+                <div style="background: rgba(88, 101, 242, 0.1); padding: 8px; border-radius: 50%; color: #5865F2;">
+                    <i data-lucide="webhook" style="width: 20px;"></i>
+                </div>
+                <h3>Discord & Slack Webhooks</h3>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text); margin-bottom: 1rem;">
+                        <input type="checkbox" name="discord_enabled" value="1" <?php echo ($settings['discord_enabled'] ?? '0') == '1' ? 'checked' : ''; ?>> Discord
+                    </label>
+                    <input type="text" name="discord_webhook_url" class="input-control" value="<?php echo htmlspecialchars($settings['discord_webhook_url'] ?? ''); ?>" placeholder="https://discord.com/api/webhooks/...">
+                </div>
+                <div>
+                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text); margin-bottom: 1rem;">
+                        <input type="checkbox" name="slack_enabled" value="1" <?php echo ($settings['slack_enabled'] ?? '0') == '1' ? 'checked' : ''; ?>> Slack
+                    </label>
+                    <input type="text" name="slack_webhook_url" class="input-control" value="<?php echo htmlspecialchars($settings['slack_webhook_url'] ?? ''); ?>" placeholder="https://hooks.slack.com/services/...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Template Section -->
+        <div class="card" style="max-width: 800px; border-top: 4px solid var(--warning); margin-top: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                <div style="background: rgba(245, 158, 11, 0.1); padding: 8px; border-radius: 50%; color: var(--warning);">
+                    <i data-lucide="type" style="width: 20px;"></i>
+                </div>
+                <h3>Netwatch Message Template</h3>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                Placeholders: <b>{name}</b>, <b>{host}</b>, <b>{status}</b>, <b>{time}</b>, <b>{duration}</b>, <b>{latency}</b>
+            </p>
+            <textarea name="custom_netwatch_template" class="input-control" style="min-height: 120px; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;" placeholder="Leave empty for default enterprise template..."><?php echo htmlspecialchars($settings['custom_netwatch_template'] ?? ''); ?></textarea>
         </div>
     </div>
 

@@ -44,6 +44,12 @@ foreach ($targets as $t) {
         }
     }
 
+    $output_str = implode("\n", $output);
+    $latency = 0;
+    if (preg_match('/time[=<]\s*([\d.]+)\s*ms/i', $output_str, $matches)) {
+        $latency = (float)$matches[1];
+    }
+
     $new_status = $current_status;
     $new_fail_count = $fail_count;
     $update_fields = [];
@@ -70,7 +76,7 @@ foreach ($targets as $t) {
             }
 
             log_netwatch_change($id, $host, 'up');
-            send_netwatch_notification($t, 'up', $duration_text);
+            send_netwatch_notification($t, 'up', $duration_text, $latency);
         }
     } else {
         $new_fail_count++;
@@ -81,7 +87,7 @@ foreach ($targets as $t) {
             if ($current_status !== 'down') {
                 $update_fields[] = "last_down = NOW()";
                 log_netwatch_change($id, $host, 'down');
-                send_netwatch_notification($t, 'down');
+                send_netwatch_notification($t, 'down', '', $latency);
             }
         } else {
             // Even if it hasn't hit threshold, we show it's failing in the count
@@ -95,7 +101,16 @@ foreach ($targets as $t) {
     $sql = "UPDATE netwatch SET " . implode(', ', $update_fields) . " WHERE id = $id";
     $db->exec($sql);
 
-    echo "Target $host: ". strtoupper($new_status) . " (Fails: $new_fail_count) Output: " . ($output[1] ?? 'No output') . "\n";
+    // Recording History
+    try {
+        $stmt = $db->prepare("INSERT INTO netwatch_history (netwatch_id, latency, status) VALUES (?, ?, ?)");
+        $stmt->execute([$id, $latency, $new_status]);
+
+        // Cleanup old history (> 1 week) 
+        $db->exec("DELETE FROM netwatch_history WHERE recorded_at < NOW() - INTERVAL 7 DAY");
+    } catch (Exception $e) { /* silent */ }
+
+    echo "Target $host: ". strtoupper($new_status) . " ({$latency}ms) (Fails: $new_fail_count)\n";
 }
 
 /**
@@ -115,8 +130,12 @@ function log_netwatch_change($id, $host, $status) {
 /**
  * Helper to send notifications
  */
-function send_netwatch_notification($target, $status, $duration = '') {
+function send_netwatch_notification($target, $status, $duration = '', $latency = null) {
     if ($target['notify'] == 1) {
-        NotificationHelper::notifyNetwatch($target['name'], $target['host'], $status, $duration);
+        // Check Maintenance Mode
+        if (!empty($target['maintenance_until']) && strtotime($target['maintenance_until']) > time()) {
+            return; // SNOOZED
+        }
+        NotificationHelper::notifyNetwatch($target['name'], $target['host'], $status, $duration, $latency);
     }
 }
