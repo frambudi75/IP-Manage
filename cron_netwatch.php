@@ -13,13 +13,12 @@ set_time_limit(300);
 $db = get_db_connection();
 
 // Fetch all targets that need checking based on interval
-// Formula: (NOW - last_check) >= ping_interval
-$targets = $db->query("SELECT * FROM netwatch")->fetchAll();
+$targets = $db->query("SELECT * FROM netwatch WHERE last_check IS NULL OR TIMESTAMPDIFF(SECOND, last_check, NOW()) >= ping_interval")->fetchAll();
 
 echo "Starting Netwatch Scan at " . date('Y-m-d H:i:s') . "\n";
 
 foreach ($targets as $t) {
-    $host = $t['host'];
+    $host = trim($t['host']);
     $id = $t['id'];
     $current_status = $t['status'];
     $fail_count = (int)$t['fail_count'];
@@ -27,16 +26,22 @@ foreach ($targets as $t) {
 
     // Basic Ping check
     $is_up = false;
+    $output = [];
+    $result = -1;
     
     // Windows-specific ping (XAMPP usually on Windows)
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-        exec("ping -n 1 -w 1000 $host", $output, $result);
+        exec("ping -n 1 -w 1000 " . escapeshellarg($host) . " 2>&1", $output, $result);
     } else {
-        exec("ping -c 1 -W 1 $host", $output, $result);
+        exec("ping -c 1 -W 1 " . escapeshellarg($host) . " 2>&1", $output, $result);
     }
 
     if ($result === 0) {
-        $is_up = true;
+        // Double check output for "Reply from" or "64 bytes from" to be sure
+        $output_str = implode("\n", $output);
+        if (strpos($output_str, 'Reply from') !== false || strpos($output_str, 'bytes from') !== false) {
+            $is_up = true;
+        }
     }
 
     $new_status = $current_status;
@@ -49,10 +54,23 @@ foreach ($targets as $t) {
         $new_fail_count = 0;
         $update_fields[] = "last_up = NOW()";
         
-        // If it was down before, log it (State Change UP)
-        if ($current_status === 'down') {
+        // If it was down or unknown before, log it (State Change UP)
+        if ($current_status !== 'up') {
+            $duration_text = '';
+            if ($current_status === 'down' && !empty($t['last_down'])) {
+                $down_time = strtotime($t['last_down']);
+                $up_time = time();
+                $diff = $up_time - $down_time;
+                
+                $h = floor($diff / 3600);
+                $m = floor(($diff % 3600) / 60);
+                $s = $diff % 60;
+                
+                $duration_text = ($h > 0 ? "{$h}h " : "") . ($m > 0 ? "{$m}m " : "") . "{$s}s";
+            }
+
             log_netwatch_change($id, $host, 'up');
-            send_netwatch_notification($t, 'up');
+            send_netwatch_notification($t, 'up', $duration_text);
         }
     } else {
         $new_fail_count++;
@@ -65,6 +83,9 @@ foreach ($targets as $t) {
                 log_netwatch_change($id, $host, 'down');
                 send_netwatch_notification($t, 'down');
             }
+        } else {
+            // Even if it hasn't hit threshold, we show it's failing in the count
+            $new_status = 'unknown'; 
         }
     }
 
@@ -74,7 +95,7 @@ foreach ($targets as $t) {
     $sql = "UPDATE netwatch SET " . implode(', ', $update_fields) . " WHERE id = $id";
     $db->exec($sql);
 
-    echo "Target $host: ". strtoupper($new_status) . " (Fails: $new_fail_count)\n";
+    echo "Target $host: ". strtoupper($new_status) . " (Fails: $new_fail_count) Output: " . ($output[1] ?? 'No output') . "\n";
 }
 
 /**
@@ -94,8 +115,8 @@ function log_netwatch_change($id, $host, $status) {
 /**
  * Helper to send notifications
  */
-function send_netwatch_notification($target, $status) {
+function send_netwatch_notification($target, $status, $duration = '') {
     if ($target['notify'] == 1) {
-        NotificationHelper::notifyNetwatch($target['name'], $target['host'], $status);
+        NotificationHelper::notifyNetwatch($target['name'], $target['host'], $status, $duration);
     }
 }

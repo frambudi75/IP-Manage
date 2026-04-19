@@ -15,6 +15,7 @@ function get_db_connection() {
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        $pdo->exec("SET time_zone = '+07:00'");
         run_auto_migrations($pdo);
         return $pdo;
     } catch (\PDOException $e) {

@@ -14,6 +14,14 @@ $page_title = 'Netwatch Monitoring';
 
 // Handle Add/Edit/Delete Actions
 $message = '';
+
+if (isset($_GET['msg'])) {
+    if ($_GET['msg'] === 'added') $message = 'Success: Target added successfully!';
+    if ($_GET['msg'] === 'updated') $message = 'Success: Target updated successfully!';
+    if ($_GET['msg'] === 'deleted') $message = 'Success: Target deleted successfully!';
+    if ($_GET['msg'] === 'error') $message = 'Error: ' . ($_SESSION['last_error'] ?? 'An unknown error occurred.');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_netwatch'])) {
         $name = $_POST['name'] ?? '';
@@ -25,9 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare("INSERT INTO netwatch (name, host, ping_interval, fail_threshold, notify) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$name, $host, $interval, $threshold, $notify]);
-            $message = 'Sucess: Target added successfully!';
+            header('Location: netwatch?msg=added');
+            exit;
         } catch (Exception $e) {
-            $message = 'Error: ' . $e->getMessage();
+            $_SESSION['last_error'] = $e->getMessage();
+            header('Location: netwatch?msg=error');
+            exit;
         }
     }
 
@@ -42,9 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare("UPDATE netwatch SET name = ?, host = ?, ping_interval = ?, fail_threshold = ?, notify = ? WHERE id = ?");
             $stmt->execute([$name, $host, $interval, $threshold, $notify, $id]);
-            $message = 'Success: Target updated successfully!';
+            header('Location: netwatch?msg=updated');
+            exit;
         } catch (Exception $e) {
-            $message = 'Error: ' . $e->getMessage();
+            $_SESSION['last_error'] = $e->getMessage();
+            header('Location: netwatch?msg=error');
+            exit;
         }
     }
 }
@@ -135,11 +149,14 @@ function runScanner() {
         .then(response => response.text())
         .then(data => {
             console.log(data);
+            if (data.includes('Failed')) {
+                alert('Scan selesai, tapi ada GAGAL kirim notifikasi:\n\n' + data);
+            }
             location.reload();
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Scan failed!');
+            alert('Scan failed! Check console for details.');
             btn.disabled = false;
             btn.innerHTML = originalContent;
             lucide.createIcons();
@@ -148,8 +165,12 @@ function runScanner() {
 </script>
 
 <?php if ($message): ?>
-    <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); border-radius: 8px; margin-bottom: 1.5rem;">
-        <?php echo htmlspecialchars($message); ?>
+    <div style="padding: 1rem; background: <?php echo strpos($message, 'Error') === 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'; ?>; border: 1px solid <?php echo strpos($message, 'Error') === 0 ? '#ef4444' : 'var(--success)'; ?>; color: <?php echo strpos($message, 'Error') === 0 ? '#ef4444' : 'var(--success)'; ?>; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="<?php echo strpos($message, 'Error') === 0 ? 'alert-circle' : 'check-circle'; ?>" style="width: 18px;"></i>
+        <?php 
+        echo htmlspecialchars($message); 
+        if (isset($_SESSION['last_error'])) unset($_SESSION['last_error']);
+        ?>
     </div>
 <?php endif; ?>
 

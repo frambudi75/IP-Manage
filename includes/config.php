@@ -17,6 +17,9 @@ require_once 'version.php';
 require_once 'settings.helper.php';
 require_once 'updater.php';
 
+// Regional Settings
+date_default_timezone_set('Asia/Jakarta');
+
 // Dynamic Configuration from Database
 define('DISCOVERY_AGGRESSIVE_MODE', Settings::enabled('discovery_aggressive'));
 define('ENABLE_NMAP_FALLBACK', Settings::enabled('nmap_enabled'));

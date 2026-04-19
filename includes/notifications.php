@@ -200,7 +200,7 @@ class NotificationHelper {
     /**
      * Notify when a Netwatch target changes status.
      */
-    public static function notifyNetwatch($name, $host, $status) {
+    public static function notifyNetwatch($name, $host, $status, $duration = null) {
         $telegram_enabled = Settings::enabled('telegram_enabled');
         $email_enabled = Settings::enabled('email_enabled');
 
@@ -209,13 +209,17 @@ class NotificationHelper {
         $icon = ($status === 'up') ? "✅" : "🚨";
         $state_text = strtoupper($status);
 
+        $success = false;
         if ($telegram_enabled) {
-            $message = "{$icon} *Netwatch Alert: {$state_text}*\n\n";
-            $message .= "🖥 *Device:* {$name}\n";
-            $message .= "🌐 *Host:* `{$host}`\n";
-            $message .= "📊 *Status:* **{$state_text}**\n";
-            $message .= "🕒 *Time:* " . date('Y-m-d H:i:s');
-            self::sendTelegram($message);
+            $message = "{$icon} <b>Netwatch Alert: {$state_text}</b>\n\n";
+            $message .= "🖥 <b>Device:</b> {$name}\n";
+            $message .= "🌐 <b>Host:</b> <code>{$host}</code>\n";
+            $message .= "📊 <b>Status:</b> <b>{$state_text}</b>\n";
+            if ($status === 'up' && !empty($duration)) {
+                $message .= "⏱ <b>Downtime:</b> <code>{$duration}</code>\n";
+            }
+            $message .= "\n🕒 <b>Time:</b> " . date('Y-m-d H:i:s');
+            if (self::sendTelegram($message)) $success = true;
         }
 
         if ($email_enabled) {
@@ -229,11 +233,17 @@ class NotificationHelper {
                 'Check Time' => date('Y-m-d H:i:s')
             ];
 
+            if ($status === 'up' && !empty($duration)) {
+                $details['Downtime Duration'] = $duration;
+            }
+
             $lead = "Monitoring system telah mendeteksi perubahan status pada perangkat <b>{$name}</b>.";
             $body = self::getPremiumEmailTemplate("Netwatch: {$state_text}", $lead, $details, $type, '/netwatch');
             
-            self::sendEmail($subject, $body);
+            if (self::sendEmail($subject, $body)) $success = true;
         }
+        
+        return $success || (!$telegram_enabled && !$email_enabled);
     }
 
     public static function testTelegram() {
@@ -260,7 +270,8 @@ class NotificationHelper {
         $data = [
             'chat_id' => $chat_id,
             'text' => $text,
-            'parse_mode' => 'Markdown'
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => true
         ];
 
         $options = [
@@ -273,7 +284,13 @@ class NotificationHelper {
         ];
 
         $context  = stream_context_create($options);
-        return @file_get_contents($url, false, $context);
+        $result = file_get_contents($url, false, $context);
+        if ($result === false) {
+            $error = error_get_last();
+            error_log("Telegram Send Error: " . ($error['message'] ?? 'Unknown error'));
+            return false;
+        }
+        return true;
     }
 
     /**
