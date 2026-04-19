@@ -212,47 +212,60 @@ class NotificationHelper {
         $state_text = strtoupper($status);
         $time = date('Y-m-d H:i:s');
 
-        // Custom Template logic
-        $template = Settings::get('custom_netwatch_template');
-        if (!empty($template)) {
-            $placeholders = [
-                '{name}' => $name,
-                '{host}' => $host,
-                '{status}' => $state_text,
-                '{time}' => $time,
-                '{duration}' => $duration ? $duration : '-',
-                '{latency}' => $latency ? $latency . 'ms' : '-'
-            ];
-            $t_message = str_replace(array_keys($placeholders), array_values($placeholders), $template);
-        } else {
-            // Default Enterprise Text
-            $t_message = "{$icon} <b>Netwatch Alert: {$state_text}</b>\n\n";
-            $t_message .= "🖥 <b>Device:</b> {$name}\n";
-            $t_message .= "🌐 <b>Host:</b> <code>{$host}</code>\n";
-            $t_message .= "📊 <b>Status:</b> <b>{$state_text}</b>\n";
-            if ($latency) $t_message .= "⚡ <b>Latency:</b> <code>{$latency}ms</code>\n";
-            if ($status === 'up' && !empty($duration)) {
-                $t_message .= "⏱ <b>Downtime:</b> <code>{$duration}</code>\n";
-            }
-            $t_message .= "\n🕒 <b>Time:</b> " . $time;
+        // 1. TELEGRAM & EMAIL MESSAGE (Always Clean HTML)
+        $html_message = "{$icon} <b>Netwatch Alert: {$state_text}</b>\n\n";
+        $html_message .= "🖥 <b>Device:</b> {$name}\n";
+        $html_message .= "🌐 <b>Host:</b> <code>{$host}</code>\n";
+        $html_message .= "📊 <b>Status:</b> <b>{$state_text}</b>\n";
+        if ($latency) $html_message .= "⚡ <b>Latency:</b> <code>{$latency}ms</code>\n";
+        if ($status === 'up' && !empty($duration)) {
+            $html_message .= "⏱ <b>Downtime:</b> <code>{$duration}</code>\n";
         }
+        $html_message .= "\n🕒 <b>Time:</b> " . $time;
+
+        // 2. DISCORD & SLACK MESSAGE (Custom or Built-in Markdown)
+        $template = Settings::get('custom_netwatch_template');
+        if (empty($template)) {
+            // Default built-in Discord modern style
+            $template = "**[ NETWATCH MONITORING ALERT ]**\n";
+            $template .= "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n";
+            $template .= "🖥 **Perangkat:** {name}\n";
+            $template .= "🌐 **Host / IP:** `{host}`\n";
+            $template .= "📊 **Status:** **{status}**\n";
+            $template .= "⚡ **Latency:** `{latency}`\n";
+            $template .= "⏱ **Durasi Down:** `{duration}`\n";
+            $template .= "🕒 **Waktu:** {time}\n";
+            $template .= "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬";
+        }
+
+        $placeholders = [
+            '{name}' => $name,
+            '{host}' => $host,
+            '{status}' => $state_text,
+            '{time}' => $time,
+            '{duration}' => $duration ? $duration : '-',
+            '{latency}' => $latency ? $latency . 'ms' : '-'
+        ];
+        $markdown_message = str_replace(array_keys($placeholders), array_values($placeholders), $template);
 
         $success = false;
+        
+        // Send to Telegram
         if ($telegram_enabled) {
-            if (self::sendTelegram($t_message)) $success = true;
+            if (self::sendTelegram($html_message)) $success = true;
         }
 
+        // Send to Discord
         if ($discord_enabled) {
-            // Discord doesn't support <b>, convert or use plain (Discord uses Markdown)
-            $discord_msg = str_replace(['<b>', '</b>', '<code>', '</code>'], ['**', '**', '`', '`'], $t_message);
-            if (self::sendDiscord($discord_msg)) $success = true;
+            if (self::sendDiscord($markdown_message)) $success = true;
         }
 
+        // Send to Slack
         if ($slack_enabled) {
-            $slack_msg = str_replace(['<b>', '</b>', '<code>', '</code>'], ['*', '*', '`', '`'], $t_message);
-            if (self::sendSlack($slack_msg)) $success = true;
+            if (self::sendSlack($markdown_message)) $success = true;
         }
 
+        // Send to Email
         if ($email_enabled) {
             $type = ($status === 'up') ? 'success' : 'danger';
             $subject = "{$icon} Netwatch Alert: {$name} is {$state_text}";
