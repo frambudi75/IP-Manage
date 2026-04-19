@@ -2,6 +2,17 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.18.1] - 2026-04-19
+### Added
+- **Downtime Duration Tracking**: Alerts now automatically calculate and display how long a host was offline once it recovers.
+- **Regional Timezone Sync**: Enforced `Asia/Jakarta` (WIB) timezone alignment across PHP and Database sessions for accurate logging.
+
+### Fixed
+- **Ping Engine Robustness**: Optimized Windows ICMP parsing to handle diverse OS output formats correctly.
+- **Form Resubmission Bug**: Implemented PRG (Post/Redirect/Get) pattern for Netwatch targets to prevent duplicate entries on refresh.
+- **Telegram Notification Stability**: Switched notification payload to HTML mode with built-in character escaping for 100% delivery reliability.
+- **Interval Enforcement**: Fixed background logic to strictly honor per-target ping intervals.
+
 ## [2.18.0] - 2026-04-16
 ### Added
 - **Netwatch Monitoring Module**: Implementation of a proactive host availability tracking system inspired by MikroTik.
