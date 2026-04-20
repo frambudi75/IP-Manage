@@ -132,6 +132,7 @@ try {
 }
 ?>
 
+<?php if (is_admin()): ?>
 <!-- Asset Monitoring Overview -->
 <div class="section-container animate-up" style="margin-bottom: 2rem;">
     <h2 class="page-header-small" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
@@ -169,6 +170,7 @@ try {
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Netwatch Monitoring Overview -->
 <div class="section-container animate-up" style="margin-bottom: 2rem; animation-delay: 0.05s;">

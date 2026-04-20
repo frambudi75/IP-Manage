@@ -29,11 +29,13 @@
                     <i data-lucide="server"></i> Managed Switches
                 </a>
             </li>
+            <?php if (is_admin()): ?>
             <li>
                 <a href="server-assets" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'server-assets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="database"></i> Server Assets
                 </a>
             </li>
+            <?php endif; ?>
             <li>
                 <a href="subnets" class="btn" style="width: 100%; justify-content: flex-start; background: <?php echo basename($_SERVER['PHP_SELF']) == 'subnets.php' ? 'var(--surface-light)' : 'transparent'; ?>">
                     <i data-lucide="layers"></i> Subnets

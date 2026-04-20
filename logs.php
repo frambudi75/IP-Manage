@@ -8,6 +8,11 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+if (!is_admin()) {
+    header('Location: index');
+    exit;
+}
+
 $db = get_db_connection();
 
 // Pagination

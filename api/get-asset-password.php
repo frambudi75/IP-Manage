@@ -12,6 +12,10 @@ if (!isset($_SESSION['user_id'])) {
     json_response(['error' => 'Unauthorized'], 401);
 }
 
+if (!is_admin()) {
+    json_response(['error' => 'Forbidden'], 403);
+}
+
 $id = $_GET['id'] ?? null;
 if (!$id) {
     json_response(['error' => 'Asset ID required'], 400);
