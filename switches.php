@@ -137,7 +137,7 @@ include 'includes/header.php';
             <i data-lucide="x"></i>
         </button>
         <h2 style="margin-bottom: 1.5rem;">Add Managed Switch</h2>
-        <form action="" method="POST">
+        <form action="" method="POST" autocomplete="off">
             <div class="input-group">
                 <label>Switch Name</label>
                 <input type="text" name="name" class="input-control" placeholder="e.g. Core-SW-01" required>
