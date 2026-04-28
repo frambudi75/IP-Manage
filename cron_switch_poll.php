@@ -379,6 +379,12 @@ foreach ($switches as $switch) {
                     }
                 }
                 
+                // Fallback: If still no ifIndex, assume ifIndex = bridge_port
+                // Many switches (like TP-Link, HP, Huawei) map bridge port directly to ifIndex 1:1
+                if (!$ifindex) {
+                    $ifindex = $bridge_port;
+                }
+                
                 // Smart port name resolution with vendor-aware fallback
                 $raw_name = $name_map[$ifindex] ?? null;
                 $port_name = normalize_port_name($raw_name, $bridge_port, $ifindex, $system_info);
