@@ -182,7 +182,9 @@ CREATE TABLE `switches` (
   `uptime` varchar(100) DEFAULT NULL,
   `cpu_usage` int(11) DEFAULT 0,
   `memory_usage` int(11) DEFAULT 0,
-  `system_info` text DEFAULT NULL
+  `system_info` text DEFAULT NULL,
+  `total_ports` int(11) DEFAULT 0,
+  `active_ports` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -203,6 +205,10 @@ CREATE TABLE `switch_port_map` (
   `switch_id` int(11) NOT NULL,
   `port_name` varchar(100) NOT NULL,
   `vlan_id` int(11) DEFAULT NULL,
+  `port_status` varchar(20) DEFAULT NULL,
+  `port_type` varchar(30) DEFAULT NULL,
+  `port_speed` varchar(10) DEFAULT NULL,
+  `port_alias` varchar(200) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -99,6 +99,9 @@ include 'includes/header.php';
         <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
             <p style="margin-bottom: 0.4rem;"><i data-lucide="cpu" style="width: 14px; vertical-align: middle;"></i> Model: <strong><?php echo htmlspecialchars($switch['model'] ?? 'Unknown'); ?></strong></p>
             <p style="margin-bottom: 0.4rem;"><i data-lucide="timer" style="width: 14px; vertical-align: middle;"></i> Uptime: <?php echo htmlspecialchars($switch['uptime'] ?? '-'); ?></p>
+            <?php if (isset($switch['total_ports']) && $switch['total_ports'] > 0): ?>
+            <p style="margin-bottom: 0.4rem;"><i data-lucide="cable" style="width: 14px; vertical-align: middle;"></i> Ports: <strong style="color: var(--success);"><?php echo (int)$switch['active_ports']; ?></strong> / <?php echo (int)$switch['total_ports']; ?> up</p>
+            <?php endif; ?>
             <p style="margin-bottom: 0.4rem;"><i data-lucide="shield" style="width: 14px; vertical-align: middle;"></i> Community: <?php echo htmlspecialchars($switch['community']); ?></p>
             <p><i data-lucide="clock" style="width: 14px; vertical-align: middle;"></i> Last Poll: <?php echo $switch['last_poll'] ? date('d M Y H:i', strtotime($switch['last_poll'])) : 'Never'; ?></p>
         </div>

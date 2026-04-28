@@ -32,6 +32,10 @@ $query = "
         m.mac_addr, 
         m.port_name, 
         m.vlan_id,
+        m.port_status,
+        m.port_type,
+        m.port_speed,
+        m.port_alias,
         m.updated_at as last_seen_on_port,
         ip.ip_addr,
         ip.hostname,
@@ -106,6 +110,14 @@ include 'includes/header.php';
                 <span style="color:var(--text-muted)">Uptime:</span>
                 <span style="font-weight: 600; text-align: right;"><?php echo htmlspecialchars($switch['uptime'] ?? '-'); ?></span>
             </div>
+            <?php if (isset($switch['total_ports']) && $switch['total_ports'] > 0): ?>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color:var(--text-muted)">Ports:</span>
+                <span style="font-weight: 600; text-align: right;">
+                    <span style="color: var(--success);"><?php echo (int)$switch['active_ports']; ?></span> / <?php echo (int)$switch['total_ports']; ?> up
+                </span>
+            </div>
+            <?php endif; ?>
             <div style="display: flex; justify-content: space-between;">
                 <span style="color:var(--text-muted)">Last Updated:</span>
                 <span id="last-poll-val" style="font-weight: 600; text-align: right;"><?php echo $switch['last_poll'] ? date('H:i:s, d M', strtotime($switch['last_poll'])) : 'Never'; ?></span>
@@ -122,12 +134,19 @@ include 'includes/header.php';
 
     <!-- Port Mapping Table -->
     <div class="card">
-        <h3 style="font-size: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Device Port Mapping</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            <h3 style="font-size: 1rem; margin: 0;">Device Port Mapping</h3>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="text" id="portSearch" placeholder="Filter..." class="input-control" style="width: 180px; padding: 6px 12px; font-size: 0.8rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><?php echo count($ports); ?> entries</span>
+            </div>
+        </div>
         <div class="table-responsive">
-            <table style="width: 100%; border-collapse: collapse;">
+            <table style="width: 100%; border-collapse: collapse;" id="portTable">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border); text-align: left;">
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Interface</th>
+                        <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Status</th>
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">VLAN</th>
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">MAC Address</th>
                         <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">Mapped IP</th>
@@ -138,16 +157,56 @@ include 'includes/header.php';
                 <tbody>
                     <?php if (empty($ports)): ?>
                         <tr>
-                            <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No devices discovered on this switch yet. Run a poll to start.</td>
+                            <td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No devices discovered on this switch yet. Run a poll to start.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($ports as $port): ?>
-                            <tr style="border-bottom: 1px solid var(--border);">
-                                <td style="padding: 1rem; font-weight: 700; color: var(--primary); white-space: nowrap;">
+                            <?php
+                                $status = $port['port_status'] ?? null;
+                                $statusColor = match($status) {
+                                    'up' => 'var(--success)',
+                                    'down' => 'var(--danger)',
+                                    'dormant' => 'var(--warning)',
+                                    default => 'var(--text-muted)'
+                                };
+                                $statusIcon = match($status) {
+                                    'up' => 'circle-check',
+                                    'down' => 'circle-x',
+                                    'dormant' => 'circle-pause',
+                                    default => 'circle-help'
+                                };
+                                $typeLabel = $port['port_type'] ?? null;
+                                $speedLabel = $port['port_speed'] ?? null;
+                            ?>
+                            <tr style="border-bottom: 1px solid var(--border);" class="port-row">
+                                <td style="padding: 1rem; white-space: nowrap;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <i data-lucide="zap" style="width: 14px;"></i>
-                                        <?php echo htmlspecialchars($port['port_name']); ?>
+                                        <i data-lucide="cable" style="width: 14px; color: <?php echo $statusColor; ?>;"></i>
+                                        <div>
+                                            <div style="font-weight: 700; color: var(--primary);"><?php echo htmlspecialchars($port['port_name']); ?></div>
+                                            <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 6px; margin-top: 2px;">
+                                                <?php if ($typeLabel && $typeLabel !== 'other'): ?>
+                                                    <span><?php echo htmlspecialchars($typeLabel); ?></span>
+                                                <?php endif; ?>
+                                                <?php if ($speedLabel): ?>
+                                                    <span>• <?php echo htmlspecialchars($speedLabel); ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($port['port_alias'])): ?>
+                                                    <span title="<?php echo htmlspecialchars($port['port_alias']); ?>">• <?php echo htmlspecialchars(substr($port['port_alias'], 0, 20)); ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
                                     </div>
+                                </td>
+                                <td style="padding: 1rem;">
+                                    <?php if ($status): ?>
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: <?php echo $status === 'up' ? 'rgba(34,197,94,0.1)' : ($status === 'down' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)'); ?>; color: <?php echo $statusColor; ?>;">
+                                            <i data-lucide="<?php echo $statusIcon; ?>" style="width: 12px;"></i>
+                                            <?php echo strtoupper($status); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="padding: 1rem;">
                                     <?php if ($port['vlan_id']): ?>
@@ -227,6 +286,14 @@ include 'includes/header.php';
 </div>
 
 <script>
+// Port search filter
+document.getElementById('portSearch')?.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.port-row').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+
 (function() {
     const switchId = <?php echo $id; ?>;
     const badge    = document.getElementById('live-badge');
