@@ -124,6 +124,13 @@ try {
         ORDER BY ip.confidence_score ASC, ip.last_seen DESC
         LIMIT 10
     ")->fetchAll();
+
+    // Switch Capacity Data
+    $switch_stats = $db->query("SELECT SUM(total_ports) as total, SUM(active_ports) as active, COUNT(*) as count FROM switches")->fetch(PDO::FETCH_ASSOC);
+    $total_switch_ports = (int)($switch_stats['total'] ?? 0);
+    $active_switch_ports = (int)($switch_stats['active'] ?? 0);
+    $switch_count = (int)($switch_stats['count'] ?? 0);
+    
 } catch (Exception $e) {
     $subnet_count = 0; $ip_count = 0; $vlan_count = 0;
     $active_count = 0; $offline_count = 0; $avg_confidence = 0; $low_confidence_count = 0;
@@ -206,6 +213,45 @@ try {
                 <p style="color: var(--text-muted); font-size: 0.875rem;">Hosts DOWN</p>
                 <h3 style="font-size: 1.875rem; font-weight: 700;"><?php echo $netwatch_down; ?></h3>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Switch Capacity Overview -->
+<div class="section-container animate-up" style="margin-bottom: 2rem; animation-delay: 0.1s;">
+    <h2 class="page-header-small" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+        <i data-lucide="server" style="color: var(--success);"></i> Switch Hardware Capacity
+    </h2>
+    <div class="card" style="display: flex; align-items: center; gap: 2rem; padding: 1.5rem;">
+        <div style="flex-shrink: 0; position: relative; width: 120px; height: 120px;">
+            <canvas id="switchCapacityChart"></canvas>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                <?php $pct = $total_switch_ports > 0 ? round(($active_switch_ports / $total_switch_ports) * 100) : 0; ?>
+                <span style="display: block; font-size: 1.5rem; font-weight: 700;"><?php echo $pct; ?>%</span>
+            </div>
+        </div>
+        <div style="flex-grow: 1;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem;"><?php echo number_format($total_switch_ports); ?></h3>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Total Physical Ports</p>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--success); margin-bottom: 0.25rem;"><?php echo number_format($active_switch_ports); ?></h3>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Active / UP</p>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem;"><?php echo number_format($total_switch_ports - $active_switch_ports); ?></h3>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Available / DOWN</p>
+                </div>
+            </div>
+            <div style="height: 10px; background: rgba(0,0,0,0.1); border-radius: 5px; overflow: hidden; display: flex;">
+                <div style="width: <?php echo $pct; ?>%; background: var(--success);"></div>
+                <div style="flex-grow: 1; background: var(--surface-light);"></div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">
+                Capacity data aggregated from <strong><?php echo $switch_count; ?></strong> managed switches via SNMP.
+            </p>
         </div>
     </div>
 </div>
@@ -487,6 +533,31 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             cutout: '85%',
             events: [], // Disable hover events for simple progress
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+
+    // Switch Capacity Radial Chart
+    const switchCtx = document.getElementById('switchCapacityChart').getContext('2d');
+    new Chart(switchCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Active Ports', 'Available Ports'],
+            datasets: [{
+                data: [<?php echo $active_switch_ports; ?>, <?php echo max(0, $total_switch_ports - $active_switch_ports); ?>],
+                backgroundColor: ['#10b981', 'rgba(16, 185, 129, 0.1)'],
+                borderWidth: 0,
+                circumference: 360,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
             plugins: {
                 legend: { display: false },
                 tooltip: { enabled: false }

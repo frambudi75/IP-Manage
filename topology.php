@@ -13,7 +13,7 @@ $db = get_db_connection();
 $page_title = "Network Topology Map";
 
 // Fetch switches 
-$switches = $db->query("SELECT id, name, ip_addr FROM switches ORDER BY name ASC")->fetchAll();
+$switches = $db->query("SELECT id, name, ip_addr, parent_switch_id FROM switches ORDER BY name ASC")->fetchAll();
 
 // Fetch subnets
 $subnets = $db->query("
@@ -59,11 +59,20 @@ foreach ($subnets as $sub) {
 $rendered_sw_vlan_links = [];
 $rendered_vlan_sub_links = [];
 
+// --- Auto-generated Switch Hierarchy ---
+foreach ($switches as $sw) {
+    if (!empty($sw['parent_switch_id'])) {
+        $mermaid_logic .= "    SW_" . $sw['parent_switch_id'] . " ==> SW_" . $sw['id'] . "\n";
+    }
+}
+
+// --- Draw Manual Links ---
 foreach ($manual_links as $link) {
     $source = "SW_" . $link['parent_switch_id'];
     
     if ($link['target_type'] == 'switch') {
-        $mermaid_logic .= "    " . $source . " ==> SW_" . $link['target_id'] . "\n";
+        // Draw as a dotted line to indicate it's a manual override/redundant link
+        $mermaid_logic .= "    " . $source . " -.-> SW_" . $link['target_id'] . "\n";
     } else {
         $sub_id = $link['target_id'];
         $target_sub = null;
