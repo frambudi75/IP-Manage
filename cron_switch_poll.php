@@ -262,6 +262,15 @@ foreach ($switches as $switch) {
         // OID: .1.3.6.1.2.1.2.2.1.3 (ifType)
         $iftype_map = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.3");
         
+        // 4.5 Get VLAN Names
+        // Standard OID: dot1qVlanStaticName (.1.3.6.1.2.1.17.7.1.4.3.1.1)
+        echo "  Fetching VLAN names...\n";
+        $vlan_names = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.17.7.1.4.3.1.1");
+        if (empty($vlan_names) && stripos($system_info, 'Cisco') !== false) {
+            // Cisco VTP VLAN names
+            $vlan_names = snmp_walk_indexed($ip, $community, ".1.3.6.1.4.1.9.9.46.1.3.1.1.4.1");
+        }
+        
         // 5. Get interface speed (ifHighSpeed in Mbps, fallback ifSpeed in bps)
         $ifhighspeed_map = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.31.1.1.1.15");
         $ifspeed_map = [];
@@ -416,12 +425,18 @@ foreach ($switches as $switch) {
                     $port_speed = format_speed($ifspeed_map[$ifindex]);
                 }
                 
+                // Resolve VLAN Name
+                $vlan_name = null;
+                if ($vlan_id && isset($vlan_names[$vlan_id])) {
+                    $vlan_name = trim($vlan_names[$vlan_id], '" ');
+                }
+                
                 // Build alias info (stored as description for additional context)
                 $port_alias = $name_map_ifalias[$ifindex] ?? null;
                 
                 if ($mac_addr && $port_name) {
-                    $stmt = $db->prepare("INSERT INTO switch_port_map (mac_addr, switch_id, port_name, vlan_id, port_status, port_type, port_speed, port_alias) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE port_name = VALUES(port_name), vlan_id = VALUES(vlan_id), port_status = VALUES(port_status), port_type = VALUES(port_type), port_speed = VALUES(port_speed), port_alias = VALUES(port_alias), updated_at = CURRENT_TIMESTAMP");
-                    $stmt->execute([$mac_addr, $switch['id'], $port_name, $vlan_id, $port_status, $port_type, $port_speed, $port_alias]);
+                    $stmt = $db->prepare("INSERT INTO switch_port_map (mac_addr, switch_id, port_name, vlan_id, vlan_name, port_status, port_type, port_speed, port_alias) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE port_name = VALUES(port_name), vlan_id = VALUES(vlan_id), vlan_name = VALUES(vlan_name), port_status = VALUES(port_status), port_type = VALUES(port_type), port_speed = VALUES(port_speed), port_alias = VALUES(port_alias), updated_at = CURRENT_TIMESTAMP");
+                    $stmt->execute([$mac_addr, $switch['id'], $port_name, $vlan_id, $vlan_name, $port_status, $port_type, $port_speed, $port_alias]);
                     $discovered_count++;
                 }
             }

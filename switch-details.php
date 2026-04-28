@@ -32,6 +32,7 @@ $query = "
         m.mac_addr, 
         m.port_name, 
         m.vlan_id,
+        m.vlan_name,
         m.port_status,
         m.port_type,
         m.port_speed,
@@ -224,9 +225,12 @@ include 'includes/header.php';
                                 </td>
                                 <td style="padding: 1rem;">
                                     <?php if ($port['vlan_id']): ?>
-                                        <span style="display: inline-block; padding: 2px 8px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-                                            ID: <?php echo $port['vlan_id']; ?>
-                                        </span>
+                                        <div style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: rgba(99, 102, 241, 0.1); border-radius: 4px;">
+                                            <span style="color: var(--primary); font-size: 0.75rem; font-weight: 800;">ID: <?php echo $port['vlan_id']; ?></span>
+                                            <?php if (!empty($port['vlan_name'])): ?>
+                                                <span style="color: var(--text-muted); font-size: 0.65rem; border-left: 1px solid rgba(99, 102, 241, 0.3); padding-left: 4px; margin-left: 2px;"><?php echo htmlspecialchars($port['vlan_name']); ?></span>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
                                         <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
                                     <?php endif; ?>

@@ -45,11 +45,19 @@ try {
         echo "Updating switch_port_map table with new columns...\n";
         $sql = "ALTER TABLE `switch_port_map`
                 ADD COLUMN `port_status` VARCHAR(20) DEFAULT NULL AFTER `vlan_id`,
-                ADD COLUMN `port_type` VARCHAR(30) DEFAULT NULL AFTER `port_status`,
+                ADD COLUMN `vlan_name` VARCHAR(100) DEFAULT NULL AFTER `port_status`,
+                ADD COLUMN `port_type` VARCHAR(30) DEFAULT NULL AFTER `vlan_name`,
                 ADD COLUMN `port_speed` VARCHAR(10) DEFAULT NULL AFTER `port_type`,
                 ADD COLUMN `port_alias` VARCHAR(200) DEFAULT NULL AFTER `port_speed`;";
         $db->exec($sql);
         echo "switch_port_map table updated.\n";
+    } else {
+        // Fallback for vlan_name if port_status was already added previously
+        $vlanNameCol = $db->query("SHOW COLUMNS FROM `switch_port_map` LIKE 'vlan_name'")->rowCount();
+        if ($vlanNameCol === 0) {
+            $db->exec("ALTER TABLE `switch_port_map` ADD COLUMN `vlan_name` VARCHAR(100) DEFAULT NULL AFTER `vlan_id`");
+            echo "Added vlan_name to switch_port_map.\n";
+        }
     }
     
     // Check and update `switches` columns
