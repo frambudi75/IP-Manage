@@ -35,9 +35,35 @@ try {
         
         $db->exec($sql);
         echo "Table 'netwatch' created successfully.\n";
-    } else {
-        echo "Database schema is up to date.\n";
     }
+
+    // --- Switch SNMP Port Monitoring Updates ---
+    
+    // Check and update `switch_port_map` columns
+    $portMapCols = $db->query("SHOW COLUMNS FROM `switch_port_map` LIKE 'port_status'")->rowCount();
+    if ($portMapCols === 0) {
+        echo "Updating switch_port_map table with new columns...\n";
+        $sql = "ALTER TABLE `switch_port_map`
+                ADD COLUMN `port_status` VARCHAR(20) DEFAULT NULL AFTER `vlan_id`,
+                ADD COLUMN `port_type` VARCHAR(30) DEFAULT NULL AFTER `port_status`,
+                ADD COLUMN `port_speed` VARCHAR(10) DEFAULT NULL AFTER `port_type`,
+                ADD COLUMN `port_alias` VARCHAR(200) DEFAULT NULL AFTER `port_speed`;";
+        $db->exec($sql);
+        echo "switch_port_map table updated.\n";
+    }
+    
+    // Check and update `switches` columns
+    $switchCols = $db->query("SHOW COLUMNS FROM `switches` LIKE 'total_ports'")->rowCount();
+    if ($switchCols === 0) {
+        echo "Updating switches table with new columns...\n";
+        $sql = "ALTER TABLE `switches`
+                ADD COLUMN `total_ports` INT(11) DEFAULT 0 AFTER `system_info`,
+                ADD COLUMN `active_ports` INT(11) DEFAULT 0 AFTER `total_ports`;";
+        $db->exec($sql);
+        echo "switches table updated.\n";
+    }
+
+    echo "Database schema is up to date.\n";
 
 } catch (Exception $e) {
     echo "Migration Error: " . $e->getMessage() . "\n";
