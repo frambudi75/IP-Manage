@@ -2,6 +2,14 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.20.0] - 2026-04-28
+### Added
+- **SNMP Switch Monitoring**: Granular discovery of port status, VLAN names, interface speed, and port aliases.
+- **Auto-Generated Topology Map**: The network map now automatically visualizes the switch hierarchy using `Parent Switch` relationships.
+- **Switch Hardware Dashboard**: New "Switch Hardware Capacity" widget on the main dashboard for global port tracking (Active vs Available).
+- **Uplink/Trunk Detection**: Intelligent identification of uplink ports based on MAC address density (>3 MACs per port).
+- **Multi-vendor Fallback**: Optimized SNMP polling for Huawei, TP-Link, and Ruijie switches via bridge-port to ifIndex mapping.
+
 ## [2.19.0] - 2026-04-19
 ### Added
 - **Netwatch Latency History**: Visual graphing of host response time (ms) over the last 24 hours using Chart.js.
