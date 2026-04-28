@@ -49,6 +49,12 @@ $stmt = $db->prepare($query);
 $stmt->execute([$id]);
 $ports = $stmt->fetchAll();
 
+// Pre-calculate MAC count per port to identify uplinks
+$port_mac_counts = [];
+foreach ($ports as $p) {
+    $port_mac_counts[$p['port_name']] = ($port_mac_counts[$p['port_name']] ?? 0) + 1;
+}
+
 $page_title = "Switch: " . $switch['name'];
 include 'includes/header.php';
 ?>
@@ -177,13 +183,21 @@ include 'includes/header.php';
                                 };
                                 $typeLabel = $port['port_type'] ?? null;
                                 $speedLabel = $port['port_speed'] ?? null;
+                                
+                                // Check if this is likely an uplink port (> 3 MACs on the same port)
+                                $is_uplink = ($port_mac_counts[$port['port_name']] ?? 0) > 3;
                             ?>
                             <tr style="border-bottom: 1px solid var(--border);" class="port-row">
                                 <td style="padding: 1rem; white-space: nowrap;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <i data-lucide="cable" style="width: 14px; color: <?php echo $statusColor; ?>;"></i>
                                         <div>
-                                            <div style="font-weight: 700; color: var(--primary);"><?php echo htmlspecialchars($port['port_name']); ?></div>
+                                            <div style="font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                                                <?php echo htmlspecialchars($port['port_name']); ?>
+                                                <?php if ($is_uplink): ?>
+                                                    <span style="font-size: 0.65rem; background: rgba(99, 102, 241, 0.15); color: var(--primary); padding: 1px 6px; border-radius: 4px; font-weight: 800; letter-spacing: 0.5px;">UPLINK</span>
+                                                <?php endif; ?>
+                                            </div>
                                             <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 6px; margin-top: 2px;">
                                                 <?php if ($typeLabel && $typeLabel !== 'other'): ?>
                                                     <span><?php echo htmlspecialchars($typeLabel); ?></span>
