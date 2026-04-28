@@ -100,8 +100,11 @@ function get_iftype_name($type_id) {
 function format_speed($speed_mbps) {
     $speed_mbps = (int)$speed_mbps;
     if ($speed_mbps <= 0) return null;
-    if ($speed_mbps >= 10000) return ($speed_mbps / 1000) . 'G';
-    if ($speed_mbps >= 1000) return ($speed_mbps / 1000) . 'G';
+    if ($speed_mbps >= 1000) {
+        $gbps = $speed_mbps / 1000;
+        // Show clean integers (1G, 10G, 40G) or one decimal (2.5G)
+        return (floor($gbps) == $gbps ? (int)$gbps : round($gbps, 1)) . 'G';
+    }
     return $speed_mbps . 'M';
 }
 
@@ -291,38 +294,90 @@ foreach ($switches as $switch) {
         }
         
         // 6. Get FDB table (MAC to Bridge Port + VLAN)
-        // Primary: dot1qTpFdbPort (.1.3.6.1.2.1.17.7.1.2.2.1.2) - VLAN Aware
+        // Primary: dot1qTpFdbPort (.1.3.6.1.2.1.17.7.1.2.2.1.2) - VLAN Aware (802.1Q)
         // Fallback: dot1dTpFdbPort (.1.3.6.1.2.1.17.4.3.1.2) - Generic
+        // Cisco IOS fallback: per-VLAN community polling (community@vlan)
         $fdb_table = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.17.7.1.2.2.1.2");
         $is_vlan_aware = ($fdb_table !== false && count($fdb_table) > 0);
         
         if (!$is_vlan_aware) {
             $fdb_table = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.17.4.3.1.2");
         }
+        
+        // Cisco IOS per-VLAN community polling fallback
+        // Some Cisco IOS switches require community@vlan to access FDB per VLAN context
+        if ((!$fdb_table || count($fdb_table) === 0) && stripos($system_info, 'Cisco') !== false) {
+            echo "  Cisco detected: trying per-VLAN community polling...\n";
+            $vlan_list = snmp_walk_indexed($ip, $community, ".1.3.6.1.4.1.9.9.46.1.3.1.1.2"); // vtpVlanState
+            if (empty($vlan_list)) {
+                // Fallback: try dot1qVlanStaticRowStatus
+                $vlan_list = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.17.7.1.4.3.1.5");
+            }
+            
+            $fdb_table = [];
+            $cisco_vlans = !empty($vlan_list) ? array_keys($vlan_list) : [1]; // Default VLAN 1
+            foreach ($cisco_vlans as $vlan_num) {
+                $vlan_num = (int)$vlan_num;
+                if ($vlan_num >= 1002 && $vlan_num <= 1005) continue; // Skip reserved VLANs
+                
+                $vlan_community = $community . '@' . $vlan_num;
+                $vlan_fdb = @snmprealwalk($ip, $vlan_community, ".1.3.6.1.2.1.17.4.3.1.2");
+                if ($vlan_fdb && is_array($vlan_fdb)) {
+                    // Tag each entry with its VLAN for later extraction
+                    foreach ($vlan_fdb as $oid => $val) {
+                        $fdb_table[$oid . '.__vlan__.' . $vlan_num] = $val;
+                    }
+                    echo "    VLAN $vlan_num: " . count($vlan_fdb) . " entries\n";
+                }
+            }
+            $is_vlan_aware = false; // Use dot1d parsing but with tagged VLANs
+        }
 
         if ($fdb_table) {
             $discovered_count = 0;
             foreach ($fdb_table as $oid => $val) {
+                // Check for Cisco per-VLAN tagged entries
+                $cisco_vlan_tag = null;
+                if (strpos($oid, '.__vlan__.') !== false) {
+                    [$oid, , $cisco_vlan_tag] = explode('.__vlan__.', $oid . '.__vlan__.');
+                    $cisco_vlan_tag = (int)$cisco_vlan_tag;
+                }
+                
                 $parts = explode('.', $oid);
                 
-                if ($is_vlan_aware) {
+                if ($is_vlan_aware && !$cisco_vlan_tag) {
                     // Structure: ...1.2.2.1.2.<VLAN>.<MAC_6_PARTS>
                     $vlan_id = (int)$parts[count($parts) - 7];
                     $mac_dec = array_slice($parts, -6);
                 } else {
                     // Structure: ...4.3.1.2.<MAC_6_PARTS>
-                    $vlan_id = null;
+                    $vlan_id = $cisco_vlan_tag ?: null;
                     $mac_dec = array_slice($parts, -6);
                 }
 
                 $mac_hex = [];
                 foreach ($mac_dec as $dec) {
-                    $mac_hex[] = str_pad(dechex($dec), 2, '0', STR_PAD_LEFT);
+                    $mac_hex[] = str_pad(dechex((int)$dec), 2, '0', STR_PAD_LEFT);
                 }
                 $mac_addr = strtoupper(implode(':', $mac_hex));
+                
+                // Validate MAC: must be 17 chars (AA:BB:CC:DD:EE:FF) and not broadcast/multicast
+                if (strlen($mac_addr) !== 17 || $mac_addr === 'FF:FF:FF:FF:FF:FF' || $mac_addr === '00:00:00:00:00:00') {
+                    continue;
+                }
+                
                 $bridge_port = trim(str_replace('INTEGER: ', '', $val));
                 
+                // For Cisco per-VLAN polling, bridge-to-ifIndex might need VLAN context too
                 $ifindex = $ifindex_map[$bridge_port] ?? null;
+                if (!$ifindex && $cisco_vlan_tag) {
+                    // Try fetching bridge port mapping with VLAN community
+                    $vlan_ifindex = @snmp2_get($ip, $community . '@' . $cisco_vlan_tag, ".1.3.6.1.2.1.17.1.4.1.2." . $bridge_port);
+                    if ($vlan_ifindex !== false) {
+                        $ifindex = trim(str_replace('INTEGER: ', '', $vlan_ifindex));
+                        $ifindex_map[$bridge_port] = $ifindex; // Cache for future lookups
+                    }
+                }
                 
                 // Smart port name resolution with vendor-aware fallback
                 $raw_name = $name_map[$ifindex] ?? null;
@@ -418,10 +473,29 @@ foreach ($switches as $switch) {
             $parts = explode('.', $oid);
             $target_ip = implode('.', array_slice($parts, -4));
             
-            // Convert binary/hex string to AA:BB:CC...
-            $mac_hex = bin2hex($mac_bin);
-            if (strlen($mac_hex) === 12) {
-                $target_mac = strtoupper(implode(':', str_split($mac_hex, 2)));
+            // Normalize MAC from SNMP — handles multiple return formats:
+            // 1. Raw binary (6 bytes)                    → bin2hex
+            // 2. Hex-string with spaces ("AA BB CC...")  → strip spaces
+            // 3. Hex-string with colons ("AA:BB:CC...")   → strip colons
+            // 4. Quoted strings ('"XX XX..."')            → trim quotes first
+            $mac_raw = trim($mac_bin, '" ');
+            $target_mac = null;
+            
+            if (strlen($mac_raw) === 6) {
+                // Raw binary: 6 bytes → convert to hex
+                $target_mac = strtoupper(implode(':', str_split(bin2hex($mac_raw), 2)));
+            } elseif (preg_match('/^([0-9A-Fa-f]{2}[: ]){5}[0-9A-Fa-f]{2}$/', $mac_raw)) {
+                // Already formatted hex-string with colons or spaces
+                $target_mac = strtoupper(str_replace(' ', ':', $mac_raw));
+            } elseif (preg_match('/^[0-9A-Fa-f]{12}$/', $mac_raw)) {
+                // Plain 12 hex characters without separators
+                $target_mac = strtoupper(implode(':', str_split($mac_raw, 2)));
+            }
+            
+            // Validate MAC format (AA:BB:CC:DD:EE:FF = 17 chars)
+            if ($target_mac && strlen($target_mac) === 17 
+                && $target_mac !== 'FF:FF:FF:FF:FF:FF' 
+                && $target_mac !== '00:00:00:00:00:00') {
                 
                 // Resolve Subnet ID (Mandatory for Foreign Key)
                 $target_subnet_id = find_subnet_for_ip($db, $target_ip);
