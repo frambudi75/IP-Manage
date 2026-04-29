@@ -486,17 +486,32 @@ async function scanSubnet(id) {
     const statusText = document.getElementById('scanStatusText');
     btn.disabled = true;
     status.style.display = 'flex';
-    statusText.innerText = "Scanning range... please wait";
     
+    const uiBlock = <?php echo $current_block; ?>;
+    const chunksPerBlock = 8; // 256 / 32 = 8 chunks
+    let totalFound = 0;
+
     try {
-        const response = await fetch(`api/scan?id=${id}&block=<?php echo $current_block; ?>`);
-        const data = await response.json();
-        if (data.success) {
-            statusText.innerText = `Scan Complete! Found ${data.data.found} active hosts.`;
-            setTimeout(() => location.reload(), 1500);
+        for (let i = 0; i < chunksPerBlock; i++) {
+            const apiBlock = (uiBlock * chunksPerBlock) + i;
+            statusText.innerText = `Scanning block ${i+1}/${chunksPerBlock}... (Found: ${totalFound})`;
+            
+            const response = await fetch(`api/scan?id=${id}&block=${apiBlock}`);
+            if (!response.ok) throw new Error("Server responded with error");
+            
+            const data = await response.json();
+            if (data.success) {
+                totalFound += data.data.found;
+            } else {
+                console.warn("Chunk failed:", data);
+            }
         }
+        
+        statusText.innerText = `Scan Complete! Total ${totalFound} active hosts found.`;
+        setTimeout(() => location.reload(), 1500);
     } catch (err) {
-        statusText.innerText = "Error during scan.";
+        console.error(err);
+        statusText.innerText = "Error during scan. (Timeout or Server Error)";
         btn.disabled = false;
     }
 }

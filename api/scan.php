@@ -35,7 +35,7 @@ set_time_limit(300);
 list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
 
 // Support chunked scanning via 'block' parameter from UI
-$block_size = 256; // Match UI
+$block_size = 32; // Reduced to 32 to prevent Cloudflare/Proxy 524 Timeouts
 $current_block = isset($_GET['block']) ? (int)$_GET['block'] : 0;
 
 // If start/end provided, use them. Otherwise calculate based on block.
