@@ -190,7 +190,7 @@ include 'includes/header.php';
                                 // Check if this is likely an uplink port (> 3 MACs on the same port)
                                 $is_uplink = ($port_mac_counts[$port['port_name']] ?? 0) > 3;
                             ?>
-                            <tr style="border-bottom: 1px solid var(--border);" class="port-row">
+                            <tr style="border-bottom: 1px solid var(--border); cursor: pointer;" class="port-row" onclick="selectPort('<?php echo htmlspecialchars($port['port_name']); ?>')">
                                 <td style="padding: 1rem; white-space: nowrap;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <i data-lucide="cable" style="width: 14px; color: <?php echo $statusColor; ?>;"></i>
@@ -301,6 +301,22 @@ include 'includes/header.php';
             <div><div style="font-size: 2rem; font-weight: 800; color: var(--success);" id="stat-devices">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Mapped Devices</div></div>
             <div><div style="font-size: 2rem; font-weight: 800; color: var(--warning);" id="stat-avg-cpu">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Avg CPU</div></div>
             <div><div style="font-size: 2rem; font-weight: 800; color: var(--danger);" id="stat-peak-cpu">—</div><div style="font-size: 0.8rem; color: var(--text-muted);">Peak CPU</div></div>
+        </div>
+    </div>
+
+    <!-- Port Traffic History (New) -->
+    <div class="card" id="port-traffic-section" style="display: none; margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                Traffic History: <span id="selected-port-name" style="color: var(--primary);">—</span>
+            </h3>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+                <span style="display: inline-block; width: 10px; height: 10px; background: #3b82f6; border-radius: 2px; margin-right: 4px;"></span> Inbound (Download)
+                <span style="display: inline-block; width: 10px; height: 10px; background: #ec4899; border-radius: 2px; margin-left: 12px; margin-right: 4px;"></span> Outbound (Upload)
+            </div>
+        </div>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="portTrafficChart"></canvas>
         </div>
     </div>
 </div>
@@ -435,6 +451,76 @@ document.getElementById('portSearch')?.addEventListener('input', function() {
                     document.getElementById('stat-avg-cpu').textContent  = 'N/A';
                     document.getElementById('stat-peak-cpu').textContent = 'N/A';
                 }
+            });
+    };
+
+    // --- Port Traffic Logic ---
+    let trafficChart = null;
+    let currentSelectedPort = null;
+
+    window.selectPort = function(portName) {
+        currentSelectedPort = portName;
+        document.getElementById('port-traffic-section').style.display = 'block';
+        document.getElementById('selected-port-name').textContent = portName;
+        
+        // Highlight row
+        document.querySelectorAll('.port-row').forEach(r => {
+            r.style.background = r.textContent.includes(portName) ? 'rgba(99, 102, 241, 0.05)' : '';
+        });
+
+        fetch(`api/port-history?id=${SWITCH_ID}&port=${encodeURIComponent(portName)}&hours=6`)
+            .then(r => r.json())
+            .then(d => {
+                const ctx = document.getElementById('portTrafficChart').getContext('2d');
+                
+                if (trafficChart) {
+                    trafficChart.destroy();
+                }
+
+                trafficChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            {
+                                label: 'In (Mbps)',
+                                data: d.rx,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'Out (Mbps)',
+                                data: d.tx,
+                                borderColor: '#ec4899',
+                                backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } },
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#888', callback: v => v + ' Mbps', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+                
+                // Scroll to chart
+                document.getElementById('port-traffic-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
     };
 

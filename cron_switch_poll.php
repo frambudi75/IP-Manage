@@ -532,6 +532,14 @@ foreach ($switches as $switch) {
     }
     $if_oper_all = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.8");
     $if_type_all = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.3");
+    
+    // Fetch traffic counters (HC In/Out) for speed calculation
+    $in_octets = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.31.1.1.1.6");
+    $out_octets = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.31.1.1.1.10");
+    if (empty($in_octets)) {
+        $in_octets = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.10");
+        $out_octets = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.16");
+    }
     $if_speed_all = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.31.1.1.1.15");
     if (empty($if_speed_all)) {
         $if_speed_raw = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.5");
@@ -572,6 +580,38 @@ foreach ($switches as $switch) {
             // Better to use an empty MAC entry so it appears in the list even if no devices found
             $db->prepare("INSERT IGNORE INTO switch_port_map (mac_addr, switch_id, port_name, port_status, port_type, port_speed) VALUES (?, ?, ?, ?, ?, ?)")
                ->execute(['', $switch['id'], $name, $status, $type, $speed]);
+
+            // --- Traffic BPS Calculation ---
+            if (isset($in_octets[$ifidx]) && isset($out_octets[$ifidx])) {
+                $curr_in = (float)$in_octets[$ifidx];
+                $curr_out = (float)$out_octets[$ifidx];
+
+                // Get previous values
+                $stmt_prev = $db->prepare("SELECT last_rx_octets, last_tx_octets, UNIX_TIMESTAMP(last_poll) as last_time FROM switch_port_latest_counters WHERE switch_id = ? AND port_name = ?");
+                $stmt_prev->execute([$switch['id'], $name]);
+                $prev = $stmt_prev->fetch();
+
+                if ($prev) {
+                    $time_diff = time() - (int)$prev['last_time'];
+                    if ($time_diff > 0) {
+                        // Calculate Delta (Handle counter wrap-around roughly)
+                        $delta_in = ($curr_in >= (float)$prev['last_rx_octets']) ? ($curr_in - (float)$prev['last_rx_octets']) : 0;
+                        $delta_out = ($curr_out >= (float)$prev['last_tx_octets']) ? ($curr_out - (float)$prev['last_tx_octets']) : 0;
+
+                        // Bytes to Bits: * 8
+                        $rx_bps = ($delta_in * 8) / $time_diff;
+                        $tx_bps = ($delta_out * 8) / $time_diff;
+
+                        // Store history
+                        $db->prepare("INSERT INTO switch_port_history (switch_id, port_name, rx_bps, tx_bps) VALUES (?, ?, ?, ?)")
+                           ->execute([$switch['id'], $name, (int)$rx_bps, (int)$tx_bps]);
+                    }
+                }
+
+                // Update latest counters
+                $db->prepare("INSERT INTO switch_port_latest_counters (switch_id, port_name, last_rx_octets, last_tx_octets, last_poll) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE last_rx_octets = ?, last_tx_octets = ?, last_poll = CURRENT_TIMESTAMP")
+                   ->execute([$switch['id'], $name, $curr_in, $curr_out, $curr_in, $curr_out]);
+            }
         }
     }
     echo "  Interface inventory: $up_interfaces/$phys_interfaces ports up.\n";
