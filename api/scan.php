@@ -34,108 +34,89 @@ set_time_limit(300);
 // Calculate full subnet range
 list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
 
-// Support chunked scanning for parallelism
-$range_start = isset($_GET['start']) ? (int)$_GET['start'] : $start_long;
-$range_end = isset($_GET['end']) ? (int)$_GET['end'] : min($end_long, $start_long + 63);
+// Support chunked scanning via 'block' parameter from UI
+$block_size = 256; // Match UI
+$current_block = isset($_GET['block']) ? (int)$_GET['block'] : 0;
+
+// If start/end provided, use them. Otherwise calculate based on block.
+$range_start = isset($_GET['start']) ? (int)$_GET['start'] : ($start_long + ($current_block * $block_size));
+$range_end = isset($_GET['end']) ? (int)$_GET['end'] : min($end_long, $range_start + $block_size - 1);
 
 $results = [
     'scanned' => 0,
     'found' => 0,
-    'ips' => [], // Return found IPs for live UI update
-    'offline_ips' => [] // Return IPs that went offline (ghosts)
+    'ips' => [],
+    'offline_ips' => []
 ];
 
-// Pre-fetch ARP table for efficiency
-exec("arp -a", $arp_cache);
-$arp_map = parse_arp_table($arp_cache);
+try {
+    // Pre-fetch ARP table once
+    $arp_map = refresh_arp_map();
+    $arp_cache = []; // Legacy support if needed
 
-for ($i = $range_start; $i <= $range_end; $i++) {
-    if (!is_usable_host_long($i, $start_long, $end_long, (int)$subnet['mask'])) {
-        continue;
-    }
+    for ($i = $range_start; $i <= $range_end; $i++) {
+        if (!is_usable_host_long($i, $start_long, $end_long, (int)$subnet['mask'])) {
+            continue;
+        }
 
-    $ip = long2ip($i);
-    $ip = normalize_ipv4($ip);
-    if (!$ip) {
-        continue;
-    }
-    $results['scanned']++;
-    
-    // Multi-probe host detection to reduce false negatives.
-    $signals = detect_host_signals($ip, $arp_map);
-    $has_ping = $signals['ping'];
-    $has_arp = $signals['arp'];
-    $has_port = $signals['port'];
-    $has_nmap = !empty($signals['nmap']);
-    $is_active = $signals['active'];
-
-    if ($is_active) {
-        $found_ip_data = ['ip' => $ip, 'state' => 'active'];
-        $results['found']++;
-        $description = '';
+        $ip = long2ip($i);
+        $results['scanned']++;
         
-        // Try to resolve hostname with normalization
-        $hostname = resolve_hostname($ip);
-        $has_dns = $hostname !== '';
+        // Multi-probe host detection
+        $signals = detect_host_signals($ip, $arp_map);
+        $is_active = $signals['active'];
 
-        // Detect MAC and Vendor
-        $mac = $arp_map[$ip] ?? null;
-        if (!$mac) {
-            $arp_map = refresh_arp_map();
+        if ($is_active) {
+            $results['found']++;
+            $hostname = '';
+            $description = '';
             $mac = $arp_map[$ip] ?? null;
-        }
-        if (!$mac) {
-            $mac = get_mac_from_arp($ip, $arp_cache);
-        }
-        $mac = normalize_mac($mac);
-        $vendor = get_vendor_by_mac($mac);
-        $has_snmp = false;
+            $vendor = get_vendor_by_mac($mac);
+            $os = 'Unknown';
+            $has_snmp = false;
 
-        // SNMP Discovery (Optional)
-        $snmp_info = SNMPHelper::getInfo($ip, $subnet['snmp_community'] ?? 'public', $subnet['snmp_version'] ?? '2c');
-        if ($snmp_info) {
-            $has_snmp = true;
-            if (!empty($snmp_info['name'])) {
-                $snmp_hostname = normalize_hostname($snmp_info['name']);
-                if ($snmp_hostname !== '') {
-                    $hostname = $snmp_hostname;
+            // Optional: Resolve hostname
+            $hostname = resolve_hostname($ip);
+            
+            // Optional: SNMP Discovery
+            $snmp_info = SNMPHelper::getInfo($ip, $subnet['snmp_community'] ?? 'public', $subnet['snmp_version'] ?? '2c');
+            if ($snmp_info) {
+                $has_snmp = true;
+                if (!empty($snmp_info['name'])) {
+                    $snmp_hostname = normalize_hostname($snmp_info['name']);
+                    if ($snmp_hostname !== '') $hostname = $snmp_hostname;
                 }
+                if (!empty($snmp_info['description'])) $description = $snmp_info['description'];
             }
-            if (!empty($snmp_info['description'])) $description = $snmp_info['description'];
-        }
 
-        // OS Fingerprinting (Nmap)
-        $os = '';
-        if ($has_nmap || ($is_active && defined('DISCOVERY_AGGRESSIVE_MODE') && DISCOVERY_AGGRESSIVE_MODE)) {
-            $os = nmap_fingerprint_os($ip);
-        }
+            // Optional: OS Fingerprinting (ONLY if explicitly enabled as it's slow)
+            if (defined('DISCOVERY_AGGRESSIVE_MODE') && DISCOVERY_AGGRESSIVE_MODE) {
+                try {
+                    $os = nmap_fingerprint_os($ip);
+                } catch (Exception $e) {}
+            }
 
-        $confidence = calculate_discovery_confidence([
-            'ping' => $has_ping,
-            'arp' => $has_arp,
-            'nmap' => $has_nmap,
-            'port' => $has_port,
-            'dns' => $has_dns,
-            'snmp' => $has_snmp
-        ]);
+            $confidence = calculate_discovery_confidence([
+                'ping' => $signals['ping'],
+                'arp' => $signals['arp'],
+                'port' => $signals['port'],
+                'dns' => ($hostname !== ''),
+                'snmp' => $has_snmp
+            ]);
 
-        try {
-            // Check current status for notifications
+            // Database Persistence
             $stmt = $db->prepare("SELECT state, mac_addr FROM ip_addresses WHERE subnet_id = ? AND ip_addr = ?");
             $stmt->execute([$subnet_id, $ip]);
             $current_data = $stmt->fetch();
 
             $conflict_detected = 0;
             if (!$current_data) {
-                // New device discovered
-                NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']);
+                try { NotificationHelper::notifyNewDevice($ip, $mac, $vendor, $hostname, $subnet['subnet']); } catch (Exception $e) {}
             } elseif ($current_data['mac_addr'] && $mac && $current_data['mac_addr'] !== $mac) {
-                // IP Conflict (MAC changed)
                 $conflict_detected = 1;
-                NotificationHelper::notifyConflict($ip, $current_data['mac_addr'], $mac, $subnet['subnet']);
+                try { NotificationHelper::notifyConflict($ip, $current_data['mac_addr'], $mac, $subnet['subnet']); } catch (Exception $e) {}
             }
 
-            // Update or Insert IP record
             $stmt = $db->prepare("
                 INSERT INTO ip_addresses (subnet_id, ip_addr, hostname, mac_addr, vendor, os, conflict_detected, description, state, last_seen, confidence_score, data_sources) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, ?, ?)
@@ -153,23 +134,21 @@ for ($i = $range_start; $i <= $range_end; $i++) {
             ");
             $stmt->execute([$subnet_id, $ip, $hostname, $mac, $vendor, $os, $conflict_detected, $description, $confidence['score'], $confidence['sources']]);
             
-            $found_ip_data['hostname'] = $hostname;
-            $found_ip_data['mac'] = $mac;
-            $found_ip_data['vendor'] = $vendor;
-            $found_ip_data['os'] = $os;
-            $found_ip_data['confidence'] = $confidence['score'];
-            $results['ips'][] = $found_ip_data;
-        } catch (Exception $e) {
-            // Log error
-        }
-    } else {
-        // GHOST PREVENTION: If IP was active before but now not detected, mark as offline
-        $stmt = $db->prepare("UPDATE ip_addresses SET state = 'offline' WHERE subnet_id = ? AND ip_addr = ? AND state = 'active'");
-        $stmt->execute([$subnet_id, $ip]);
-        if ($stmt->rowCount() > 0) {
-            $results['offline_ips'][] = $ip;
+            $results['ips'][] = ['ip' => $ip, 'state' => 'active', 'hostname' => $hostname, 'mac' => $mac];
+        } else {
+            // Mark as offline if it was previously active
+            $stmt = $db->prepare("UPDATE ip_addresses SET state = 'offline' WHERE subnet_id = ? AND ip_addr = ? AND state = 'active'");
+            $stmt->execute([$subnet_id, $ip]);
+            if ($stmt->rowCount() > 0) $results['offline_ips'][] = $ip;
         }
     }
+
+    // Final mark of subnet scan time
+    $db->prepare("UPDATE subnets SET last_scan = CURRENT_TIMESTAMP WHERE id = ?")->execute([$subnet_id]);
+
+} catch (Exception $e) {
+    // If something fatal happens, we still return the partial results
+    $results['error_occurred'] = $e->getMessage();
 }
 
 json_response([
