@@ -71,6 +71,37 @@ try {
         echo "switches table updated.\n";
     }
 
+    // --- Traffic Monitoring Tables ---
+    
+    $trafficTableExists = $db->query("SHOW TABLES LIKE 'switch_port_history'")->rowCount() > 0;
+    if (!$trafficTableExists) {
+        echo "Creating traffic monitoring tables...\n";
+        $sql = "
+        CREATE TABLE IF NOT EXISTS switch_port_latest_counters (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            switch_id INT,
+            port_name VARCHAR(100),
+            last_rx_octets BIGINT UNSIGNED,
+            last_tx_octets BIGINT UNSIGNED,
+            last_poll TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY (switch_id, port_name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+        CREATE TABLE IF NOT EXISTS switch_port_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            switch_id INT,
+            port_name VARCHAR(100),
+            rx_bps BIGINT,
+            tx_bps BIGINT,
+            recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX(switch_id, port_name),
+            INDEX(recorded_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+        ";
+        $db->exec($sql);
+        echo "Traffic monitoring tables created.\n";
+    }
+
     echo "Database schema is up to date.\n";
 
 } catch (Exception $e) {
