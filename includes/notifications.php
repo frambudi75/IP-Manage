@@ -212,10 +212,14 @@ class NotificationHelper {
         $state_text = strtoupper($status);
         $time = date('Y-m-d H:i:s');
 
+        // Escape variables for HTML safety
+        $safe_name = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $safe_host = htmlspecialchars($host, ENT_QUOTES, 'UTF-8');
+
         // 1. TELEGRAM & EMAIL MESSAGE (Always Clean HTML)
         $html_message = "{$icon} <b>Netwatch Alert: {$state_text}</b>\n\n";
-        $html_message .= "🖥 <b>Device:</b> {$name}\n";
-        $html_message .= "🌐 <b>Host:</b> <code>{$host}</code>\n";
+        $html_message .= "🖥 <b>Device:</b> {$safe_name}\n";
+        $html_message .= "🌐 <b>Host:</b> <code>{$safe_host}</code>\n";
         $html_message .= "📊 <b>Status:</b> <b>{$state_text}</b>\n";
         if ($latency) $html_message .= "⚡ <b>Latency:</b> <code>{$latency}ms</code>\n";
         if ($status === 'up' && !empty($duration)) {
@@ -329,10 +333,14 @@ class NotificationHelper {
         ];
 
         $context  = stream_context_create($options);
-        $result = file_get_contents($url, false, $context);
+        $result = @file_get_contents($url, false, $context);
+        
         if ($result === false) {
             $error = error_get_last();
-            error_log("Telegram Send Error: " . ($error['message'] ?? 'Unknown error'));
+            // Try to get more info from the response headers (contains Telegram error body)
+            $response_headers = $http_response_header ?? [];
+            $status_line = $response_headers[0] ?? 'Unknown Status';
+            error_log("Telegram Send Error: " . ($error['message'] ?? 'Unknown error') . " | Status: " . $status_line);
             return false;
         }
         return true;

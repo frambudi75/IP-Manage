@@ -60,24 +60,24 @@ foreach ($targets as $t) {
         $new_fail_count = 0;
         $update_fields[] = "last_up = NOW()";
         
-        // If it was down or unknown before, log it (State Change UP)
-        if ($current_status !== 'up') {
-            $duration_text = '';
-            if ($current_status === 'down' && !empty($t['last_down'])) {
-                $down_time = strtotime($t['last_down']);
-                $up_time = time();
-                $diff = $up_time - $down_time;
-                
-                $h = floor($diff / 3600);
-                $m = floor(($diff % 3600) / 60);
-                $s = $diff % 60;
-                
-                $duration_text = ($h > 0 ? "{$h}h " : "") . ($m > 0 ? "{$m}m " : "") . "{$s}s";
-            }
+            // If it was down before, log it and notify recovery
+            if ($current_status === 'down') {
+                $duration_text = '';
+                if (!empty($t['last_down'])) {
+                    $down_time = strtotime($t['last_down']);
+                    $up_time = time();
+                    $diff = $up_time - $down_time;
+                    
+                    $h = floor($diff / 3600);
+                    $m = floor(($diff % 3600) / 60);
+                    $s = $diff % 60;
+                    
+                    $duration_text = ($h > 0 ? "{$h}h " : "") . ($m > 0 ? "{$m}m " : "") . "{$s}s";
+                }
 
-            log_netwatch_change($id, $host, 'up');
-            send_netwatch_notification($t, 'up', $duration_text, $latency);
-        }
+                log_netwatch_change($id, $host, 'up');
+                send_netwatch_notification($t, 'up', $duration_text, $latency);
+            }
     } else {
         $new_fail_count++;
         if ($new_fail_count >= $threshold) {
