@@ -85,7 +85,7 @@ function poll_live_health(string $ip, string $community, string $model): array {
                 }
             }
         }
-        if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
+        if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
 
         // CPU Fallback for multicore
         if ($cpu === false || $cpu === "") {

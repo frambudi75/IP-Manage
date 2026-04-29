@@ -191,7 +191,7 @@ foreach ($switches as $switch) {
             }
         }
         
-        if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
+        if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
     } elseif (stripos($system_info, 'Alcatel') !== false || stripos($system_info, 'AOS') !== false || stripos($system_info, 'OmniSwitch') !== false) {
         $model = "Alcatel-Lucent";
         // Alcatel-Lucent OmniSwitch CPU/Memory
