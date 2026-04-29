@@ -80,10 +80,18 @@ function poll_live_health(string $ip, string $community, string $model): array {
                         $idx = end($parts);
                         $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.$idx");
                         $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.$idx");
-                        break;
+                        
+                        // If we got valid-looking numbers, use them
+                        if ($total_mem && (int)$total_mem > 0) break;
                     }
                 }
             }
+        }
+        
+        // Final fallback: try standard index 65536 directly
+        if (!$total_mem || (int)$total_mem == 0) {
+            $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
+            $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
         }
         if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
 

@@ -175,10 +175,18 @@ foreach ($switches as $switch) {
                         $idx = end($parts);
                         $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.$idx");
                         $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.$idx");
-                        break;
+                        
+                        // If we got valid-looking numbers, use them
+                        if ($total_mem && (int)$total_mem > 0) break;
                     }
                 }
             }
+        }
+        
+        // Final fallback: try standard index 65536 directly
+        if (!$total_mem || (int)$total_mem == 0) {
+            $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
+            $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
         }
 
         if ($cpu === false || $cpu === "" || (int)$cpu >= 100) {
@@ -507,6 +515,25 @@ foreach ($switches as $switch) {
     // Save interface counts
     $db->prepare("UPDATE switches SET total_ports = ?, active_ports = ? WHERE id = ?")
        ->execute([$phys_interfaces, $up_interfaces, $switch['id']]);
+
+    // Ensure all physical interfaces are in the port map for visibility
+    foreach ($if_names_all as $ifidx => $name) {
+        if (isset($if_type_all[$ifidx]) && (int)$if_type_all[$ifidx] === 6) { // ethernetCsmacd
+            $name = trim(str_replace('"', '', $name));
+            $status = 'unknown';
+            if (isset($if_oper_all[$ifidx])) {
+                $status = ((int)$if_oper_all[$ifidx] === 1) ? 'up' : 'down';
+            }
+            $speed = isset($if_speed_all[$ifidx]) ? format_speed($if_speed_all[$ifidx]) : null;
+            $type = get_iftype_name($if_type_all[$ifidx]);
+
+            // Insert placeholder entry for the port itself (without MAC)
+            // Use a specific dummy MAC or just let the MAC be NULL/Empty? 
+            // Better to use an empty MAC entry so it appears in the list even if no devices found
+            $db->prepare("INSERT IGNORE INTO switch_port_map (mac_addr, switch_id, port_name, port_status, port_type, port_speed) VALUES (?, ?, ?, ?, ?, ?)")
+               ->execute(['', $switch['id'], $name, $status, $type, $speed]);
+        }
+    }
     echo "  Interface inventory: $up_interfaces/$phys_interfaces ports up.\n";
 
     // --- Phase 3: L3 ARP Table Polling (ARP Discovery) ---
