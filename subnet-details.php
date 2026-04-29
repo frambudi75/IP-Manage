@@ -29,7 +29,7 @@ $all_switches = $db->query("SELECT id, name, ip_addr FROM switches ORDER BY name
 $page_title = 'Subnet Details: ' . $subnet['subnet'] . '/' . $subnet['mask'];
 
 // Handle IP allocation
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip']) && is_admin()) {
     $ip_addr = $_POST['ip_addr'];
     $description = $_POST['description'];
     $hostname = $_POST['hostname'];
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_ip'])) {
 }
 
 // Handle Subnet Settings Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subnet_settings'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subnet_settings']) && is_admin()) {
     $scan_interval = (int)$_POST['scan_interval'];
     $description = $_POST['description'] ?? '';
     $vlan_id = (isset($_POST['vlan_id']) && $_POST['vlan_id'] !== '') ? (int)$_POST['vlan_id'] : null;
@@ -276,8 +276,12 @@ include 'includes/header.php';
                 }
             ?>
             <div 
+                <?php if (is_admin()): ?>
                 onclick="openEditModal('<?php echo $ip; ?>', '<?php echo $info['hostname'] ?? ''; ?>', '<?php echo $info['description'] ?? ''; ?>', '<?php echo $info['state'] ?? 'active'; ?>', '<?php echo $info['asset_tag'] ?? ''; ?>', '<?php echo $info['owner'] ?? ''; ?>')"
                 style="aspect-ratio: 1; background: <?php echo $bg; ?>; border: 1px solid <?php echo $border; ?>; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: <?php echo $color; ?>; opacity: <?php echo $info ? '1' : '0.4'; ?>;"
+                <?php else: ?>
+                style="aspect-ratio: 1; background: <?php echo $bg; ?>; border: 1px solid <?php echo $border; ?>; border-radius: 6px; cursor: default; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: <?php echo $color; ?>; opacity: <?php echo $info ? '1' : '0.4'; ?>;"
+                <?php endif; ?>
                 title="<?php echo $ip; ?>"
             >
                 <?php echo $last_octet; ?>

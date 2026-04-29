@@ -671,15 +671,19 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="card">
         <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem;">System Quick Links</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 0.8rem;">
-            <a href="add-subnet" class="btn btn-primary" style="font-size: 0.875rem;">
+            <?php if (is_admin()): ?>
+            <a href="subnets" class="btn btn-primary" style="font-size: 0.875rem;">
                 <i data-lucide="plus-circle" style="width: 16px;"></i> New Subnet
             </a>
+            <?php endif; ?>
             <a href="vlans" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
                 <i data-lucide="vibrate" style="width: 16px;"></i> VLANs
             </a>
+            <?php if (is_admin()): ?>
             <a href="settings" class="btn" style="background: var(--surface-light); font-size: 0.875rem;">
                 <i data-lucide="settings" style="width: 16px;"></i> Settings
             </a>
+            <?php endif; ?>
         </div>
     </div>
 

@@ -20,7 +20,7 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'added') {
     $message = 'Subnet added successfully!';
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subnet'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subnet']) && is_admin()) {
     $subnet = $_POST['subnet'] ?? '';
     $mask = $_POST['mask'] ?? '';
     $description = $_POST['description'] ?? '';
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subnet'])) {
 }
 
 // Handle Edit Subnet
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_subnet'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_subnet']) && is_admin()) {
     $sid = (int)$_POST['subnet_id'];
     $subnet = $_POST['subnet'] ?? '';
     $mask = $_POST['mask'] ?? '';
@@ -102,9 +102,11 @@ include 'includes/header.php';
         <button class="btn btn-secondary" style="font-size: 0.875rem;" onclick="window.print()">
             <i data-lucide="printer" style="width: 14px;"></i> Print PDF
         </button>
+        <?php if (is_admin()): ?>
         <button class="btn btn-primary" style="font-size: 0.875rem;" onclick="document.getElementById('addModal').style.display='flex'">
             <i data-lucide="plus" style="width: 14px;"></i> Add Subnet
         </button>
+        <?php endif; ?>
     </div>
 </div>
 

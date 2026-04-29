@@ -13,7 +13,7 @@ $db = get_db_connection();
 $message = '';
 
 // Handle Switch Add/Delete
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_admin()) {
     if (isset($_POST['add_switch'])) {
         $name = $_POST['name'];
         $ip = $_POST['ip_addr'];
@@ -46,9 +46,11 @@ include 'includes/header.php';
         <h1 style="font-size: 1.5rem;">Managed Switches</h1>
         <p style="color: var(--text-muted); font-size: 0.875rem;">Manage devices for L2 port mapping discovery</p>
     </div>
+    <?php if (is_admin()): ?>
     <button class="btn btn-primary" onclick="document.getElementById('addSwitchModal').style.display='flex'">
         <i data-lucide="plus"></i> Add Switch
     </button>
+    <?php endif; ?>
 </div>
 
 <?php if ($message): ?>
@@ -116,6 +118,7 @@ include 'includes/header.php';
             <button class="btn btn-primary" style="flex: 1; font-size: 0.75rem;" onclick="location.href='switch-details?id=<?php echo $switch['id']; ?>'">
                 <i data-lucide="eye" style="width: 14px; margin-right: 4px;"></i> Details
             </button>
+            <?php if (is_admin()): ?>
             <button class="btn" style="background: var(--surface-light); font-size: 0.75rem;" onclick="location.href='cron_switch_poll?id=<?php echo $switch['id']; ?>'">
                 <i data-lucide="refresh-cw" style="width: 14px;"></i> Poll
             </button>
@@ -125,6 +128,7 @@ include 'includes/header.php';
                     <i data-lucide="trash-2" style="width: 14px;"></i>
                 </button>
             </form>
+            <?php endif; ?>
         </div>
     </div>
     <?php endforeach; ?>

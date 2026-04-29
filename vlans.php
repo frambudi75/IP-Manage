@@ -14,7 +14,7 @@ $page_title = 'VLANs';
 
 // Handle Add VLAN
 $message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_vlan'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_vlan']) && is_admin()) {
     $number = $_POST['number'] ?? '';
     $name = $_POST['name'] ?? '';
     $description = $_POST['description'] ?? '';
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_vlan'])) {
 }
 
 // Handle Edit VLAN
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_vlan'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_vlan']) && is_admin()) {
     $vid = (int)$_POST['vlan_id'];
     $number = $_POST['number'] ?? '';
     $name = $_POST['name'] ?? '';
@@ -76,9 +76,11 @@ include 'includes/header.php';
         <button class="btn btn-secondary" style="font-size: 0.875rem;" onclick="window.print()">
             <i data-lucide="printer" style="width: 14px;"></i> Print PDF
         </button>
+        <?php if (is_admin()): ?>
         <button class="btn btn-primary" style="font-size: 0.875rem;" onclick="document.getElementById('vlanModal').style.display='flex'">
             <i data-lucide="plus" style="width: 14px;"></i> Add VLAN
         </button>
+        <?php endif; ?>
     </div>
 </div>
 

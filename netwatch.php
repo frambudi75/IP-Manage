@@ -22,7 +22,7 @@ if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'error') $message = 'Error: ' . ($_SESSION['last_error'] ?? 'An unknown error occurred.');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_admin()) {
     if (isset($_POST['add_netwatch'])) {
         $name = $_POST['name'] ?? '';
         $host = $_POST['host'] ?? '';
@@ -70,7 +70,7 @@ if (isset($_GET['delete']) && is_admin()) {
     exit;
 }
 
-if (isset($_GET['snooze']) && isset($_GET['hours'])) {
+if (isset($_GET['snooze']) && isset($_GET['hours']) && is_admin()) {
     $id = (int)$_GET['snooze'];
     $hours = (int)$_GET['hours'];
     $until = ($hours == 0) ? null : date('Y-m-d H:i:s', strtotime("+$hours hour"));
@@ -143,15 +143,19 @@ include 'includes/header.php';
         <?php endif; ?>
     </div>
     <div style="display: flex; gap: 0.5rem;">
+        <?php if (is_admin()): ?>
         <button id="scanBtn" class="btn btn-warning" onclick="runScanner()" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">
             <i data-lucide="scan" style="width: 14px;"></i> Scan All Now
         </button>
+        <?php endif; ?>
         <button class="btn btn-secondary" onclick="location.reload()">
             <i data-lucide="refresh-cw" style="width: 14px;"></i> Refresh
         </button>
+        <?php if (is_admin()): ?>
         <button class="btn btn-primary" onclick="document.getElementById('addModal').style.display='flex'">
             <i data-lucide="plus" style="width: 14px;"></i> Add Target
         </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -282,6 +286,7 @@ function runScanner() {
                                             <i data-lucide="line-chart" style="width: 14px;"></i>
                                         </button>
                                         
+                                        <?php if (is_admin()): ?>
                                         <!-- Snooze Dropdown -->
                                         <div style="position: relative;">
                                             <button class="btn btn-sm" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px;" onclick="toggleSnoozeMenu(<?php echo $t['id']; ?>)" title="Snooze Notifications">
@@ -303,6 +308,7 @@ function runScanner() {
                                         <a href="?delete=<?php echo $t['id']; ?>" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 5px;" onclick="return confirm('Delete this target?')">
                                             <i data-lucide="trash-2" style="width: 14px;"></i>
                                         </a>
+                                        <?php endif; ?>
                                     </div>
                             </td>
                         </tr>

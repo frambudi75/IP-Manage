@@ -70,9 +70,11 @@ include 'includes/header.php';
             <p style="color: var(--text-muted); font-family: monospace; font-size: 1.125rem; margin-top: 0.25rem;"><?php echo htmlspecialchars($switch['ip_addr']); ?></p>
         </div>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <?php if (is_admin()): ?>
             <button class="btn btn-secondary" onclick="location.href='cron_switch_poll?id=<?php echo $id; ?>'">
                 <i data-lucide="refresh-cw" style="width: 16px;"></i> Force Poll
             </button>
+            <?php endif; ?>
             <button class="btn btn-primary" onclick="window.print()">
                 <i data-lucide="printer" style="width: 16px;"></i> Export Report
             </button>
