@@ -71,13 +71,13 @@ function poll_live_health(string $ip, string $community, string $model): array {
 
         // Fallback to Generic Host Resources if MikroTik OIDs are empty/zero
         if (!$total_mem || $total_mem == 0) {
-            // RAM index can vary (65536 is common, but not always)
             $storage_types = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.2.3.1.2");
             if ($storage_types) {
                 foreach ($storage_types as $oid => $type) {
                     // Check for hrStorageRam ( .1.3.6.1.2.1.25.2.1.2 )
                     if (strpos($type, ".1.3.6.1.2.1.25.2.1.2") !== false) {
-                        $idx = end(explode('.', $oid));
+                        $parts = explode('.', $oid);
+                        $idx = end($parts);
                         $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.$idx");
                         $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.$idx");
                         break;
@@ -88,12 +88,20 @@ function poll_live_health(string $ip, string $community, string $model): array {
         if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
 
         // CPU Fallback for multicore
-        if ($cpu === false || $cpu === "") {
+        if ($cpu === false || $cpu === "" || (int)$cpu >= 100) {
             $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-            if ($cores) {
+            if ($cores && count($cores) > 0) {
                 $cpu_sum = 0; $count = 0;
-                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
-                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+                foreach ($cores as $val) { 
+                    $v = (int)trim(str_replace(['INTEGER: ', '"'], '', $val));
+                    $cpu_sum += $v; 
+                    $count++; 
+                }
+                $avg_cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+                
+                // If specific OID gave 100 but walk gave something else, use walk
+                if ((int)$cpu >= 100 && $avg_cpu < 100) $cpu = $avg_cpu;
+                elseif ($cpu === false || $cpu === "") $cpu = $avg_cpu;
             }
         }
     } elseif ($model === 'Cisco') {

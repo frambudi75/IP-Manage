@@ -166,7 +166,6 @@ foreach ($switches as $switch) {
         $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.8.0");
         $used_mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.9.0");
         
-        // Fallback for RAM/CPU if MikroTik OIDs fail (common on ARM/some RouterOS versions)
         if (!$total_mem || $total_mem == 0) {
             $storage_types = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.2.3.1.2");
             if ($storage_types) {
@@ -182,12 +181,19 @@ foreach ($switches as $switch) {
             }
         }
 
-        if ($cpu === false || $cpu === "") {
+        if ($cpu === false || $cpu === "" || (int)$cpu >= 100) {
             $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-            if ($cores) {
+            if ($cores && count($cores) > 0) {
                 $cpu_sum = 0; $count = 0;
-                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
-                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+                foreach ($cores as $val) { 
+                    $v = (int)trim(str_replace(['INTEGER: ', '"'], '', $val));
+                    $cpu_sum += $v; 
+                    $count++; 
+                }
+                $avg_cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+                
+                if ((int)$cpu >= 100 && $avg_cpu < 100) $cpu = $avg_cpu;
+                elseif ($cpu === false || $cpu === "") $cpu = $avg_cpu;
             }
         }
         
