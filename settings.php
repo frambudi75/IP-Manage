@@ -39,7 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
         'discord_webhook_url' => $_POST['discord_webhook_url'] ?? '',
         'slack_enabled' => isset($_POST['slack_enabled']) ? '1' : '0',
         'slack_webhook_url' => $_POST['slack_webhook_url'] ?? '',
-        'custom_netwatch_template' => $_POST['custom_netwatch_template'] ?? ''
+        'custom_netwatch_template' => $_POST['custom_netwatch_template'] ?? '',
+        'nmap_enabled' => isset($_POST['nmap_enabled']) ? '1' : '0',
+        'discovery_aggressive' => isset($_POST['discovery_aggressive']) ? '1' : '0'
     ];
 
     try {
