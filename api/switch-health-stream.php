@@ -119,23 +119,56 @@ function poll_live_health(string $ip, string $community, string $model): array {
         $mem_free = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.6.1");
         if ($mem_used > 0) $mem = round(($mem_used / ($mem_used + $mem_free)) * 100);
 
-    } else {
-        // Generic MIB
-        $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-        if ($cores) {
-            $cpu_sum = 0; $count = 0;
-            foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
-            $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+    } elseif ($model === 'Alcatel-Lucent') {
+        // Alcatel-Lucent OmniSwitch (AOS 6/7/8)
+        // healthDeviceCpuLatest (1min avg): .1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0");
+        if ($cpu === false) {
+            // Try AOS 8 specific / alternate path
+            $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.13.0");
         }
-        $total_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-        $used_mem  = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-        if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
+        
+        // healthDeviceMemoryLatest
+        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.10.0");
+        if ($mem === false) {
+            $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.10.0");
+        }
+
+        // Final fallback for Alcatel (Generic MIB)
+        if ($cpu === false || $cpu === "" || $mem === false || (int)$mem == 0) {
+            $generic = poll_live_health_generic($ip, $community);
+            if ($cpu === false || $cpu === "") $cpu = $generic['cpu'];
+            if ($mem === false || (int)$mem == 0) $mem = $generic['mem'];
+        }
+    } else {
+        $generic = poll_live_health_generic($ip, $community);
+        $cpu = $generic['cpu'];
+        $mem = $generic['mem'];
     }
 
     return [
         'cpu' => min(100, max(0, $cpu)),
         'mem' => min(100, max(0, $mem)),
     ];
+}
+
+/**
+ * Generic Fallback Polling (RFC 2790)
+ */
+function poll_live_health_generic(string $ip, string $community): array {
+    $cpu = 0;
+    $mem = 0;
+    $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
+    if ($cores) {
+        $cpu_sum = 0; $count = 0;
+        foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
+        $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+    }
+    $total_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
+    $used_mem  = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
+    if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
+
+    return ['cpu' => $cpu, 'mem' => $mem];
 }
 
 // Stream loop - send a new event every 5 seconds

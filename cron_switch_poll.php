@@ -208,21 +208,31 @@ foreach ($switches as $switch) {
         if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
     } elseif (stripos($system_info, 'Alcatel') !== false || stripos($system_info, 'AOS') !== false || stripos($system_info, 'OmniSwitch') !== false) {
         $model = "Alcatel-Lucent";
-        // Alcatel-Lucent OmniSwitch CPU/Memory
+        // Alcatel-Lucent OmniSwitch (AOS 6/7/8)
         // healthDeviceCpuLatest (1min avg): .1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0
-        $cpu = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0");
-        if (!$cpu) {
-            // Alternative: healthModuleCpu1MinAvg
-            $cpu = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.14.0");
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0");
+        if ($cpu === false) {
+            // Try AOS 8 specific / alternate path
+            $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.13.0");
         }
         
         // healthDeviceMemoryLatest
-        $mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.10.0");
-        if (!$mem) {
-            // Fallback generic
-            $total_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-            $used_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-            if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
+        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.10.0");
+        if ($mem === false) {
+            $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.10.0");
+        }
+
+        // Generic Fallback for Alcatel
+        if ($cpu === false || $cpu === "" || $mem === false || (int)$mem == 0) {
+            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
+            if ($cores) {
+                $cpu_sum = 0; $count = 0;
+                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
+                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+            }
+            $total_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
+            $used_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
+            if ($total_mem_g > 0) $mem = round(($used_mem_g / $total_mem_g) * 100);
         }
     } else {
         // Generic Fallback (Standard Host Resources MIB - RFC 2790)

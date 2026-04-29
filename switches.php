@@ -47,9 +47,14 @@ include 'includes/header.php';
         <p style="color: var(--text-muted); font-size: 0.875rem;">Manage devices for L2 port mapping discovery</p>
     </div>
     <?php if (is_admin()): ?>
-    <button class="btn btn-primary" onclick="document.getElementById('addSwitchModal').style.display='flex'">
-        <i data-lucide="plus"></i> Add Switch
-    </button>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary" onclick="location.href='cron_switch_poll'">
+            <i data-lucide="refresh-cw" style="width: 16px;"></i> Sync All Switches
+        </button>
+        <button class="btn btn-primary" onclick="document.getElementById('addSwitchModal').style.display='flex'">
+            <i data-lucide="plus" style="width: 16px;"></i> Add Switch
+        </button>
+    </div>
     <?php endif; ?>
 </div>
 
