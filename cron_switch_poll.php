@@ -42,7 +42,7 @@ function format_uptime_ticks($ticks) {
     $ticks = (int)$ticks;
     if ($ticks <= 0) return '-';
     
-    $seconds = $ticks / 100;
+    $seconds = (int)($ticks / 100);
     $days = floor($seconds / 86400);
     $hours = floor(($seconds % 86400) / 3600);
     $minutes = floor(($seconds % 3600) / 60);
