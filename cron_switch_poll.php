@@ -160,16 +160,35 @@ foreach ($switches as $switch) {
     } elseif (stripos($system_info, 'MikroTik') !== false || stripos($system_info, 'RouterOS') !== false) {
         $model = "MikroTik";
         // CPU Load (%) - mtxrHlProcessorLoad
-        $cpu = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.11.0");
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.11.0");
         
         // Memory (Bytes) - mtxrHlMemoryTotal / Used
-        $total_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.8.0");
-        $used_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.9.0");
+        $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.8.0");
+        $used_mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.9.0");
         
-        // Fallback for RAM if MikroTik OID fails
-        if (!$total_mem) {
-            $total_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-            $used_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
+        // Fallback for RAM/CPU if MikroTik OIDs fail (common on ARM/some RouterOS versions)
+        if (!$total_mem || $total_mem == 0) {
+            $storage_types = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.2.3.1.2");
+            if ($storage_types) {
+                foreach ($storage_types as $oid => $type) {
+                    if (strpos($type, ".1.3.6.1.2.1.25.2.1.2") !== false) {
+                        $parts = explode('.', $oid);
+                        $idx = end($parts);
+                        $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.$idx");
+                        $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.$idx");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($cpu === false || $cpu === "") {
+            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
+            if ($cores) {
+                $cpu_sum = 0; $count = 0;
+                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
+                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+            }
         }
         
         if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
