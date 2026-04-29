@@ -119,6 +119,24 @@ function poll_live_health(string $ip, string $community, string $model): array {
         $mem_free = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.6.1");
         if ($mem_used > 0) $mem = round(($mem_used / ($mem_used + $mem_free)) * 100);
 
+    } elseif ($model === 'Juniper') {
+        // Juniper Networks
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.2636.3.1.13.1.8.1.1.0"); // jnxOperatingCPU
+        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.2636.3.1.13.1.11.1.1.0"); // jnxOperatingBuffer
+        if ($cpu === false || (int)$mem == 0) {
+            $generic = poll_live_health_generic($ip, $community);
+            if ($cpu === false) $cpu = $generic['cpu'];
+            if ((int)$mem == 0) $mem = $generic['mem'];
+        }
+    } elseif ($model === 'HP' || $model === 'Aruba' || $model === 'H3C') {
+        // HP / H3C / Aruba
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.25506.2.6.1.1.1.1.6.1"); // hh3cEntityExtCpuUsage
+        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.25506.2.6.1.1.1.1.8.1"); // hh3cEntityExtMemUsage
+        if ($cpu === false || (int)$mem == 0) {
+            $generic = poll_live_health_generic($ip, $community);
+            if ($cpu === false) $cpu = $generic['cpu'];
+            if ((int)$mem == 0) $mem = $generic['mem'];
+        }
     } elseif ($model === 'Alcatel-Lucent') {
         // Alcatel-Lucent OmniSwitch (AOS 6/7/8)
         // healthDeviceCpuLatest (1min avg): .1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0

@@ -206,6 +206,36 @@ foreach ($switches as $switch) {
         }
         
         if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
+    } elseif (stripos($system_info, 'Juniper') !== false) {
+        $model = "Juniper";
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.2636.3.1.13.1.8.1.1.0");
+        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.2636.3.1.13.1.11.1.1.0");
+        if ($cpu === false || (int)$mem == 0) {
+            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
+            if ($cores) {
+                $cpu_sum = 0; $count = 0;
+                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
+                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+            }
+            $total_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
+            $used_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
+            if ($total_mem_g > 0) $mem = round(($used_mem_g / $total_mem_g) * 100);
+        }
+    } elseif (stripos($system_info, 'ProCurve') !== false || stripos($system_info, 'Aruba') !== false || stripos($system_info, 'H3C') !== false) {
+        $model = "HP/Aruba";
+        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.25506.2.6.1.1.1.1.6.1");
+        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.25506.2.6.1.1.1.1.8.1");
+        if ($cpu === false || (int)$mem == 0) {
+            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
+            if ($cores) {
+                $cpu_sum = 0; $count = 0;
+                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
+                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
+            }
+            $total_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
+            $used_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
+            if ($total_mem_g > 0) $mem = round(($used_mem_g / $total_mem_g) * 100);
+        }
     } elseif (stripos($system_info, 'Alcatel') !== false || stripos($system_info, 'AOS') !== false || stripos($system_info, 'OmniSwitch') !== false) {
         $model = "Alcatel-Lucent";
         // Alcatel-Lucent OmniSwitch (AOS 6/7/8)
