@@ -2,6 +2,14 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.21.0] - 2026-05-02
+### Added
+- **SNMP Multi-vendor Engine**: Complete rewrite of the polling logic to support 30+ hardware vendors (Fortinet, pfSense, MikroTik, Cisco, Huawei, Juniper, etc.) with centralized OID management.
+- **SSL/HTTPS Deployment**: Official support for secure Docker deployments with an automated Nginx reverse proxy and self-signed certificate generation.
+- **Subnet Scan Optimization**: Implemented high-performance ARP pre-seeding (batch firing) and parallel discovery signals to prevent timeouts on large subnets.
+- **Dedicated pfSense Handler**: Specialized monitoring for pfSense/OPNsense via `net-snmp` (UCD-SNMP-MIB) OIDs for accurate CPU/RAM reporting.
+- **Real-time Scan UI**: Dashboard and Subnet views now display real-time elapsed time and more granular progress status during network discovery.
+
 ## [2.20.0] - 2026-04-28
 ### Added
 - **SNMP Switch Monitoring**: Granular discovery of port status, VLAN names, interface speed, and port aliases.
