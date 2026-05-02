@@ -254,7 +254,7 @@ include 'includes/header.php';
             <i data-lucide="x"></i>
         </button>
         <h2 id="modalTitle" style="margin-bottom: 1.5rem;">Add Server Asset</h2>
-        <form action="" method="POST">
+        <form action="" method="POST" autocomplete="off">
             <input type="hidden" name="action" id="modalAction" value="add">
             <input type="hidden" name="id" id="assetId" value="">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
@@ -280,7 +280,7 @@ include 'includes/header.php';
     <div class="card" style="width: 100%; max-width: 450px;">
         <button onclick="document.getElementById('importModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer;"><i data-lucide="x"></i></button>
         <h2 style="margin-bottom: 1.5rem;">Import CSV</h2>
-        <form action="" method="POST" enctype="multipart/form-data">
+        <form action="" method="POST" enctype="multipart/form-data" autocomplete="off">
             <input type="hidden" name="action" value="import_csv">
             <div class="input-group"><label>Select CSV File</label><input type="file" name="csv_file" class="input-control" accept=".csv" required></div>
             <button type="submit" class="btn btn-primary" style="width: 100%; mt-1rem;">Start Import</button>

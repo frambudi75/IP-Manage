@@ -328,7 +328,7 @@ function runScanner() {
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="add_netwatch" value="1">
             <div class="input-group">
                 <label>Target Name</label>
@@ -366,7 +366,7 @@ function runScanner() {
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="edit_netwatch" value="1">
             <input type="hidden" name="id" id="edit_id">
             <div class="input-group">

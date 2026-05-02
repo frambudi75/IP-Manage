@@ -81,7 +81,7 @@ include 'includes/header.php';
     <!-- Profile Section -->
     <div class="card" style="padding: 2rem; margin-bottom: 2rem;">
         <h3 style="margin-bottom: 1.5rem; font-size: 1.125rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">Identity</h3>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="update_profile" value="1">
             <div class="input-group">
                 <label>Access Username</label>
@@ -104,7 +104,7 @@ include 'includes/header.php';
     <!-- Security Section -->
     <div class="card" style="padding: 2rem;">
         <h3 style="margin-bottom: 1.5rem; font-size: 1.125rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">Security Keys</h3>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="update_password" value="1">
             <div class="input-group">
                 <label>Current Security Key</label>

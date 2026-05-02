@@ -2,6 +2,15 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.22.0] - 2026-05-02
+### Added
+- **Styled SNMP Terminal UI**: Replaced raw text output for switch polling with a professional dark-themed console interface including auto-scrolling and real-time status headers.
+- **Auto-Redirect Logic**: Implemented intelligent task redirection to automatically return the user to the management page after polling is completed.
+- **Enhanced OS Detection**: Integrated Nmap fingerprinting into the manual subnet scan engine, respecting the global "Deep Scan" settings while maintaining UI performance.
+- **Security & Privacy Hardening**: Implemented global `autocomplete="off"` across all system forms (Login, Settings, IP Management) to prevent sensitive data suggestions in shared browser environments.
+- **SNMP ARP Fallback**: Advanced multi-table ARP discovery (MIB-II, Modern IP-MIB, and Alcatel-Specific) to ensure 100% IP-to-MAC resolution on core switches.
+
+
 ## [2.21.0] - 2026-05-02
 ### Added
 - **SNMP Multi-vendor Engine**: Complete rewrite of the polling logic to support 30+ hardware vendors (Fortinet, pfSense, MikroTik, Cisco, Huawei, Juniper, etc.) with centralized OID management.

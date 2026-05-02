@@ -230,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <div class="form-group">
                 <label>Access Identity</label>
                 <div class="field-container">

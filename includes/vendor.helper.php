@@ -169,13 +169,45 @@ class VendorDetector {
     }
 
     private static function pollAlcatel($ip, $c) {
-        $cpu = @snmp2_get($ip, $c, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0");
-        if ($cpu === false) $cpu = @snmp2_get($ip, $c, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.13.0");
-        $mem = @snmp2_get($ip, $c, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.10.0");
-        if ($mem === false) $mem = @snmp2_get($ip, $c, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.10.0");
-        if (!$cpu || (int)$cpu == 0) $cpu = self::getGenericCPU($ip, $c);
-        if (!$mem || (int)$mem == 0) $mem = self::getGenericMem($ip, $c);
-        return ['cpu' => (int)$cpu, 'mem' => (int)$mem];
+        // Base Health OIDs (Alcatel can have multiple modules/chassis indices)
+        // Chassis-based OIDs
+        $cpu_roots = [
+            ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13", // healthModuleCpuChassisUtil
+            ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.13",
+            ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.2",  // healthModuleCpu1MinAvg
+            ".1.3.6.1.4.1.6486.800.1.2.1.10.1.1.1.11" // alaStackMgrHealthCpuUtil
+        ];
+        $mem_roots = [
+            ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.10", // healthModuleMemoryChassisUtil
+            ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.10",
+            ".1.3.6.1.4.1.6486.800.1.2.1.10.1.1.1.12" // alaStackMgrHealthMemoryUtil
+        ];
+
+        $cpu = 0; $mem = 0;
+        
+        foreach ($cpu_roots as $root) {
+            $walk = @snmp2_real_walk($ip, $c, $root);
+            if ($walk) {
+                foreach ($walk as $val) {
+                    $val = (int)trim(str_replace(['"', 'INTEGER: '], '', $val));
+                    if ($val > 0 && $val <= 100) { $cpu = $val; break 2; }
+                }
+            }
+        }
+
+        foreach ($mem_roots as $root) {
+            $walk = @snmp2_real_walk($ip, $c, $root);
+            if ($walk) {
+                foreach ($walk as $val) {
+                    $val = (int)trim(str_replace(['"', 'INTEGER: '], '', $val));
+                    if ($val > 0 && $val <= 100) { $mem = $val; break 2; }
+                }
+            }
+        }
+
+        if ($cpu == 0) $cpu = self::getGenericCPU($ip, $c);
+        if ($mem == 0) $mem = self::getGenericMem($ip, $c);
+        return ['cpu' => $cpu, 'mem' => $mem];
     }
 
     private static function pollHuawei($ip, $c) {

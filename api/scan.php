@@ -83,7 +83,6 @@ try {
             $hostname = resolve_hostname($ip);
             
             // SNMP discovery - only attempt if host responded to ping
-            // (SNMP-capable devices almost always respond to ping)
             if ($signals['ping'] || $signals['arp']) {
                 $snmp_info = SNMPHelper::getInfo($ip, $subnet['snmp_community'] ?? 'public', $subnet['snmp_version'] ?? '2c');
                 if ($snmp_info) {
@@ -96,9 +95,10 @@ try {
                 }
             }
 
-            // NOTE: OS Fingerprinting (nmap -O) is SKIPPED in web UI scan
-            // because it takes 3-5s per IP and causes timeouts.
-            // It only runs in background cron scans where time is not critical.
+            // OS Fingerprinting (Respect global settings)
+            if (Settings::get('nmap_enabled') == '1') {
+                $os = nmap_fingerprint_os($ip);
+            }
 
             $confidence = calculate_discovery_confidence([
                 'ping' => $signals['ping'],

@@ -137,7 +137,7 @@ include 'includes/header.php';
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="add_user" value="1">
             <div class="input-group">
                 <label>Username</label>
@@ -172,7 +172,7 @@ include 'includes/header.php';
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="reset_password" value="1">
             <input type="hidden" name="user_id" id="reset_user_id">
             <div class="input-group">

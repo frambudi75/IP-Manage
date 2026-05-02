@@ -18,7 +18,33 @@ require_once 'includes/network.php';
 require_once 'includes/audit.helper.php';
 require_once 'includes/vendor.helper.php';
 
-ob_start(); // Buffer output to prevent "Headers already sent" errors
+ob_start();
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Switch Poller - IPManager Pro</title>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: 'JetBrains Mono', 'Fira Code', monospace; padding: 20px; line-height: 1.5; font-size: 13px; }
+        .terminal { max-width: 1200px; margin: 0 auto; background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+        .terminal-header { background: #334155; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #475569; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #ef4444; } .dot-yellow { background: #f59e0b; } .dot-green { background: #10b981; }
+        .terminal-body { padding: 20px; white-space: pre-wrap; word-break: break-all; max-height: 70vh; overflow-y: auto; }
+        .success { color: #10b981; font-weight: bold; }
+        .info { color: #38bdf8; }
+        .warning { color: #fbbf24; }
+        .switch-title { color: #8b5cf6; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-top: 15px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+            <div style="margin-left: 10px; font-weight: bold; font-size: 11px; opacity: 0.8;">SNMP_POLLER_V2.21</div>
+        </div>
+        <div class="terminal-body" id="console">
+<?php
 
 if (!extension_loaded('snmp')) {
     die("PHP SNMP extension is not loaded. Please enable it in php.ini.");
@@ -493,16 +519,43 @@ foreach ($switches as $switch) {
     echo "  Interface inventory: $up_interfaces/$phys_interfaces ports up.\n";
 
     // --- Phase 3: L3 ARP Table Polling (ARP Discovery) ---
-    // OID: .1.3.6.1.2.1.4.22.1.2 (ipNetToMediaPhysAddress)
-    $arp_raw_macs = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.4.22.1.2");
-    if ($arp_raw_macs) {
-        $arp_count = 0;
-        foreach ($arp_raw_macs as $oid => $mac_bin) {
-            // Extraction OID: .1.3.6.1.2.1.4.22.1.2.ifIndex.ipAddress (last 4 parts are IP)
-            $parts = explode('.', $oid);
-            $target_ip = implode('.', array_slice($parts, -4));
-            
-            // Normalize MAC from SNMP — handles multiple return formats:
+    echo "  Phase 3: L3 ARP Discovery...\n";
+    $arp_count = 0;
+    
+    // Strategy: Try multiple tables until we find one with data
+    $arp_tables = [
+        ['name' => 'ipNetToMediaTable (Standard)', 'oid' => ".1.3.6.1.2.1.4.22.1.2"],
+        ['name' => 'ipNetToPhysicalTable (Modern)', 'oid' => ".1.3.6.1.2.1.4.35.1.4"],
+        ['name' => 'Alcatel-Specific Table',        'oid' => ".1.3.6.1.4.1.6486.800.1.2.1.25.1.1.1.2"]
+    ];
+
+    foreach ($arp_tables as $table) {
+        echo "    Trying {$table['name']}...\n";
+        $arp_raw_macs = @snmp2_real_walk($ip, $community, $table['oid']);
+        
+        if ($arp_raw_macs && count($arp_raw_macs) > 0) {
+            echo "    Found " . count($arp_raw_macs) . " raw entries.\n";
+            foreach ($arp_raw_macs as $oid => $mac_bin) {
+                $parts = explode('.', $oid);
+                
+                // IP Extraction Logic:
+                // Standard: .ifIndex.ip.ip.ip.ip (Last 4)
+                // Modern:   .ifIndex.type.len.ip.ip.ip.ip (Last 4 if IPv4)
+                $target_ip = implode('.', array_slice($parts, -4));
+                
+                if (!filter_var($target_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    // Try searching for a valid IP pattern in the OID if last 4 failed
+                    foreach (range(4, 16) as $len) {
+                        $possible_ip = implode('.', array_slice($parts, -$len, 4));
+                        if (filter_var($possible_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                            $target_ip = $possible_ip;
+                            break;
+                        }
+                    }
+                }
+
+                if (!filter_var($target_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) continue;
+
             // 1. Raw binary (6 bytes)                    → bin2hex
             // 2. Hex-string with spaces ("AA BB CC...")  → strip spaces
             // 3. Hex-string with colons ("AA:BB:CC...")   → strip colons
@@ -545,16 +598,34 @@ foreach ($switches as $switch) {
                 }
             }
         }
-        echo "Discovered $arp_count ARP entries from {$switch['name']}.\n";
+        if ($arp_count > 0) {
+            echo "    Successfully discovered $arp_count ARP entries from {$table['name']}.\n";
+            break; // Found data, stop trying other tables
+        }
+    }
     }
 }
+?>
 
-if ($switch_id > 0) {
-    if (!headers_sent()) {
-        header('Location: switches.php?message=Poll completed');
-    } else {
-        echo "<hr><p>Poll completed. <a href='switches.php'>Click here to return</a></p>";
-        echo "<script>setTimeout(() => { window.location.href = 'switches.php?message=Poll completed'; }, 2000);</script>";
-    }
-}
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem;">
+        <p style="color: #64748b; font-size: 0.8rem;">Task finished. Redirecting to Management Console...</p>
+        <a href="switches.php" style="color: #38bdf8; text-decoration: none; font-weight: bold; border: 1px solid #38bdf8; padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 10px;">Return Now</a>
+    </div>
+
+    <script>
+        // Auto scroll to bottom as logs come in
+        const consoleObj = document.getElementById('console');
+        consoleObj.scrollTop = consoleObj.scrollHeight;
+        
+        // Immediate redirect if no errors
+        setTimeout(() => {
+            window.location.href = 'switches.php?message=Poll completed';
+        }, 1500);
+    </script>
+</body>
+</html>
+<?php
 ob_end_flush();

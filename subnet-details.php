@@ -413,7 +413,7 @@ include 'includes/header.php';
             <h3>Subnet Settings</h3>
             <button onclick="document.getElementById('settingsModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i data-lucide="x"></i></button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="update_subnet_settings" value="1">
             <div class="input-group">
                 <label>Description</label>
@@ -450,7 +450,7 @@ include 'includes/header.php';
             <h3 id="modalTitle">Manage IP</h3>
             <button onclick="document.getElementById('editModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i data-lucide="x"></i></button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="assign_ip" value="1">
             <input type="hidden" name="ip_addr" id="modalIp">
             <div class="input-group">

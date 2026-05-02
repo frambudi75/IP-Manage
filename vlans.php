@@ -140,7 +140,7 @@ include 'includes/header.php';
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="add_vlan" value="1">
             <div class="input-group">
                 <label>VLAN Number (1-4094)</label>
@@ -167,7 +167,7 @@ include 'includes/header.php';
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <input type="hidden" name="edit_vlan" value="1">
             <input type="hidden" name="vlan_id" id="edit_vlan_id">
             <div class="input-group">

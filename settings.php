@@ -165,7 +165,7 @@ include 'includes/header.php';
     <div class="tab-btn" onclick="showTab(event, 'tab-system')"><i data-lucide="settings"></i> SISTEM</div>
 </div>
 
-<form method="POST">
+<form method="POST" autocomplete="off">
     <!-- UMUM TAB -->
     <div id="tab-umum" class="tab-content active">
         <div class="card" style="max-width: 800px;">

@@ -65,7 +65,7 @@ include 'includes/header.php';
     <?php endif; ?>
 
     <div class="card" style="padding: 2rem;">
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <div class="input-group">
                 <label>Subnet Address</label>
                 <input type="text" name="subnet" class="input-control" placeholder="e.g. 192.168.1.0" required autofocus>
