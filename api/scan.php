@@ -35,7 +35,8 @@ set_time_limit(300);
 list($start_long, $end_long) = cidr_to_range($subnet['subnet'] . '/' . $subnet['mask']);
 
 // Support chunked scanning via 'block' parameter from UI
-$block_size = 32; // Reduced to 32 to prevent Cloudflare/Proxy 524 Timeouts
+// Increased to 64 since optimized detection is much faster
+$block_size = 64;
 $current_block = isset($_GET['block']) ? (int)$_GET['block'] : 0;
 
 // If start/end provided, use them. Otherwise calculate based on block.
@@ -50,9 +51,10 @@ $results = [
 ];
 
 try {
-    // Pre-fetch ARP table once
-    $arp_map = refresh_arp_map();
-    $arp_cache = []; // Legacy support if needed
+    // ====== PHASE 1: Batch ARP Pre-seeding ======
+    // Fire concurrent pings to fill ARP cache BEFORE scanning.
+    // This is the biggest single performance improvement.
+    $arp_map = preseed_arp_batch($range_start, $range_end, 200);
 
     for ($i = $range_start; $i <= $range_end; $i++) {
         if (!is_usable_host_long($i, $start_long, $end_long, (int)$subnet['mask'])) {
@@ -62,8 +64,8 @@ try {
         $ip = long2ip($i);
         $results['scanned']++;
         
-        // Multi-probe host detection
-        $signals = detect_host_signals($ip, $arp_map);
+        // ====== PHASE 2: Fast host detection (optimized for web UI) ======
+        $signals = fast_detect_host_signals($ip, $arp_map);
         $is_active = $signals['active'];
 
         if ($is_active) {
@@ -75,26 +77,28 @@ try {
             $os = 'Unknown';
             $has_snmp = false;
 
-            // Optional: Resolve hostname
+            // ====== PHASE 3: Lazy enrichment (only for active hosts) ======
+            
+            // Hostname resolution (single attempt, fast timeout)
             $hostname = resolve_hostname($ip);
             
-            // Optional: SNMP Discovery
-            $snmp_info = SNMPHelper::getInfo($ip, $subnet['snmp_community'] ?? 'public', $subnet['snmp_version'] ?? '2c');
-            if ($snmp_info) {
-                $has_snmp = true;
-                if (!empty($snmp_info['name'])) {
-                    $snmp_hostname = normalize_hostname($snmp_info['name']);
-                    if ($snmp_hostname !== '') $hostname = $snmp_hostname;
+            // SNMP discovery - only attempt if host responded to ping
+            // (SNMP-capable devices almost always respond to ping)
+            if ($signals['ping'] || $signals['arp']) {
+                $snmp_info = SNMPHelper::getInfo($ip, $subnet['snmp_community'] ?? 'public', $subnet['snmp_version'] ?? '2c');
+                if ($snmp_info) {
+                    $has_snmp = true;
+                    if (!empty($snmp_info['name'])) {
+                        $snmp_hostname = normalize_hostname($snmp_info['name']);
+                        if ($snmp_hostname !== '') $hostname = $snmp_hostname;
+                    }
+                    if (!empty($snmp_info['description'])) $description = $snmp_info['description'];
                 }
-                if (!empty($snmp_info['description'])) $description = $snmp_info['description'];
             }
 
-            // Optional: OS Fingerprinting (ONLY if explicitly enabled as it's slow)
-            if (defined('DISCOVERY_AGGRESSIVE_MODE') && DISCOVERY_AGGRESSIVE_MODE) {
-                try {
-                    $os = nmap_fingerprint_os($ip);
-                } catch (Exception $e) {}
-            }
+            // NOTE: OS Fingerprinting (nmap -O) is SKIPPED in web UI scan
+            // because it takes 3-5s per IP and causes timeouts.
+            // It only runs in background cron scans where time is not critical.
 
             $confidence = calculate_discovery_confidence([
                 'ping' => $signals['ping'],

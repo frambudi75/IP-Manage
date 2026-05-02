@@ -16,6 +16,7 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/network.php';
 require_once 'includes/audit.helper.php';
+require_once 'includes/vendor.helper.php';
 
 ob_start(); // Buffer output to prevent "Headers already sent" errors
 
@@ -150,137 +151,12 @@ foreach ($switches as $switch) {
     $uptime_raw = trim((string)$sys_uptime);
     $uptime_str = format_uptime_ticks($uptime_raw);
 
-    // Smart Vendor Detection for CPU/RAM
-    if (stripos($system_info, 'Cisco') !== false) {
-        $model = "Cisco";
-        $cpu = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.109.1.1.1.1.5.1");
-        $mem_free = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.6.1");
-        $mem_used = (int)@snmp2_get($ip, $community, ".1.3.6.1.4.1.9.9.48.1.1.1.5.1");
-        if ($mem_used > 0) $mem = round(($mem_used / ($mem_used + $mem_free)) * 100);
-    } elseif (stripos($system_info, 'MikroTik') !== false || stripos($system_info, 'RouterOS') !== false) {
-        $model = "MikroTik";
-        // CPU Load (%) - mtxrHlProcessorLoad
-        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.11.0");
-        
-        // Memory (Bytes) - mtxrHlMemoryTotal / Used
-        $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.8.0");
-        $used_mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.14988.1.1.3.9.0");
-        
-        if (!$total_mem || $total_mem == 0) {
-            $storage_types = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.2.3.1.2");
-            if ($storage_types) {
-                foreach ($storage_types as $oid => $type) {
-                    if (strpos($type, ".1.3.6.1.2.1.25.2.1.2") !== false) {
-                        $parts = explode('.', $oid);
-                        $idx = end($parts);
-                        $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.$idx");
-                        $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.$idx");
-                        
-                        // If we got valid-looking numbers, use them
-                        if ($total_mem && (int)$total_mem > 0) break;
-                    }
-                }
-            }
-        }
-        
-        // Final fallback: try standard index 65536 directly
-        if (!$total_mem || (int)$total_mem == 0) {
-            $total_mem = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-            $used_mem  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-        }
-
-        if ($cpu === false || $cpu === "" || (int)$cpu >= 100) {
-            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-            if ($cores && count($cores) > 0) {
-                $cpu_sum = 0; $count = 0;
-                foreach ($cores as $val) { 
-                    $v = (int)trim(str_replace(['INTEGER: ', '"'], '', $val));
-                    $cpu_sum += $v; 
-                    $count++; 
-                }
-                $avg_cpu = $count > 0 ? round($cpu_sum / $count) : 0;
-                
-                if ((int)$cpu >= 100 && $avg_cpu < 100) $cpu = $avg_cpu;
-                elseif ($cpu === false || $cpu === "") $cpu = $avg_cpu;
-            }
-        }
-        
-        if ($total_mem > 0) $mem = round(((int)$used_mem / (int)$total_mem) * 100);
-    } elseif (stripos($system_info, 'Juniper') !== false) {
-        $model = "Juniper";
-        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.2636.3.1.13.1.8.1.1.0");
-        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.2636.3.1.13.1.11.1.1.0");
-        if ($cpu === false || (int)$mem == 0) {
-            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-            if ($cores) {
-                $cpu_sum = 0; $count = 0;
-                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
-                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
-            }
-            $total_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-            $used_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-            if ($total_mem_g > 0) $mem = round(($used_mem_g / $total_mem_g) * 100);
-        }
-    } elseif (stripos($system_info, 'ProCurve') !== false || stripos($system_info, 'Aruba') !== false || stripos($system_info, 'H3C') !== false) {
-        $model = "HP/Aruba";
-        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.25506.2.6.1.1.1.1.6.1");
-        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.25506.2.6.1.1.1.1.8.1");
-        if ($cpu === false || (int)$mem == 0) {
-            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-            if ($cores) {
-                $cpu_sum = 0; $count = 0;
-                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
-                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
-            }
-            $total_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-            $used_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-            if ($total_mem_g > 0) $mem = round(($used_mem_g / $total_mem_g) * 100);
-        }
-    } elseif (stripos($system_info, 'Alcatel') !== false || stripos($system_info, 'AOS') !== false || stripos($system_info, 'OmniSwitch') !== false) {
-        $model = "Alcatel-Lucent";
-        // Alcatel-Lucent OmniSwitch (AOS 6/7/8)
-        // healthDeviceCpuLatest (1min avg): .1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0
-        $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.13.0");
-        if ($cpu === false) {
-            // Try AOS 8 specific / alternate path
-            $cpu = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.13.0");
-        }
-        
-        // healthDeviceMemoryLatest
-        $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.16.1.1.1.10.0");
-        if ($mem === false) {
-            $mem = @snmp2_get($ip, $community, ".1.3.6.1.4.1.6486.801.1.2.1.16.1.1.1.10.0");
-        }
-
-        // Generic Fallback for Alcatel
-        if ($cpu === false || $cpu === "" || $mem === false || (int)$mem == 0) {
-            $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-            if ($cores) {
-                $cpu_sum = 0; $count = 0;
-                foreach ($cores as $val) { $cpu_sum += (int)$val; $count++; }
-                $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
-            }
-            $total_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-            $used_mem_g = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-            if ($total_mem_g > 0) $mem = round(($used_mem_g / $total_mem_g) * 100);
-        }
-    } else {
-        // Generic Fallback (Standard Host Resources MIB - RFC 2790)
-        $cores = @snmp2_real_walk($ip, $community, ".1.3.6.1.2.1.25.3.3.1.2");
-        if ($cores) {
-            $cpu_sum = 0; $count = 0;
-            foreach ($cores as $val) {
-                $cpu_sum += (int)$val;
-                $count++;
-            }
-            $cpu = $count > 0 ? round($cpu_sum / $count) : 0;
-        }
-        
-        // Generic RAM
-        $total_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.65536");
-        $used_mem = (int)@snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.65536");
-        if ($total_mem > 0) $mem = round(($used_mem / $total_mem) * 100);
-    }
+    // Smart Vendor Detection for CPU/RAM (30+ vendors supported)
+    $vendor_result = VendorDetector::detect($ip, $community, $system_info);
+    $model = $vendor_result['model'];
+    $cpu = $vendor_result['cpu'];
+    $mem = $vendor_result['mem'];
+    echo "  Detected: $model (CPU: {$cpu}%, MEM: {$mem}%)\n";
 
     // Safety Bounds
     $cpu = min(100, max(0, (int)$cpu));

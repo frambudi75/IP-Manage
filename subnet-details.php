@@ -488,13 +488,16 @@ async function scanSubnet(id) {
     status.style.display = 'flex';
     
     const uiBlock = <?php echo $current_block; ?>;
-    const chunksPerBlock = 8; // 256 / 32 = 8 chunks
+    const chunksPerBlock = 4; // 256 / 64 = 4 chunks (optimized: larger chunks, fewer HTTP calls)
     let totalFound = 0;
+    let totalScanned = 0;
+    const scanStart = Date.now();
 
     try {
         for (let i = 0; i < chunksPerBlock; i++) {
             const apiBlock = (uiBlock * chunksPerBlock) + i;
-            statusText.innerText = `Scanning block ${i+1}/${chunksPerBlock}... (Found: ${totalFound})`;
+            const elapsed = ((Date.now() - scanStart) / 1000).toFixed(1);
+            statusText.innerText = `⚡ Scanning block ${i+1}/${chunksPerBlock}... (Found: ${totalFound} | Scanned: ${totalScanned} | ${elapsed}s)`;
             
             const response = await fetch(`api/scan?id=${id}&block=${apiBlock}`);
             if (!response.ok) throw new Error("Server responded with error");
@@ -502,16 +505,19 @@ async function scanSubnet(id) {
             const data = await response.json();
             if (data.success) {
                 totalFound += data.data.found;
+                totalScanned += data.data.scanned;
             } else {
                 console.warn("Chunk failed:", data);
             }
         }
         
-        statusText.innerText = `Scan Complete! Total ${totalFound} active hosts found.`;
-        setTimeout(() => location.reload(), 1500);
+        const totalTime = ((Date.now() - scanStart) / 1000).toFixed(1);
+        statusText.innerText = `✅ Scan Complete! Found ${totalFound} active hosts (${totalScanned} IPs scanned in ${totalTime}s)`;
+        setTimeout(() => location.reload(), 2000);
     } catch (err) {
         console.error(err);
-        statusText.innerText = "Error during scan. (Timeout or Server Error)";
+        const totalTime = ((Date.now() - scanStart) / 1000).toFixed(1);
+        statusText.innerText = `❌ Error during scan after ${totalTime}s. (Timeout or Server Error)`;
         btn.disabled = false;
     }
 }
