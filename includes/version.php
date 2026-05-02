@@ -9,7 +9,7 @@ if (!defined('GITHUB_REPO')) define('GITHUB_REPO', 'frambudi75/IP-Manage');
 if (!defined('GITHUB_URL')) define('GITHUB_URL', 'https://github.com/' . GITHUB_REPO);
 
 $versions = [
-    ['ver' => '2.21.0', 'date' => '2026-05-02', 'changes' => ['SNMP Multi-vendor Engine (30+ Vendors supported)', 'Dedicated pfSense/OPNsense/net-snmp Monitoring', 'SSL/HTTPS Docker Deployment (Auto-generation)', 'Subnet Scan Optimization (ARP Pre-seeding)', 'Real-time Scan Progress & Elapsed Time tracking']],
+    ['ver' => '2.21.0', 'date' => '2026-05-02', 'changes' => ['SNMP Multi-vendor Engine (30+ Vendors supported)', 'Dedicated pfSense/OPNsense/net-snmp Monitoring', 'Subnet Scan Optimization (ARP Pre-seeding)', 'Real-time Scan Progress & Elapsed Time tracking']],
     ['ver' => '2.20.0', 'date' => '2026-04-28', 'changes' => ['SNMP Switch Monitoring (VLAN names, Speed, Status)', 'Auto-Generated Topology Map Hierarchy', 'Switch Hardware Capacity Dashboard', 'Uplink/Trunk Detection Logic', 'Multi-vendor SNMP Fallback (Cisco/Alcatel/Huawei)']],
     ['ver' => '2.19.0', 'date' => '2026-04-19', 'changes' => ['Netwatch Latency History & Graphing', 'Discord & Slack Webhook Integration', 'Custom Notification Templates', 'Maintenance Mode (Snooze Alert)', 'Scanner Health Status Indicator']],
     ['ver' => '2.18.1', 'date' => '2026-04-19', 'changes' => ['Downtime Duration calculation in alerts', 'Improved Windows Ping robustness', 'Timezone synchronization logic', 'Telegram HTML Mode upgrade', 'Fixed Netwatch Form Resubmission']],

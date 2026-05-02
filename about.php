@@ -174,7 +174,7 @@ include 'includes/header.php';
         </h3>
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
             <?php
-            $stack = ['PHP 8.2', 'MariaDB 10.11', 'Redis 7', 'Apache 2.4', 'Nginx 1.25', 'OpenSSL', 'Chart.js 4', 'Mermaid.js', 'Lucide Icons', 'SNMP v2c', 'ICMP Ping', 'SSE', 'Docker'];
+            $stack = ['PHP 8.2', 'MariaDB 10.11', 'Redis 7', 'Apache 2.4', 'Chart.js 4', 'Mermaid.js', 'Lucide Icons', 'SNMP v2c', 'ICMP Ping', 'SSE', 'Docker'];
             foreach ($stack as $t): ?>
             <span style="padding: 6px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
                 <?php echo $t; ?>
