@@ -141,7 +141,7 @@ include 'includes/header.php';
             <input type="hidden" name="add_user" value="1">
             <div class="input-group">
                 <label>Username</label>
-                <input type="text" name="username" class="input-control" required>
+                <input type="text" name="username" class="input-control" required autocomplete="off" readonly onfocus="this.removeAttribute('readonly');">
             </div>
             <div class="input-group">
                 <label>Email Address</label>
@@ -149,7 +149,7 @@ include 'includes/header.php';
             </div>
             <div class="input-group">
                 <label>Password</label>
-                <input type="password" name="password" class="input-control" required>
+                <input type="password" name="password" class="input-control" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
             </div>
             <div class="input-group">
                 <label>Role</label>

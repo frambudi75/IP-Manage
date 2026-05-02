@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Access Identity</label>
                 <div class="field-container">
                     <i data-lucide="user"></i>
-                    <input type="text" name="username" class="modern-input" placeholder="Username" required autofocus autocomplete="username">
+                    <input type="text" name="username" class="modern-input" placeholder="Username" required autofocus autocomplete="off" readonly onfocus="this.removeAttribute('readonly');">
                 </div>
             </div>
 
@@ -243,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Security Key</label>
                 <div class="field-container">
                     <i data-lucide="lock-keyhole"></i>
-                    <input type="password" name="password" class="modern-input" placeholder="Password" required autocomplete="current-password">
+                    <input type="password" name="password" class="modern-input" placeholder="Password" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
                 </div>
             </div>
 

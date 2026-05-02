@@ -68,7 +68,7 @@ include 'includes/header.php';
         <form method="POST" autocomplete="off">
             <div class="input-group">
                 <label>Subnet Address</label>
-                <input type="text" name="subnet" class="input-control" placeholder="e.g. 192.168.1.0" required autofocus>
+                <input type="text" name="subnet" class="input-control" placeholder="e.g. 192.168.1.0" required autofocus autocomplete="off" readonly onfocus="this.removeAttribute('readonly');">
                 <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">The network base address.</small>
             </div>
             
