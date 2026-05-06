@@ -237,13 +237,28 @@ foreach ($switches as $switch) {
         // OID: .1.3.6.1.2.1.2.2.1.3 (ifType)
         $iftype_map = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.2.2.1.3");
         
+        // 4.1 Get Port Vlan ID (PVID) - Crucial for non-tagged/access ports
+        // Standard: dot1qPortPvid (.1.3.6.1.2.1.17.7.1.4.5.1.1)
+        // Alcatel: alaVlanPortVlanId (.1.3.6.1.4.1.6486.800.1.2.1.11.1.1.1.2)
+        echo "  Fetching Port PVIDs...\n";
+        $pvid_map = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.17.7.1.4.5.1.1");
+        if (empty($pvid_map) && (stripos($system_info, 'Alcatel') !== false || stripos($model, 'Alcatel') !== false)) {
+            $pvid_map = snmp_walk_indexed($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.11.1.1.1.2");
+        }
+        
         // 4.5 Get VLAN Names
         // Standard OID: dot1qVlanStaticName (.1.3.6.1.2.1.17.7.1.4.3.1.1)
         echo "  Fetching VLAN names...\n";
         $vlan_names = snmp_walk_indexed($ip, $community, ".1.3.6.1.2.1.17.7.1.4.3.1.1");
-        if (empty($vlan_names) && stripos($system_info, 'Cisco') !== false) {
-            // Cisco VTP VLAN names
-            $vlan_names = snmp_walk_indexed($ip, $community, ".1.3.6.1.4.1.9.9.46.1.3.1.1.4.1");
+        if (empty($vlan_names)) {
+            if (stripos($system_info, 'Cisco') !== false) {
+                // Cisco VTP VLAN names
+                $vlan_names = snmp_walk_indexed($ip, $community, ".1.3.6.1.4.1.9.9.46.1.3.1.1.4.1");
+            } elseif (stripos($system_info, 'Alcatel') !== false || stripos($system_info, 'OmniSwitch') !== false || stripos($model, 'Alcatel') !== false) {
+                // Alcatel alaVlanName (.1.3.6.1.4.1.6486.800.1.2.1.11.1.1.1.2)
+                echo "    Trying Alcatel-specific VLAN names...\n";
+                $vlan_names = snmp_walk_indexed($ip, $community, ".1.3.6.1.4.1.6486.800.1.2.1.11.1.1.1.2");
+            }
         }
         
         // 5. Get interface speed (ifHighSpeed in Mbps, fallback ifSpeed in bps)
@@ -278,13 +293,23 @@ foreach ($switches as $switch) {
         }
         
         // 6. Get FDB table (MAC to Bridge Port + VLAN)
+        // Detect if this is an Alcatel switch (flat bridge mode)
+        $is_alcatel = (stripos($system_info, 'Alcatel') !== false || stripos($model, 'Alcatel') !== false || stripos($system_info, 'OmniSwitch') !== false);
+        
+        echo "  Scanning FDB Tables...\n";
+        
         // Primary: dot1qTpFdbPort (.1.3.6.1.2.1.17.7.1.2.2.1.2) - VLAN Aware (802.1Q)
-        // Fallback: dot1dTpFdbPort (.1.3.6.1.2.1.17.4.3.1.2) - Generic
-        // Cisco IOS fallback: per-VLAN community polling (community@vlan)
         $fdb_table = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.17.7.1.2.2.1.2");
         $is_vlan_aware = ($fdb_table !== false && count($fdb_table) > 0);
         
+        if ($is_alcatel && $is_vlan_aware) {
+            echo "    Alcatel flat bridge mode: will use PVID for VLAN resolution.\n";
+            echo "    PVID map has " . count($pvid_map) . " entries.\n";
+        }
+        
+        // Fallback: dot1dTpFdbPort (.1.3.6.1.2.1.17.4.3.1.2) - Generic (no VLAN)
         if (!$is_vlan_aware) {
+            echo "    dot1q empty, falling back to generic bridge table...\n";
             $fdb_table = @snmprealwalk($ip, $community, ".1.3.6.1.2.1.17.4.3.1.2");
         }
         
@@ -352,6 +377,19 @@ foreach ($switches as $switch) {
                 
                 $bridge_port = trim(str_replace('INTEGER: ', '', $val));
                 
+                // Smart VLAN Resolution using PVID
+                // Alcatel flat bridge: dot1q always reports VLAN 1, use PVID instead
+                // Other vendors: use PVID only when VLAN is missing
+                if ($is_alcatel) {
+                    // Alcatel PVID is indexed by bridge port (1001, 1002, etc.)
+                    $pvid_val = $pvid_map[$bridge_port] ?? null;
+                    if ($pvid_val && (int)$pvid_val > 0) {
+                        $vlan_id = (int)$pvid_val;
+                    }
+                } elseif (!$vlan_id) {
+                    $vlan_id = $pvid_map[$bridge_port] ?? 1;
+                }
+
                 // For Cisco per-VLAN polling, bridge-to-ifIndex might need VLAN context too
                 $ifindex = $ifindex_map[$bridge_port] ?? null;
                 if (!$ifindex && $cisco_vlan_tag) {
