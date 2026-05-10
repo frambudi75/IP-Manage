@@ -239,4 +239,32 @@ function run_auto_migrations($db) {
         $db->exec("ALTER TABLE netwatch CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         $db->exec("ALTER TABLE netwatch_history CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     } catch (Exception $e) { /* ignore on failure */ }
+
+    // 18. Performance Indexes & Data Retention Settings
+    // Add missing indexes on history/log tables for query performance
+    try {
+        // audit_logs: index on created_at for date-range queries and cleanup
+        $idx = $db->query("SHOW INDEX FROM audit_logs WHERE Key_name = 'idx_created_at'")->rowCount();
+        if ($idx === 0) {
+            $db->exec("ALTER TABLE audit_logs ADD INDEX idx_created_at (created_at)");
+        }
+    } catch (Exception $e) {}
+
+    try {
+        // switch_port_history: composite index for efficient per-switch time-range queries
+        $idx = $db->query("SHOW INDEX FROM switch_port_history WHERE Key_name = 'idx_switch_port_time'")->rowCount();
+        if ($idx === 0) {
+            $db->exec("ALTER TABLE switch_port_history ADD INDEX idx_switch_port_time (switch_id, port_name, recorded_at)");
+        }
+    } catch (Exception $e) {}
+
+    // Default data retention settings (days)
+    $db->exec("INSERT IGNORE INTO settings (`key`, `value`) VALUES 
+        ('retention_port_history', '30'),
+        ('retention_health_history', '30'),
+        ('retention_netwatch_history', '30'),
+        ('retention_audit_logs', '90'),
+        ('retention_auto_cleanup', '1'),
+        ('last_db_cleanup', '0')
+    ");
 }

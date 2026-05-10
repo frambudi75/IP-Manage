@@ -2,6 +2,23 @@
 
 All major functional changes, enhancements, and critical fixes are documented here.
 
+## [2.24.0] - 2026-05-10
+### Added
+- **Database Maintenance System**: Complete auto-cleanup engine (`cron_cleanup.php`) that automatically purges expired data from time-series tables using configurable retention policies.
+- **Database Health Dashboard**: New "DATABASE" tab in Settings showing real-time table row counts, disk usage, per-table progress bars, and last cleanup timestamp.
+- **Configurable Retention Policy**: Per-table retention settings (Port History, Health History, Netwatch History, Audit Logs) configurable from the UI with recommended defaults (30/90 days).
+- **One-click Manual Cleanup**: AJAX-powered cleanup button with detailed per-table results feedback (rows deleted, remaining, status per table).
+- **Daily Auto-Cleanup Integration**: Cleanup automatically runs once per day when `cron_scanner.php` executes, controlled by the "Auto Cleanup" toggle in Settings.
+
+### Optimized
+- **Performance Indexes**: Added `idx_created_at` on `audit_logs` and `idx_switch_port_time` composite index on `switch_port_history` for faster date-range queries.
+- **Batch Delete Engine**: Data cleanup uses 10K-row batches to prevent table locking on large datasets.
+- **Auto OPTIMIZE TABLE**: Tables are automatically optimized after significant cleanup (>1000 rows deleted) to reclaim disk space.
+- **AUTO_INCREMENT Reset**: Counter IDs are automatically reset after heavy cleanup to prevent unnecessary ID inflation.
+
+### Changed
+- **Switch Health Retention**: `cron_switch_poll.php` now uses the configurable retention setting from the database instead of a hardcoded 48-hour window.
+
 ## [2.23.0] - 2026-05-09
 ### Added
 - **Major Rebranding (NetScope Pro)**: Transitioned the entire application identity to NetScope Pro, including new logos, consistent naming, and professional "About" credits.

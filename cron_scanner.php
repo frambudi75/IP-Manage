@@ -116,4 +116,18 @@ echo "[ " . date('Y-m-d H:i:s') . " ] All tasks completed.\n";
 $total_active = $db->query("SELECT COUNT(*) FROM ip_addresses WHERE state = 'active'")->fetchColumn();
 $db->prepare("INSERT INTO stats_history (snapshot_date, total_active) VALUES (CURRENT_DATE, ?) ON DUPLICATE KEY UPDATE total_active = VALUES(total_active)")
    ->execute([$total_active]);
+
+// Auto Database Cleanup (runs once per day if enabled)
+try {
+    $auto_cleanup = Settings::get('retention_auto_cleanup', '1');
+    $last_cleanup = (int)Settings::get('last_db_cleanup', 0);
+    $cleanup_interval = 86400; // 24 hours
+
+    if ($auto_cleanup === '1' && (time() - $last_cleanup) >= $cleanup_interval) {
+        echo "Running daily database cleanup...\n";
+        include __DIR__ . '/cron_cleanup.php';
+    }
+} catch (Exception $e) {
+    echo "Cleanup error: " . $e->getMessage() . "\n";
+}
 ?>

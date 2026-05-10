@@ -194,11 +194,12 @@ foreach ($switches as $switch) {
     $db->prepare("UPDATE switches SET model = ?, uptime = ?, cpu_usage = ?, memory_usage = ?, system_info = ? WHERE id = ?")
        ->execute([$model, $uptime_str, $cpu, $mem, $system_info, $switch['id']]);
 
-    // Save to History (for graphs) - keep last 24h only
+    // Save to History (for graphs) - cleanup handled by retention policy
     $db->prepare("INSERT INTO switch_health_history (switch_id, cpu_usage, memory_usage) VALUES (?, ?, ?)")
        ->execute([$switch['id'], $cpu, $mem]);
-    $db->prepare("DELETE FROM switch_health_history WHERE switch_id = ? AND recorded_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)")
-       ->execute([$switch['id']]);
+    $health_retention = max(1, (int)Settings::get('retention_health_history', 30));
+    $db->prepare("DELETE FROM switch_health_history WHERE switch_id = ? AND recorded_at < DATE_SUB(NOW(), INTERVAL ? DAY)")
+       ->execute([$switch['id'], $health_retention]);
 
     // --- Phase 1: Interface Discovery & Port Mapping ---
     echo "  Phase 1: Discovering interfaces...\n";

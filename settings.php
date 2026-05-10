@@ -41,7 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
         'slack_webhook_url' => $_POST['slack_webhook_url'] ?? '',
         'custom_netwatch_template' => $_POST['custom_netwatch_template'] ?? '',
         'nmap_enabled' => isset($_POST['nmap_enabled']) ? '1' : '0',
-        'discovery_aggressive' => isset($_POST['discovery_aggressive']) ? '1' : '0'
+        'discovery_aggressive' => isset($_POST['discovery_aggressive']) ? '1' : '0',
+        'retention_port_history' => max(0, (int)($_POST['retention_port_history'] ?? 30)),
+        'retention_health_history' => max(0, (int)($_POST['retention_health_history'] ?? 30)),
+        'retention_netwatch_history' => max(0, (int)($_POST['retention_netwatch_history'] ?? 30)),
+        'retention_audit_logs' => max(0, (int)($_POST['retention_audit_logs'] ?? 90)),
+        'retention_auto_cleanup' => isset($_POST['retention_auto_cleanup']) ? '1' : '0'
     ];
 
     try {
@@ -162,6 +167,7 @@ include 'includes/header.php';
     <div class="tab-btn active" onclick="showTab(event, 'tab-umum')"><i data-lucide="layout"></i> UMUM</div>
     <div class="tab-btn" onclick="showTab(event, 'tab-notif')"><i data-lucide="send"></i> NOTIFIKASI</div>
     <div class="tab-btn" onclick="showTab(event, 'tab-email')"><i data-lucide="mail"></i> EMAIL</div>
+    <div class="tab-btn" onclick="showTab(event, 'tab-database')"><i data-lucide="database"></i> DATABASE</div>
     <div class="tab-btn" onclick="showTab(event, 'tab-system')"><i data-lucide="settings"></i> SISTEM</div>
 </div>
 
@@ -374,6 +380,162 @@ include 'includes/header.php';
         </div>
     </div>
 
+    <!-- DATABASE TAB -->
+    <div id="tab-database" class="tab-content">
+        <?php
+        // Gather table statistics
+        $db_tables = [
+            'switch_port_history' => ['label' => 'Port Traffic History', 'icon' => 'activity', 'color' => '#3b82f6', 'setting' => 'retention_port_history'],
+            'switch_health_history' => ['label' => 'Switch Health History', 'icon' => 'heart-pulse', 'color' => '#ef4444', 'setting' => 'retention_health_history'],
+            'netwatch_history' => ['label' => 'Netwatch History', 'icon' => 'radar', 'color' => '#10b981', 'setting' => 'retention_netwatch_history'],
+            'audit_logs' => ['label' => 'Audit Logs', 'icon' => 'scroll-text', 'color' => '#f59e0b', 'setting' => 'retention_audit_logs'],
+        ];
+        $table_stats = [];
+        foreach ($db_tables as $tbl => $meta) {
+            try {
+                $row_count = (int)$db->query("SELECT COUNT(*) FROM `$tbl`")->fetchColumn();
+                $size_info = $db->query("SELECT data_length + index_length as size FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '$tbl'")->fetch();
+                $size_bytes = $size_info ? (int)$size_info['size'] : 0;
+                $table_stats[$tbl] = ['rows' => $row_count, 'size' => $size_bytes];
+            } catch (Exception $e) {
+                $table_stats[$tbl] = ['rows' => 0, 'size' => 0];
+            }
+        }
+        $total_rows = array_sum(array_column($table_stats, 'rows'));
+        $total_size = array_sum(array_column($table_stats, 'size'));
+        
+        function format_bytes($bytes) {
+            if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+            if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
+            if ($bytes >= 1024) return round($bytes / 1024, 2) . ' KB';
+            return $bytes . ' B';
+        }
+        
+        function health_color($rows) {
+            if ($rows < 50000) return '#10b981';
+            if ($rows < 500000) return '#f59e0b';
+            return '#ef4444';
+        }
+        ?>
+
+        <!-- Database Overview -->
+        <div class="card" style="max-width: 900px; border-top: 4px solid #8b5cf6;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
+                <div style="background: rgba(139, 92, 246, 0.1); padding: 8px; border-radius: 50%; color: #8b5cf6;">
+                    <i data-lucide="database" style="width: 20px;"></i>
+                </div>
+                <h3>Database Health Overview</h3>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid-settings" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <div class="update-card" style="text-align: center; margin-bottom: 0;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Total Rows</div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: <?php echo health_color($total_rows); ?>;"><?php echo number_format($total_rows); ?></div>
+                </div>
+                <div class="update-card" style="text-align: center; margin-bottom: 0;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Disk Usage</div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: white;"><?php echo format_bytes($total_size); ?></div>
+                </div>
+                <div class="update-card" style="text-align: center; margin-bottom: 0;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Cleanup Terakhir</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--text);">
+                        <?php 
+                        $last_cleanup = (int)Settings::get('last_db_cleanup', 0);
+                        echo $last_cleanup ? date('d M Y H:i', $last_cleanup) : 'Belum pernah'; 
+                        ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Per-Table Stats -->
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem;">
+                <?php foreach ($db_tables as $tbl => $meta): 
+                    $stats = $table_stats[$tbl];
+                    $health = health_color($stats['rows']);
+                    // Calculate bar width (max at 100K rows = 100%)
+                    $bar_pct = min(100, ($stats['rows'] / max(1, $total_rows)) * 100);
+                ?>
+                <div style="padding: 1rem 1.25rem; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="<?php echo $meta['icon']; ?>" style="width: 16px; color: <?php echo $meta['color']; ?>;"></i>
+                            <span style="font-weight: 600; font-size: 0.875rem;"><?php echo $meta['label']; ?></span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);"><?php echo format_bytes($stats['size']); ?></span>
+                            <span style="font-weight: 700; font-size: 0.95rem; color: <?php echo $health; ?>;"><?php echo number_format($stats['rows']); ?> rows</span>
+                        </div>
+                    </div>
+                    <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; width: <?php echo max(2, $bar_pct); ?>%; background: <?php echo $meta['color']; ?>; border-radius: 4px; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Retention Settings -->
+        <div class="card" style="max-width: 900px; border-top: 4px solid #3b82f6; margin-top: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                <div style="background: rgba(59, 130, 246, 0.1); padding: 8px; border-radius: 50%; color: #3b82f6;">
+                    <i data-lucide="timer" style="width: 20px;"></i>
+                </div>
+                <h3>Data Retention Policy</h3>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6;">
+                Tentukan berapa lama data history disimpan. Data yang lebih lama dari batas retensi akan dihapus otomatis. Set <strong>0</strong> untuk menyimpan selamanya.
+            </p>
+
+            <div class="input-group" style="margin-bottom: 1.5rem;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text);">
+                    <input type="checkbox" name="retention_auto_cleanup" value="1" <?php echo ($settings['retention_auto_cleanup'] ?? '1') == '1' ? 'checked' : ''; ?>>
+                    <strong>Auto Cleanup</strong> — Jalankan cleanup otomatis saat cron berjalan
+                </label>
+            </div>
+
+            <div class="grid-settings" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <?php foreach ($db_tables as $tbl => $meta): ?>
+                <div class="input-group">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                        <i data-lucide="<?php echo $meta['icon']; ?>" style="width: 14px; color: <?php echo $meta['color']; ?>;"></i>
+                        <?php echo $meta['label']; ?>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" name="<?php echo $meta['setting']; ?>" class="input-control" 
+                            value="<?php echo htmlspecialchars($settings[$meta['setting']] ?? '30'); ?>" 
+                            min="0" max="3650" style="max-width: 120px;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">hari</span>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div style="padding: 1rem; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); border-radius: 8px; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.6;">
+                    💡 <strong>Rekomendasi:</strong> Port History & Health History = <strong>30 hari</strong>, Netwatch History = <strong>30 hari</strong>, Audit Logs = <strong>90 hari</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Cleanup -->
+        <div class="card" style="max-width: 900px; border-top: 4px solid #ef4444; margin-top: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 50%; color: #ef4444;">
+                    <i data-lucide="trash-2" style="width: 20px;"></i>
+                </div>
+                <h3>Manual Cleanup</h3>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                Jalankan pembersihan data sekarang berdasarkan retention policy di atas. Simpan pengaturan terlebih dahulu sebelum menjalankan cleanup.
+            </p>
+            <button type="button" id="btn-cleanup" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 1rem; border: 1px solid rgba(239, 68, 68, 0.3);" onclick="runCleanup()">
+                <i data-lucide="sparkles"></i> Jalankan Cleanup Sekarang
+            </button>
+            <div id="cleanup-result" style="display: none; margin-top: 1.5rem;"></div>
+        </div>
+    </div>
+
     <div class="settings-footer" style="margin-top: 3rem; display: flex; justify-content: flex-end; gap: 1rem;">
         <button type="submit" name="save_settings" class="btn btn-primary" style="padding: 1rem 3rem; justify-content: center;">
             <i data-lucide="check-circle-2"></i> Simpan Semua Pengaturan
@@ -389,6 +551,72 @@ include 'includes/header.php';
         document.getElementById(tabId).classList.add('active');
         if(event) event.currentTarget.classList.add('active');
     }
+
+    function runCleanup() {
+        const btn = document.getElementById('btn-cleanup');
+        const resultDiv = document.getElementById('cleanup-result');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Menjalankan cleanup...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        resultDiv.style.display = 'none';
+        
+        fetch('cron_cleanup', {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="sparkles"></i> Jalankan Cleanup Sekarang';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            resultDiv.style.display = 'block';
+            
+            if (data.success) {
+                let html = '<div style="padding: 1rem; background: rgba(16, 185, 129, 0.08); border: 1px solid var(--success); border-radius: 10px;">';
+                html += '<div style="font-weight: 700; color: var(--success); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;"><i data-lucide="check-circle" style="width: 16px;"></i> Cleanup Selesai</div>';
+                html += '<div style="font-size: 0.85rem; color: var(--text); margin-bottom: 1rem;">Total dihapus: <strong>' + data.total_deleted.toLocaleString() + ' rows</strong></div>';
+                html += '<div style="display: flex; flex-direction: column; gap: 6px;">';
+                for (const [table, info] of Object.entries(data.tables)) {
+                    const statusIcon = info.status === 'cleaned' ? '🧹' : (info.status === 'clean' ? '✨' : '⏭');
+                    const statusColor = info.status === 'cleaned' ? 'var(--warning)' : 'var(--text-muted)';
+                    html += '<div style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">';
+                    html += '<span>' + statusIcon + ' ' + table + '</span>';
+                    html += '<span style="color: ' + statusColor + ';">';
+                    if (info.deleted > 0) {
+                        html += '-' + info.deleted.toLocaleString() + ' rows';
+                    } else {
+                        html += info.status === 'skipped' ? 'disabled' : 'no change';
+                    }
+                    html += ' (' + info.remaining.toLocaleString() + ' remaining)</span>';
+                    html += '</div>';
+                }
+                html += '</div></div>';
+                
+                if (data.total_deleted > 0) {
+                    html += '<p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; text-align: center;">Refresh halaman untuk melihat statistik terbaru.</p>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<div style="padding: 1rem; background: rgba(239, 68, 68, 0.08); border: 1px solid var(--danger); color: var(--danger); border-radius: 10px;">Cleanup gagal. Silakan cek log server.</div>';
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="sparkles"></i> Jalankan Cleanup Sekarang';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="padding: 1rem; background: rgba(239, 68, 68, 0.08); border: 1px solid var(--danger); color: var(--danger); border-radius: 10px;">Network error: ' + err.message + '</div>';
+        });
+    }
 </script>
+
+<style>
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+</style>
 
 <?php include 'includes/footer.php'; ?>
